@@ -23,6 +23,7 @@ import HaemoglobinPerChild from './screens/HaemoglobinPerChild'
 import GradePerChild from './screens/GradePerChild'
 import AnganwadiCountvsBit_name from './screens/AnganwadiCountvsBit_name';
 import BitNamevsGenderGraph from './screens/BitNamevsGenderGraph';
+import GrowthChartPerChild from './screens/GrowthChartPerChild';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -329,7 +330,19 @@ export default function App() {
             }}
           />
 
+          <Stack.Screen
+            name="GrowthChartPerChild"
+            component={GrowthChartPerChild}
+            options={{
+              // headerShown: false,
+              headerStyle: {
+                backgroundColor: COLORS.theme, // Set your desired background color
 
+              },
+              headerTintColor: COLORS.white,
+              title: "Report",
+            }}
+          />
 
 
 

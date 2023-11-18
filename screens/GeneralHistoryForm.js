@@ -197,8 +197,8 @@ const GeneralHistoryForm = () => {
 
     try {
       const generalHistoryData = {
-        anganwadiNo: anganwadiNo,
-        childName: childsName,
+        anganwadi_no: anganwadiNo,
+        child_name: childsName,
         vomiting: generalHistory.vomiting, // Accessing values from generalHistory state
         fever: generalHistory.fever,
         commonCold: generalHistory.commonCold,

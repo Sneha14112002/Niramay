@@ -9,7 +9,7 @@ const AnganwadiCountvsBitName
 
   useEffect(() => {
     // Make a GET request to your Node.js server
-    axios.get('http://192.168.1.34:3000/anganwadi-count')
+    axios.get('http://192.168.1.16:3000/anganwadi-count')
       .then(response => {
         setData(response.data);
         console.log(data)

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, ScrollView } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
 
 const WeightPerChild = ({ route }) => {
   const { anganwadiNo, childsName } = route.params;
@@ -17,7 +17,7 @@ const WeightPerChild = ({ route }) => {
           childsName,
         };
 
-        const response = await fetch('http://192.168.1.34:3000/getVisitsData', {
+        const response = await fetch('http://192.168.1.16:3000/getVisitsData', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ const WeightPerChild = ({ route }) => {
           <View style={styles.chart}>
             <Text style={styles.chartTitle}>Weight Chart</Text>
             <ScrollView horizontal={true}>
-              <BarChart
+              {/* <BarChart
                 data={{
                   labels: customLabels, // Use custom labels for x-axis on the graph
                   datasets: [
@@ -86,7 +86,30 @@ const WeightPerChild = ({ route }) => {
                   decimalPlaces: 2,
                 }}
                 style={styles.chartStyle}
-              />
+              /> */}
+              <LineChart
+              data={{
+                labels: customLabels,
+                datasets: [
+                  {
+                    data: weights,
+                  },
+                ],
+              }}
+              width={customLabels.length * 60}
+              height={200}
+              yAxisLabel="Weight (kg)"
+              yAxisSuffix=" kg"
+              chartConfig={{
+                backgroundGradientFrom: '#fff',
+                backgroundGradientTo: '#fff',
+                color: (opacity = 0.7) => `rgba(128, 0, 128, ${opacity})`,
+                strokeWidth: 2,
+                barRadius: 0,
+                decimalPlaces: 2,
+              }}
+              style={styles.chartStyle}
+            />
             </ScrollView>
           </View>
 

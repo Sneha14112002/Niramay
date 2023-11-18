@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, ScrollView } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
 
 const HeightPerChild = ({ route }) => {
   const { anganwadiNo, childsName } = route.params;
@@ -17,7 +17,7 @@ const HeightPerChild = ({ route }) => {
           childsName,
         };
 
-        const response = await fetch('http://192.168.1.34:3000/getVisitsData', {
+        const response = await fetch('http://192.168.1.16:3000/getVisitsData', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -54,9 +54,9 @@ const HeightPerChild = ({ route }) => {
   // Create table data
   const tableData = data
     ? data.map((entry, index) => ({
-        visit: visitDates[index], // Use visit dates for the table
-        height: `${parseFloat(entry.height).toFixed(2)} cm`,
-      }))
+      visit: visitDates[index], // Use visit dates for the table
+      height: `${parseFloat(entry.height).toFixed(2)} cm`,
+    }))
     : [];
 
   return (
@@ -68,29 +68,52 @@ const HeightPerChild = ({ route }) => {
           <View style={styles.chart}>
             <Text style={styles.chartTitle}>Height Chart</Text>
             <ScrollView horizontal={true}>
-            <BarChart
-  data={{
-    labels: visitLabels,
-    datasets: [
-      {
-        data: heights,
-      },
-    ],
-  }}
-  width={350}
-  height={200}
-  yAxisLabel="Height (cm)"
-  yAxisSuffix=" cm" // Make sure there is a space before "cm"
-  chartConfig={{
-    backgroundGradientFrom: '#fff',
-    backgroundGradientTo: '#fff',
-    color: (opacity = 0.7) => `rgba(0, 128, 255, ${opacity})`,
-    strokeWidth: 2,
-    barRadius: 0,
-    decimalPlaces: 2,
-  }}
-  style={styles.chartStyle}
-/>
+              {/* <BarChart
+                data={{
+                  labels: visitLabels,
+                  datasets: [
+                    {
+                      data: heights,
+                    },
+                  ],
+                }}
+                width={350}
+                height={200}
+                yAxisLabel="Height (cm)"
+                yAxisSuffix=" cm" // Make sure there is a space before "cm"
+                chartConfig={{
+                  backgroundGradientFrom: '#fff',
+                  backgroundGradientTo: '#fff',
+                  color: (opacity = 0.7) => `rgba(0, 128, 255, ${opacity})`,
+                  strokeWidth: 2,
+                  barRadius: 0,
+                  decimalPlaces: 2,
+                }}
+                style={styles.chartStyle}
+              /> */}
+              <LineChart
+                data={{
+                  labels: visitLabels,
+                  datasets: [
+                    {
+                      data: heights,
+                    },
+                  ],
+                }}
+                width={350}
+                height={200}
+                yAxisLabel="Height (cm)"
+                yAxisSuffix=" cm"
+                chartConfig={{
+                  backgroundGradientFrom: '#fff',
+                  backgroundGradientTo: '#fff',
+                  color: (opacity = 0.7) => `rgba(0, 128, 255, ${opacity})`,
+                  strokeWidth: 2,
+                  barRadius: 0,
+                  decimalPlaces: 2,
+                }}
+                style={styles.chartStyle}
+              />
 
             </ScrollView>
           </View>
@@ -128,7 +151,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 4,
     padding: 16,
-    marginLeft:20
+    marginLeft: 20
   },
   chartTitle: {
     fontSize: 18,

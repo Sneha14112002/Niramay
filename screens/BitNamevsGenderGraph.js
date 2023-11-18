@@ -10,7 +10,7 @@ const BitNamevsGenderGraph = () => {
 
   useEffect(() => {
     axios
-      .get('http://192.168.1.34:3000/childDataGender')
+      .get('http://192.168.1.16:3000/childDataGender')
       .then((response) => {
         if (response.data) {
           // Check if response.data is defined

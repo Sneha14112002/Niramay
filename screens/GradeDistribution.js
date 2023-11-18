@@ -133,7 +133,7 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     setLoading(true);
-    axios.get('http://192.168.1.34:3000/bit_name')
+    axios.get('http://192.168.1.16:3000/bit_name')
       .then((response) => {
         setBitName(response.data);
         setLoading(false);
@@ -146,7 +146,7 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     if (selectedBitName) {
-      axios.get(`http://192.168.1.34:3000/visitDate/${selectedBitName}`)
+      axios.get(`http://192.168.1.16:3000/visitDate/${selectedBitName}`)
         .then((response) => {
           setVisitDate(response.data);
         })
@@ -158,7 +158,7 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     if (selectedDate) {
-      axios.get(`http://192.168.1.34:3000/child_distribution/${selectedBitName}/${selectedDate}`)
+      axios.get(`http://192.168.1.16:3000/child_distribution/${selectedBitName}/${selectedDate}`)
         .then((response) => {
           const formattedData = response.data.map((item) => ({
             grade: item.grade,

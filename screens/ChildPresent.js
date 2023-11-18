@@ -23,7 +23,7 @@ const ChildPresent = () => {
         childsName,
       };
       
-      const response = await fetch('http://192.168.1.34:3000/checkData', {
+      const response = await fetch('http://192.168.1.16:3000/checkData', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

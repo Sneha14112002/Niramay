@@ -11,7 +11,7 @@ const BitNamevsGender = () => {
 
   useEffect(() => {
     axios
-      .get('http://192.168.1.34:3000/childData')
+      .get('http://192.168.1.16:3000/childData')
       .then((response) => {
         if (response.data instanceof Array) {
           setData(response.data);

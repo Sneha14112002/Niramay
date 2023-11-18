@@ -20,8 +20,8 @@ app.use((req, res, next) => {
 const db = mysql.createConnection({
   host: 'localhost', // Replace with your MySQL host
   user: 'root',      // Replace with your MySQL user
-  password: 'root@123',  // Resplace with your MySQL password
-  database: 'ngo', // Replace with your MySQL database name
+  password: 'Silvi@2002',  // Resplace with your MySQL password
+  database: 'niramay', // Replace with your MySQL database name
 });
 
 db.connect((err) => {
@@ -126,7 +126,7 @@ app.post('/checkData', (req, res) => {
     const { anganwadiNo, childsName } = req.body;
   console.log(anganwadiNo,childsName);
     // Query the database to check if the data exists
-    const sql = 'SELECT * FROM GeneralHistory WHERE anganwadiNo = ? AND childName  = ?';
+    const sql = 'SELECT * FROM GeneralHistory WHERE anganwadi_no = ? AND child_name  = ?';
     const values = [anganwadiNo, childsName];
   
     db.query(sql, values, (err, result) => {

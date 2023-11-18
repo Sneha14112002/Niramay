@@ -17,7 +17,7 @@ const ChildReport = ({ route }) => {
           childsName,
         };
 
-        const response = await fetch('http://192.168.1.34:3000/getVisitsData', {
+        const response = await fetch('http://192.168.1.16:3000/getVisitsData', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
