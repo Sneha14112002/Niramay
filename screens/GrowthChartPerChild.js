@@ -45,14 +45,31 @@ const GrowthChartPerChild = ({ route }) => {
     const { data } = formData || {};
     const weights = data ? data.map((entry) => parseFloat(entry.weight)) : [];
     const heights = data ? data.map((entry) => parseFloat(entry.height)) : [];
-    const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null) : [];
-    const haemoglobin = haemoglobinData ? haemoglobinData.map(entry => parseFloat(entry.haemoglobin)) : [];
+    const haemoglobin = data ? data.map((entry) => parseFloat(entry.haemoglobin)) : [];
     const visitDates = data ? data.map((entry) => entry.visitDate) : [];
 
     // Create an array of custom labels for the graph ("visit1," "visit2," etc.)
-    //const customLabels = weights.map((_, index) => `visit${index + 1}`);
     const customLabels = heights.map((_, index) => `visit${index + 1}`);
 
+    // Before using haemoglobin array in the LineChart component
+    const filledHaemoglobin = haemoglobin.map((value, index) => {
+        if (isNaN(value) && index > 0) {
+            // If the value is NaN and index is greater than 0, replace it with the previous numeric value
+            let previousNumericValue = null;
+
+            for (let i = index - 1; i >= 0; i--) {
+                if (!isNaN(haemoglobin[i])) {
+                    previousNumericValue = haemoglobin[i];
+                    break;
+                }
+            }
+
+            return previousNumericValue || 0;
+        }
+        return value;
+    });
+
+    console.log(filledHaemoglobin);
 
     // Create table data with visit dates
     const tableData = visitDates.map((visitDate, index) => ({
@@ -71,13 +88,11 @@ const GrowthChartPerChild = ({ route }) => {
         return data.map((value) => (value - minValue) / range);
     };
 
+
     // Normalize the height, weight, and haemoglobin datasets
     const normalizedHeights = normalize(heights);
-    console.log("Normalized Height: ", normalizedHeights);
     const normalizedWeights = normalize(weights);
-    console.log("Normalized Weight: ", normalizedWeights);
-    const normalizedHaemoglobin = normalize(haemoglobin);
-    console.log("Normalized Haem: ", normalizedHaemoglobin);
+    const normalizedHaemoglobin = normalize(filledHaemoglobin);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -93,23 +108,24 @@ const GrowthChartPerChild = ({ route }) => {
                                     labels: customLabels, // Use custom labels for x-axis on the graph
                                     datasets: [
                                         {
+                                            data: normalizedHaemoglobin,
+                                            color: (opacity = 0.7) => `rgba(237, 102, 99, ${opacity})`, // Customize color for haemoglobin
+                                            strokeWidth: 2,
+                                            legend: 'Haemoglobin', // Legend for the haemoglobin data
+                                        },
+                                        {
                                             data: normalizedHeights,
-                                            color: (opacity = 0.7) => `rgba(0, 128, 128, ${opacity})`, // Customize color for height
+                                            color: (opacity = 0.7) => `rgba(255, 163, 114, ${opacity})`, // Customize color for height
                                             strokeWidth: 2,
                                             legend: 'Height', // Legend for the height data
                                         },
                                         {
                                             data: normalizedWeights,
-                                            color: (opacity = 0.7) => `rgba(128, 0, 128, ${opacity})`, // Customize color for weight
+                                            color: (opacity = 0.7) => `rgba(67, 101, 139, ${opacity})`, // Customize color for weight
                                             strokeWidth: 2,
                                             legend: 'Weight', // Legend for the weight data
                                         },
-                                        {
-                                            data: normalizedHaemoglobin,
-                                            color: (opacity = 0.7) => `rgba(255, 0, 0, ${opacity})`, // Customize color for haemoglobin
-                                            strokeWidth: 2,
-                                            legend: 'Haemoglobin', // Legend for the haemoglobin data
-                                        },
+
                                     ],
                                 }}
                                 width={customLabels.length * 60} // Adjust width as needed
@@ -130,23 +146,6 @@ const GrowthChartPerChild = ({ route }) => {
                         </ScrollView>
                     </View>
 
-                    {/* <View style={styles.table}>
-                        <Text style={styles.tableTitle}>Summary Table</Text>
-                        <View style={styles.tableContainer}>
-                            <View style={styles.tableHeader}>
-                                <Text style={styles.tableHeaderText}>Visit Date</Text>
-                                <Text style={styles.tableHeaderText}>Height</Text>
-                                <Text style={styles.tableHeaderText}>Weight</Text>
-                            </View>
-                            {tableData.map((item, index) => (
-                                <View style={styles.tableRow} key={index}>
-                                    <Text style={styles.tableCell}>{item.visit}</Text>
-                                    <Text style={styles.tableCell}>{item.height}</Text>
-                                    <Text style={styles.tableCell}>{item.weight}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View> */}
 
                     <View style={styles.table}>
                         <Text style={styles.tableTitle}>Summary Table</Text>
