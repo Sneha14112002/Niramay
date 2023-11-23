@@ -7,7 +7,7 @@ import { useRoute } from '@react-navigation/native';
 import COLORS from '../constants/colors';
 import { API_URL } from './config';
 const checkmarkImage = require('../assets/check-mark.png');
-
+import CheckBox from 'react-native-check-box';
 
 const CollapsibleSectionWithIcon = ({ title, children }) => {
   const [collapsed, setCollapsed] = useState(true);
@@ -122,7 +122,16 @@ const VisitRow = ({ visit, index, handleVisitFieldChange }) => {
         onChangeText={(text) => handleVisitFieldChange(index, 'difference', text)}
         style={styles.textInput}
       />
-
+<Text style={styles.label}>Observations And Suggestions :</Text>
+          <TextInput
+            label="Observations and Suggestions"
+            multiline
+            value={visit.observations}
+            onChangeText={(text) =>
+              handleTextInputChange('observations', text)
+            }
+            style={styles.multilineTextInput}
+          />
       
     </View>
   );
@@ -167,7 +176,6 @@ const GeneralHistoryForm = () => {
     abdomen: '',
     motion: '',
     otherSigns: '',
-    observationsAndSuggestions: '',
     visits: [],
   });
 
@@ -182,6 +190,7 @@ const GeneralHistoryForm = () => {
       difference: '',
       grade: '',
       observations: '',
+      
     };
     setGeneralHistory((prevHistory) => ({
       ...prevHistory,
@@ -321,41 +330,41 @@ const GeneralHistoryForm = () => {
         <CollapsibleSectionWithIcon title={<Text style={styles.sectionTitle}>Test / चाचणी</Text>}>
 
 
-          <Checkbox.Item
-            label="Vomiting"
-            status={generalHistory.vomiting ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('vomiting')}
-            color='teal'
+        <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('vomiting')}
+            isChecked={generalHistory.vomiting}
+            leftText="Vomiting"
           />
-          <Checkbox.Item
-            label="Fever"
-            status={generalHistory.fever ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('fever')}
-            color='teal'
+          <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('fever')}
+            isChecked={generalHistory.fever}
+            leftText="Fever"
           />
-          <Checkbox.Item
-            label="Common Cold"
-            status={generalHistory.commonCold ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('commonCold')}
-            color='teal'
+          <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('commonCold')}
+            isChecked={generalHistory.commonCold}
+            leftText="Common Cold"
           />
-          <Checkbox.Item
-            label="Cough"
-            status={generalHistory.cough ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('cough')}
-            color='teal'
+          <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('cough')}
+            isChecked={generalHistory.cough}
+            leftText="Cough"
           />
-          <Checkbox.Item
-            label="Oedema"
-            status={generalHistory.oedema ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('oedema')}
-            color='teal'
+          <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('oedema')}
+            isChecked={generalHistory.oedema}
+            leftText="Oedema"
           />
-          <Checkbox.Item
-            label="Vaccination Done"
-            status={generalHistory.vaccinationDone ? 'checked' : 'unchecked'}
-            onPress={() => handleToggle('vaccinationDone')}
-            color='teal'
+          <CheckBox
+            checkBoxColor="teal"
+            onClick={() => handleToggle('vaccinationDone')}
+            isChecked={generalHistory.vaccinationDone}
+            leftText="Vaccination Done"
           />
 
           <Text style={styles.label}>Appetite Test:</Text>
@@ -454,18 +463,7 @@ const GeneralHistoryForm = () => {
           />
         </CollapsibleSectionWithIcon>
 
-        <CollapsibleSectionWithIcon title={<Text style={styles.sectionTitle}>Observations & Suggestions /निरीक्षणे , सूचना</Text>}>
-          <Text style={styles.label}>Observations And Suggestions :</Text>
-          <TextInput
-            label="Observations and Suggestions"
-            multiline
-            value={generalHistory.observationsAndSuggestions}
-            onChangeText={(text) =>
-              handleTextInputChange('observationsAndSuggestions', text)
-            }
-            style={styles.multilineTextInput}
-          />
-        </CollapsibleSectionWithIcon>
+        
 
         <CollapsibleSectionWithIcon title={<Text style={styles.sectionTitle}>Visits / भेटी</Text>}>
           <VisitsTable

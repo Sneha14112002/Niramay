@@ -24,7 +24,9 @@ import GradePerChild from './screens/GradePerChild'
 import AnganwadiCountvsBit_name from './screens/AnganwadiCountvsBit_name';
 import BitNamevsGenderGraph from './screens/BitNamevsGenderGraph';
 const Stack = createNativeStackNavigator();
-
+import GrowthChartPerChild from './screens/GrowthChartPerChild';
+import BMIChartvsPerVisit from './screens/BMIChartvsPerVisit';
+import AnganwadiCountPerBit from './screens/AnganwadiCountPerBit';
 export default function App() {
   return (
     <View style={{ flex: 1 }}>
@@ -329,7 +331,47 @@ export default function App() {
             }}
           />
 
+<Stack.Screen
+            name="GrowthChartPerChild"
+            component={GrowthChartPerChild}
+            options={{
+              // headerShown: false,
+              headerStyle: {
+                backgroundColor: COLORS.theme, // Set your desired background color
 
+              },
+              headerTintColor: COLORS.white,
+              title: "Report",
+            }}
+          />
+          <Stack.Screen
+            name="BMIChartvsPerVisit"
+            component={BMIChartvsPerVisit}
+            options={{
+              // headerShown: false,
+              headerStyle: {
+                backgroundColor: COLORS.theme, // Set your desired background color
+
+              },
+              headerTintColor: COLORS.white,
+              title: "Report",
+            }}
+          />
+          
+
+          <Stack.Screen
+            name="AnganwadiCountPerBit"
+            component={AnganwadiCountPerBit}
+            options={{
+              // headerShown: false,
+              headerStyle: {
+                backgroundColor: COLORS.theme, // Set your desired background color
+
+              },
+              headerTintColor: COLORS.white,
+              title: "Report",
+            }}
+          />
 
 
 

@@ -18,10 +18,10 @@ app.use((req, res, next) => {
 
 // MySQL Database Configuration
 const db = mysql.createConnection({
-  host: 'localhost', // Replace with your MySQL host
-  user: 'root',      // Replace with your MySQL user
-  password: 'root@123',  // Resplace with your MySQL password
-  database: 'ngo', // Replace with your MySQL database name
+  host: 'localhost',
+  user: 'root',
+  password: 'simran@123',
+  database: 'Niramay',
 });
 
 db.connect((err) => {
@@ -69,7 +69,7 @@ app.post('/api/register', (req, res) => {
     const { email, password } = req.body;
     console.log("here");
     // Query the database to check if the email and password match a user record
-    const sql = 'SELECT * FROM users WHERE email = ? AND password = ?';
+    const sql = 'SELECT role,name  FROM users WHERE email = ? AND password = ?';
     const values = [email, password];
   
     db.query(sql, values, (err, result) => {
@@ -88,17 +88,26 @@ app.post('/api/register', (req, res) => {
     });
   });
   app.post('/submitForm', (req, res) => {
-  const formData = req.body;
-   console.log(formData);
-  // Insert form data into the MySQL table
-  db.query('INSERT INTO Customers SET ?', formData, (err, result) => {
-    if (err) {
-      throw err;
+    const formData = req.body;
+    console.log("****************");
+    console.log("FORM DATA",formData);
+    console.log("****************");
+    // Convert array to comma-separated string for prevHistory
+    if (formData.prev_history && Array.isArray(formData.prev_history)) {
+      formData.prev_history = formData.prev_history.join(', ');
     }
-    console.log('Form data inserted');
-    res.send('Form data inserted');
+  
+    // Insert form data into the MySQL table
+    db.query('INSERT INTO Customers SET ?', formData, (err, result) => {
+      if (err) {
+        console.error('Error inserting form data:', err);
+        res.status(500).send('Error inserting form data');
+      } else {
+        console.log('Form data inserted');
+        res.send('Form data inserted');
+      }
+    });
   });
-});
 app.post('/checkData', (req, res) => {
     const { anganwadiNo, childsName } = req.body;
   
@@ -122,6 +131,64 @@ app.post('/checkData', (req, res) => {
       }
     });
   });
+  app.post('/check-duplicates', (req, res) => {
+    const { anganwadiNo, childName } = req.body;
+  
+    const query = `
+      SELECT anganwadi_no, child_name FROM customers
+      WHERE anganwadi_no = ? AND child_name = ?
+    `;
+  
+    db.query(query, [anganwadiNo, childName], (err, results) => {
+      if (err) {
+        console.error('Error checking duplicates:', err);
+        res.status(500).json({ error: true });
+      } else {
+        if (results.length > 0) {
+          // Duplicate entries found
+          res.json({ error: true });
+        } else {
+          // No duplicate entries found
+          res.json({ error: false });
+        }
+      }
+    });
+  });
+  app.post('/updatePhoneNumber', (req, res) => {
+    const { anganwadiNo, childsName, updatedPhoneNumber } = req.body;
+  
+    // Update the phone number in the customers table
+    const sql = `UPDATE customers SET child_phone = ? WHERE anganwadi_no = ? AND child_name = ?`;
+  
+    db.query(sql, [updatedPhoneNumber, anganwadiNo, childsName], (err, result) => {
+      if (err) {
+        console.error('Error updating phone number:', err);
+        res.status(500).json({ error: 'Error updating phone number' });
+        throw err;
+      }
+  
+      console.log('Phone number updated successfully');
+      res.status(200).json({ message: 'Phone number updated successfully' });
+    });
+  });
+  app.post('/updateAssistantNumber', (req, res) => {
+    const { anganwadiNo, childsName, updatedPhoneNumber } = req.body;
+  
+    // Update the phone number in the customers table
+    const sql = `UPDATE customers SET assistant_phone= ? WHERE anganwadi_no = ? AND child_name = ?`;
+  
+    db.query(sql, [updatedPhoneNumber, anganwadiNo, childsName], (err, result) => {
+      if (err) {
+        console.error('Error updating phone number:', err);
+        res.status(500).json({ error: 'Error updating phone number' });
+        throw err;
+      }
+  
+      console.log('Phone number updated successfully');
+      res.status(200).json({ message: 'Phone number updated successfully' });
+    });
+  });
+  
   app.post('/checkDataMedical', (req, res) => {
     const { anganwadiNo, childsName } = req.body;
   console.log(anganwadiNo,childsName);
@@ -167,6 +234,25 @@ app.post('/checkData', (req, res) => {
         }
       });
     });
+});
+app.post('/updateSibling', (req, res) => {
+  const { anganwadiNo, childsName, newTotalFamilyMembers, newTotalSiblings } = req.body;
+
+  // Update the database query
+  const sql = `UPDATE customers 
+               SET total_family_members = ?, TotalSiblings = ?
+               WHERE child_name = ? AND anganwadi_no = ?`;
+
+  db.query(sql, [newTotalFamilyMembers, newTotalSiblings, childsName, anganwadiNo], (err, results) => {
+    if (err) {
+      console.error('Error updating sibling information:', err);
+      res.status(500).send('Failed to update sibling information');
+      return;
+    }
+
+    console.log('Siblings data updated successfully');
+    res.status(200).send('Siblings data updated successfully');
+  });
 });
   app.post('/getFormData', (req, res) => {
     const { anganwadiNo, childsName } = req.body;
@@ -610,7 +696,49 @@ app.get('/childDataGender', (req, res) => {
     res.json(formattedData);
   });
 });
+app.get('/gender_distribution/:bit_name/', (req, res) => {
+  const { bit_name } = req.params;
 
+  // Fetch child distribution data for the provided bit_name
+  const query = `
+    SELECT child_gender AS gender, COUNT(*) AS count
+    FROM customers
+    WHERE bit_name = ?
+    GROUP BY child_gender;
+  `;
+
+  db.query(query, [bit_name], (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    const childDistribution = results.map((row) => ({
+      gender: row.gender,
+      count: row.count,
+    }));
+
+    console.log(childDistribution);
+    res.json(childDistribution);
+  });
+});                                                                                                                                                                                                                             app.get('/anganwadi-count', (req, res) => {
+  const query = 'SELECT bit_name, COUNT(DISTINCT anganwadi_no) AS anganwadi_count FROM customers GROUP BY bit_name';
+
+  db.query(query, (error, results) => {
+    if (error) {
+      console.error('Error executing the SQL query:', error);
+      res.status(500).json({ error: 'Error fetching data' });
+    } else {
+      if (results.length === 0) {
+        res.json([]); // Return an empty array if there are no results
+      } else {
+        res.json(results);
+      }
+    }
+  });
+  
+});
 
 
   

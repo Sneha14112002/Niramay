@@ -164,7 +164,7 @@ const GeneralHistoryDisplay = ({ route }) => {
         <View style={styles.visitContainer}>
             <View style={styles.visitRow}>
                 <Text style={styles.label}>Visit Date:</Text>
-                <Text style={styles.text}>{item.date}</Text>
+                <Text style={styles.text}>{item.visitDate}</Text>
             </View>
             <View style={styles.visitRow}>
                 <Text style={styles.label}>No. of Supplements:</Text>

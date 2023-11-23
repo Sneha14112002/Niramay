@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageBackground,ToastAndroid} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import COLORS from '../constants/colors';
-
+import { API_URL } from './config';
 const IsChildAlreadyPresent = () => {
   const navigation = useNavigation();
   const [isChildPresent, setIsChildPresent] = useState(false); 
@@ -17,7 +17,7 @@ const IsChildAlreadyPresent = () => {
         childsName,
       };
       
-      const response = await fetch('http://192.168.1.34:3000/checkData', {
+      const response = await fetch(`${API_URL}/checkData`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,11 +94,7 @@ const IsChildAlreadyPresent = () => {
                 <Text style={styles.buttonText}>View Form</Text>
               </TouchableOpacity>
 
-              {isUpdateVisible && (
-                <TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
-                  <Text style={styles.buttonText}>Update</Text>
-                </TouchableOpacity>
-              )}
+              
             </View>
           )}
         </View>

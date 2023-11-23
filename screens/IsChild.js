@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageBackground,ToastAndroid} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import COLORS from '../constants/colors';
-
+import { API_URL } from './config';
 const IsChild = () => {
   const navigation = useNavigation();
   const [isChildPresent, setIsChildPresent] = useState(false); 
@@ -17,7 +17,7 @@ const IsChild = () => {
         childsName,
       };
       
-      const response = await fetch('http://192.168.1.34:3000/checkDataMedical', {
+      const response = await fetch(`${API_URL}/checkDataMedical`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

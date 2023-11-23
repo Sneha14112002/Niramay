@@ -7,7 +7,9 @@ const options = [
   { key: 'option2', label: 'Weight Per Visit', image: require('../assets/weight.png') },
   { key: 'option3', label: 'Haemoglobin Per Visit', image: require('../assets/drop.png') },
   { key: 'option4', label: 'Grade Per Visit', image: require('../assets/grade.png') },
-  { key: 'option5', label: 'Haemoglobin / Grade / No of Supplements Per Visit', image: require('../assets/grade.png') },
+  { key: 'option5', label: 'BMI Per Visit', image: require('../assets/bmi.png') },
+  { key: 'option6', label: 'Overall Growth Per Visit', image: require('../assets/Overall.png') },
+
 
 ];
 const Reports = ({ navigation, route }) => {
@@ -36,10 +38,13 @@ const Reports = ({ navigation, route }) => {
               if (item.key === 'option4') {
                 navigation.navigate('GradePerChild', { anganwadiNo, childsName }); // Navigate to BitNamevsGender screen
               }
+              if (item.key === 'option5') {
+                navigation.navigate('BMIChartvsPerVisit',{ anganwadiNo, childsName }); // Navigate to BitNamevsGender screen
+              }
 
-              // if (item.key === 'option5') {
-              //   navigation.navigate('HaemoglobinPerGrade',{ anganwadiNo, childsName }); // Navigate to BitNamevsGender screen
-              // }
+              if (item.key === 'option6') {
+                navigation.navigate('GrowthChartPerChild',{ anganwadiNo, childsName }); // Navigate to BitNamevsGender screen
+              }
             }}
           >
             <View style={styles.optionRow}>

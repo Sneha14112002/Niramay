@@ -4,14 +4,14 @@ import axios from 'axios';
 import { BarChart } from 'react-native-chart-kit';
 import Draggable from 'react-native-draggable';
 import { FlatList } from 'react-native';
-
+import { API_URL } from './config';
 const BitNamevsGender = () => {
   const [data, setData] = useState([]);
   const chartRef = useRef(null);
 
   useEffect(() => {
     axios
-      .get('http://192.168.1.34:3000/childData')
+      .get(`${API_URL}/childData`)
       .then((response) => {
         if (response.data instanceof Array) {
           setData(response.data);

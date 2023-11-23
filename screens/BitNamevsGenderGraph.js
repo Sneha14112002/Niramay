@@ -1,148 +1,214 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView } from 'react-native';
+import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
-import { BarChart } from 'react-native-chart-kit';
-import Draggable from 'react-native-draggable';
+import { PieChart } from 'react-native-chart-kit';
+import { API_URL } from './config';
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    padding: 20,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: 'black',
+  },
+  dropdownContainer: {
+    width: 300,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    marginBottom: 20,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  dropdownOptions: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    borderRadius: 8,
+    width: 300,
+  },
+  dropdownOptionText: {
+    fontSize: 16,
+  },
+  genderChartSection: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    marginTop: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: 'black',
+  },
+  tableContainer: {
+    borderRadius: 8,
+    paddingBottom: 20,
+    marginTop: 20,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  tableHeader: {
+    backgroundColor: 'teal',
+    paddingVertical: 8,
+  },
+  tableHeaderText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  tableCell: {
+    flex: 1,
+    padding: 8,
+    textAlign: 'center',
+    color: 'black',
+  },
+});
+
+const colors = ['#3498db', '#ff69b4']; // Blue for male, Pink for female
 
 const BitNamevsGenderGraph = () => {
+  const [bitName, setBitName] = useState([]);
+  const [selectedBitName, setSelectedBitName] = useState('');
   const [data, setData] = useState([]);
-  const chartRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios
-      .get('http://192.168.1.34:3000/childDataGender')
+    setLoading(true);
+    axios.get(`${API_URL}/bit_name`)
       .then((response) => {
-        if (response.data) {
-          // Check if response.data is defined
-          if (response.data instanceof Array) {
-            // If the response is an array (ReadableNativeArray), use it as-is
-            setData(response.data);
-          } else if (response.data instanceof Object) {
-            // If the response is an object (ReadableMap), convert it to an array
-            const dataArray = Object.values(response.data);
-            setData(dataArray);
-          } else {
-            console.error('Invalid data format:', response.data);
-          }
-        }
+        setBitName(response.data);
+        setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching data:', error);
+        console.error(error);
+        setLoading(false);
       });
   }, []);
 
-  const chartData = {
-    labels: data.map((item) => item.bit_name),
-    datasets: [
-      {
-        data: data.map((item) => parseInt(item.male_count)),
-        color: (opacity = 1) => `rgba(255, 87, 51, ${opacity})`,
-        legend: 'Male',
-      },
-      {
-        data: data.map((item) => parseInt(item.female_count)),
-        color: (opacity = 1) => `rgba(51, 255, 87, ${opacity})`,
-        legend: 'Female',
-      },
-    ],
-  };
+  useEffect(() => {
+    if (selectedBitName) {
+      axios.get(`${API_URL}/gender_distribution/${selectedBitName}`)
+        .then((response) => {
+          setData(response.data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+  }, [selectedBitName]);
 
-  const chartConfig = {
-    backgroundGradientFrom: 'white',
-    backgroundGradientTo: 'white',
-    barPercentage: 0.6,
-    propsForDots: {
-      r: '4',
-    },
-    propsForBackgroundLines: {
-      stroke: 'transparent',
-    },
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Color for the bars
-    labelRotation: 45,
-    labelFontSize: 10,
-  };
+  const pieChartData = data.map((item, index) => ({
+    name: item.gender,
+    count: item.count,
+    color: colors[index % colors.length],
+  }));
 
-  if (data.length === 0) {
-    return <Text>Loading data...</Text>;
-  }
+  useEffect(() => {
+    console.log('bitName:', bitName);
+    console.log('selectedBitName:', selectedBitName);
+    console.log('data:', data);
+    console.log('pieChartData:', pieChartData);
+  }, [bitName, selectedBitName, data, pieChartData]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.chartTitle}>Children by Bit Name and Gender</Text>
-      <ScrollView horizontal={true}>
-        <BarChart
-          data={chartData}
-          width={800}
-          height={400}
-          yAxisLabel="Count"
-          chartConfig={chartConfig}
-          style={styles.chart}
-          ref={chartRef}
-        />
-      </ScrollView>
-      <Text style={styles.legend}>Legend:</Text>
-      <View style={styles.legendItem}>
-        <View style={[styles.legendColorBox, { backgroundColor: '#FF5733' }]} />
-        <Text style={styles.legendText}>Male</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Gender Distribution</Text>
+      <View>
+        <Text style={styles.label}>Select Anganwadi Name:</Text>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0072ff" />
+        ) : (
+          <View style={styles.dropdownContainer}>
+            <ModalDropdown
+              options={bitName}
+              defaultValue="Select an Anganwadi Name"
+              onSelect={(index, value) => setSelectedBitName(value)}
+              textStyle={styles.dropdownText}
+              dropdownStyle={styles.dropdownOptions}
+              dropdownTextStyle={styles.dropdownOptionText}
+            />
+          </View>
+        )}
       </View>
-      <View style={styles.legendItem}>
-        <View style={[styles.legendColorBox, { backgroundColor: '#33FF57' }]} />
-        <Text style={styles.legendText}>Female</Text>
-      </View>
-      {/* Add the draggable scrollbar component */}
-      <Draggable
-        x={0}
-        minX={0}
-        maxX={chartData.labels.length * 60}
-        onMove={(_, { x }) => {
-          const scrollPosition = (x / (chartData.labels.length * 60)) * chartRef.current.scrollContentWidth;
-          chartRef.current.scrollTo({ x: scrollPosition, animated: false });
-        }}
-      >
-        <View style={styles.scrollbar} />
-      </Draggable>
-    </View>
+
+      {data.length > 0 && (
+        <View style={styles.genderChartSection}>
+          <Text style={styles.label}>Gender Distribution Chart</Text>
+          <PieChart
+            data={pieChartData}
+            width={300}
+            height={200}
+            chartConfig={{
+              backgroundGradientFrom: '#1E2923',
+              backgroundGradientTo: '#08130D',
+              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+            }}
+            accessor="count"
+            backgroundColor="transparent"
+            paddingLeft="5"
+            absolute
+          />
+        </View>
+      )}
+
+      {data.length > 0 && (
+        <View style={styles.tableContainer}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.tableHeaderText}>Gender Summary</Text>
+          </View>
+          <FlatList
+            initialScrollIndex={0}
+            data={data}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item.gender}</Text>
+                <Text style={styles.tableCell}>{item.count}</Text>
+              </View>
+            )}
+          />
+        </View>
+      )}
+    </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    margin: 10,
-    width: '100%',
-    height: '100%',
-  },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  chart: {
-    marginVertical: 10,
-  },
-  legend: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  legendColorBox: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
-  },
-  legendText: {
-    fontSize: 16,
-  },
-  scrollbar: {
-    width: 50,
-    height: 5,
-    borderRadius: 5,
-  },
-});
 
 export default BitNamevsGenderGraph;

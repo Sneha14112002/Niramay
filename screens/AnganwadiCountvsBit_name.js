@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import axios from 'axios';
 import { BarChart } from 'react-native-chart-kit';
-
+import { API_URL } from './config';
 const AnganwadiCountvsBitName
  = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     // Make a GET request to your Node.js server
-    axios.get('http://192.168.1.34:3000/anganwadi-count')
+    axios.get(`${API_URL}/anganwadi-count`)
       .then(response => {
         setData(response.data);
         console.log(data)

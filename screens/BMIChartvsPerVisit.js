@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, ScrollView } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { BarChart } from 'react-native-chart-kit';
 import { API_URL } from './config';
-const HaemoglobinPerChild = ({ route }) => {
+const BMIChartvsPerVisit = ({ route }) => {
   const { anganwadiNo, childsName } = route.params;
 
   // State variables to store data
@@ -16,7 +16,8 @@ const HaemoglobinPerChild = ({ route }) => {
           anganwadiNo,
           childsName,
         };
-        const response = await fetch( `${API_URL}/getVisitsData`, {
+
+        const response = await fetch(`${API_URL}/getVisitsData`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -40,67 +41,84 @@ const HaemoglobinPerChild = ({ route }) => {
     fetchData();
   }, [anganwadiNo, childsName]);
 
-  // Extract haemoglobin data from formData and filter out records where haemoglobin is not present
+  // Extract height and weight data from formData
   const { data } = formData || {};
-  const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null) : [];
+  const heights = data ? data.map((entry) => parseFloat(entry.height)) : [];
+  const weights = data ? data.map((entry) => parseFloat(entry.weight)) : [];
 
-  const chartData = {
-    labels: haemoglobinData ? haemoglobinData.map((_, index) => `Visit ${index + 1}`) : [],
-    datasets: [
-      {
-        data: haemoglobinData ? haemoglobinData.map(entry => entry.haemoglobin) : [],
-        strokeWidth: 2,
-      },
-    ],
+  // Calculate BMI for each visit
+  const calculateBMI = (height, weight) => {
+    const heightInMeters = height / 100;
+    return (weight / (heightInMeters * heightInMeters)).toFixed(2);
   };
 
-  const tableData = haemoglobinData || [];
+  const bmis = data
+    ? data.map((entry, index) => calculateBMI(heights[index], weights[index]))
+    : [];
+
+  // Create an array of visit labels for the graph
+  const visitLabels = data ? data.map((_, index) => `Visit ${index + 1}`) : [];
+
+  // Create table data
+  const tableData = data
+    ? data.map((entry, index) => ({
+        visit: entry.visitDate,
+        height: `${parseFloat(entry.height).toFixed(2)} cm`,
+        weight: `${parseFloat(entry.weight).toFixed(2)} kg`,
+        bmi: bmis[index],
+      }))
+    : [];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       {loading ? (
         <ActivityIndicator size="large" color="#007AFF" />
       ) : (
         <View>
           <View style={styles.chart}>
-            <Text style={styles.chartTitle}>Haemoglobin Chart</Text>
+            <Text style={styles.chartTitle}>BMI Chart</Text>
             <ScrollView horizontal={true}>
-            <LineChart
-              data={chartData}
-              width={350}
-              height={200}
-              yAxisLabel="Haemoglobin"
-              yAxisSuffix=""
-              chartConfig={{
-                backgroundGradientFrom: '#fff',
-                backgroundGradientTo: '#fff',
-                color: (opacity = 0.7) => `rgba(128, 0, 128, ${opacity})`,
-                decimalPlaces: 2,
-              }}
-              style={styles.chartStyle}
-            />
+              <BarChart
+                data={{
+                  labels: visitLabels,
+                  datasets: [
+                    {
+                      data: bmis.map((bmi) => parseFloat(bmi)),
+                    },
+                  ],
+                }}
+                width={350}
+                height={200}
+                yAxisLabel="BMI"
+                yAxisSuffix=""
+                chartConfig={{
+                  backgroundGradientFrom: '#fff',
+                  backgroundGradientTo: '#fff',
+                  color: (opacity = 0.7) => `rgba(0, 128, 255, ${opacity})`,
+                  strokeWidth: 2,
+                  barRadius: 0,
+                  decimalPlaces: 2,
+                }}
+                style={styles.chartStyle}
+              />
             </ScrollView>
           </View>
 
           <View style={styles.table}>
             <Text style={styles.tableTitle}>Summary Table</Text>
             <View style={styles.tableContainer}>
-              <View style={styles.tableRow}>
-                <View style={[styles.tableHeader, { flex: 2 }]}>
-                  <Text style={styles.tableHeaderText}>Visit Date</Text>
-                </View>
-                <View style={[styles.tableHeader, { flex: 1 }]}>
-                  <Text style={styles.tableHeaderText}>Haemoglobin</Text>
-                </View>
+              <View style={styles.tableHeader}>
+                <Text style={styles.tableHeaderText}>Visit Date</Text>
+                <Text style={styles.tableHeaderText}>Height</Text>
+                <Text style={styles.tableHeaderText}>Weight</Text>
+                <Text style={styles.tableHeaderText}>BMI</Text>
               </View>
               {tableData.map((item, index) => (
                 <View style={styles.tableRow} key={index}>
-                  <View style={[styles.tableCell, { flex: 2 }]}>
-                    <Text style={styles.tableCellText}>{item.visitDate}</Text>
-                  </View>
-                  <View style={[styles.tableCell, { flex: 1 }]}>
-                    <Text style={styles.tableCellText}>{item.haemoglobin}</Text>
-                  </View>
+                  <Text style={styles.tableCell}>{item.visit}</Text>
+                  <Text style={styles.tableCell}>{item.height}</Text>
+                  <Text style={styles.tableCell}>{item.weight}</Text>
+                  <Text style={styles.tableCell}>{item.bmi}</Text>
                 </View>
               ))}
             </View>
@@ -115,6 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f4f4',
+    paddingVertical: 20,
   },
   chart: {
     margin: 16,
@@ -122,6 +141,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 4,
     padding: 16,
+    marginLeft: 20,
   },
   chartTitle: {
     fontSize: 18,
@@ -158,8 +178,10 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     backgroundColor: 'teal',
-    padding: 8,
-    justifyContent :'space-evenly'
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   tableHeaderText: {
     fontSize: 16,
@@ -169,21 +191,18 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
   tableCell: {
     flex: 1,
-    padding: 8,
     textAlign: 'center',
-  },
-  tableCellText: {
-    fontSize: 14,
     color: '#333',
-    textAlign:'center'
   },
 });
 
-export default HaemoglobinPerChild;
+export default BMIChartvsPerVisit;

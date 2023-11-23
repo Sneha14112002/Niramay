@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text,TextInput, ActivityIndicator, StyleSheet, ScrollView,TouchableOpacity,Switch} from 'react-native';
 // import NetInfo from '@react-native-community/netinfo';
 import { API_URL } from './config.js';
+import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors.js';
+import { color } from 'react-native-elements/dist/helpers/index.js';
+import COLORS from '../constants/colors.js';
 const ViewForm = ({ route }) => {
   const { anganwadiNo, childsName } = route.params;
   const [formData, setFormData] = useState(null);
@@ -9,13 +12,18 @@ const ViewForm = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [siblings, setSiblings] = useState([]);
   const [updatedSiblings, setUpdatedSiblings] = useState([]);
-  
+  const [newTotalSiblings, setNewTotalSiblings] = useState(0); // Initialize with initial value
+const [newTotalFamilyMembers, setNewTotalFamilyMembers] = useState(0); // Initialize with initial value
 
 
   const handleAddSibling = () => {
     setSiblings([...siblings, { name: '', age: '', malnourished: false }]);
     const newSibling = { name: '', age: '', malnourished: false };
       setUpdatedSiblings([...updatedSiblings, newSibling]);
+      setNewTotalSiblings(formData.TotalSiblings + 1);
+     setNewTotalFamilyMembers(formData.total_family_members + 1);
+      setFormData({ ...formData, TotalSiblings: newTotalSiblings+1,total_family_members: newTotalFamilyMembers+1 });
+  
 
   };
 
@@ -23,6 +31,9 @@ const ViewForm = ({ route }) => {
     const updatedSiblings = [...siblings];
     updatedSiblings.splice(index, 1);
     setSiblings(updatedSiblings);
+    setNewTotalSiblings(formData.TotalSiblings - 1);
+     setNewTotalFamilyMembers(formData.total_family_members - 1);
+      setFormData({ ...formData, TotalSiblings: newTotalSiblings-1,total_family_members: newTotalFamilyMembers-1 });
   };
 
   const handleSiblingFieldChange = (index, field, value) => {
@@ -39,10 +50,12 @@ const ViewForm = ({ route }) => {
         childsName,
         siblings: siblings, // Updated siblings data
       };
+     
+      
       console.log("hello");
     console.log(requestData);
       // Send a POST request to save the siblings data
-      
+       
       const response = await fetch(`${API_URL}/submit-sibling`, {
         method: 'POST',
         headers: {
@@ -60,6 +73,27 @@ const ViewForm = ({ route }) => {
     } catch (error) {
       console.error('Error saving siblings data:', error);
     }
+    const updateSIbling={
+      anganwadiNo,
+        childsName,
+      newTotalFamilyMembers,
+      newTotalSiblings
+    };
+    const response = await fetch(`${API_URL}/updateSibling`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateSIbling),
+    });
+
+    if (response.status === 200) {
+      // Data saved successfully, you can perform any additional actions here
+      console.log('Siblings data saved successfully');
+    } else {
+      console.log('Failed to save siblings data');
+    }
+  
   };
   
   useEffect(() => {
@@ -123,16 +157,81 @@ const ViewForm = ({ route }) => {
 
     fetchSiblingData();
   }, [anganwadiNo, childsName]);
-//   const renderSiblingData = () => {
-//     return siblingsData.map((sibling, index) => (
-//       <View key={index} style={styles.fieldContainer}>
-//         <Text style={styles.label}>Sibling {index + 1} Name:</Text>
-//         <Text style={styles.text}>{sibling.name}</Text>
-//         {/* Add more sibling data fields here */}
-//       </View>
-//     ));
-//   };
 
+  const [editedPhoneNumber, setEditedPhoneNumber] = useState(""); // Initialize with the existing phone number
+  // Add a state variable to track whether the phone number is in editing mode
+  const [isEditingPhoneNumber, setIsEditingPhoneNumber] = useState(false);
+  const [newAssitantPhNo,setnewAssistantPhNo]=useState("");
+  const [isEditingAssistantPhNo, setIsEditingAssistantPhNo] = useState(false);
+  // Function to handle the update button press and enable editing mode for the phone number
+  const handleUpdatePhoneNumber = () => {
+    setIsEditingPhoneNumber(true);
+  };
+  const handleUpdateAssistantPhNo = () => {
+    setIsEditingAssistantPhNo(true);
+  };
+  const handleSaveAssistantPhNo = async() => {
+    try{
+      setFormData({ ...formData, assistant_phone: newAssitantPhNo});
+      const requestData = {
+        anganwadiNo, // Assuming these variables are available in scope
+        childsName,
+        updatedPhoneNumber: newAssitantPhNo, // Pass the updated phone number to the backend
+      };
+
+      const response = await fetch(`${API_URL}/updateAssistantNumber`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        // Phone number updated successfully in the backend
+        console.log('Phone number updated successfully');
+      } else {
+        console.log('Failed to update phone number');
+      }
+    }catch (error) {
+      console.error('Error updating phone number:', error);
+    }
+    
+    setIsEditingAssistantPhNo(false);
+  };
+  // Function to handle saving the changes made to the phone number
+  const handleSavePhoneNumber = async () => {
+    try {
+      // Update the formData state with the edited phone number
+      setFormData({ ...formData, child_phone: editedPhoneNumber });
+      
+      // Make an API call to update the phone number in the backend
+      const requestData = {
+        anganwadiNo, // Assuming these variables are available in scope
+        childsName,
+        updatedPhoneNumber: editedPhoneNumber, // Pass the updated phone number to the backend
+      };
+
+      const response = await fetch(`${API_URL}/updatePhoneNumber`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        // Phone number updated successfully in the backend
+        console.log('Phone number updated successfully');
+      } else {
+        console.log('Failed to update phone number');
+      }
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+    }
+
+    setIsEditingPhoneNumber(false);
+  };
   return (
     <ScrollView style={styles.container}>
       {loading ? (
@@ -141,97 +240,146 @@ const ViewForm = ({ route }) => {
         <View style={styles.formDataContainer}>
           <View style={styles.fieldContainer}>
           <Text style={styles.subSectionTitle}>Bit Information / बिट माहिती</Text>
-            <Text style={styles.label}>Bit Name:</Text>
+            <Text style={styles.label}>Bit Name/ बिटचे नाव:</Text>
             <Text style={styles.text}>{formData.bit_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Anganwadi No.:</Text>
+            <Text style={styles.label}>Anganwadi No./ अंगणवाडी क्र.:</Text>
             <Text style={styles.text}>{formData.anganwadi_no}</Text>
           </View>
 
           <Text style={styles.subSectionTitle}>Anganwadi Assistant Information/अंगणवाडी सहाय्यकांची माहिती </Text>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Anganwadi Assistance Name:</Text>
+            <Text style={styles.label}>Name / नाव:</Text>
             <Text style={styles.text}>{formData.assistant_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Anganwadi Assistance Phone no. :</Text>
-            <Text style={styles.text}>{formData.assistant_phone}</Text>
+            <Text style={styles.label}>Phone Number / फोन नंबर :</Text>
+            {/* //<Text style={styles.text}>{formData.assistant_phone}</Text> */}
+            {isEditingAssistantPhNo? (
+          // If editing mode is enabled, display a TextInput to edit the phone number
+          <TextInput
+            style={[styles.input, { color: 'black' }]}
+            value={newAssitantPhNo}
+            onChangeText={(value) => setnewAssistantPhNo(value)}
+            keyboardType="phone-pad"
+          />
+        ) : (
+          // Display the current phone number as text
+          <Text style={styles.text}>{formData.assistant_phone}</Text>
+        )}
+        {isEditingAssistantPhNo ? (
+          // If editing mode is enabled, display a save button to save changes
+          <TouchableOpacity style={styles.addButton} onPress={handleSaveAssistantPhNo}>
+            <Text style={styles.saveChangesButtonText}>Save Phone Number</Text>
+          </TouchableOpacity>
+        ) : (
+          // Display an update button to enable editing mode for the phone number
+          <TouchableOpacity style={styles.addButton} onPress={handleUpdateAssistantPhNo}>
+            <Text style={styles.addButtonLabel}>Update Phone Number</Text>
+          </TouchableOpacity>
+        )}
           </View>
 
           <Text style={styles.subSectionTitle}>Child Information / मुलांची माहिती</Text>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Child's Name:</Text>
+            <Text style={styles.label}>Child's Name/मुलाचे नाव:</Text>
             <Text style={styles.text}>{formData.child_name}</Text>
           </View>
 
           
           <View style={styles.fieldContainer}>
-  <Text style={styles.label}>Child's DOB:</Text>
+  <Text style={styles.label}>Child's DOB/मुलाची जन्म तारीख:</Text>
   <Text style={styles.text}>
-    {formData.child_dob ? new Date(formData.child_dob).toISOString().split('T')[0] : 'N/A'}
+  {formData.child_dob
+      ? new Date(formData.child_dob).toLocaleDateString('en-US', {
+          timeZone: 'Asia/Kolkata', // Set the timezone to India's timezone
+        })
+      : 'N/A'}
   </Text>
 </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Child's Gender</Text>
+            <Text style={styles.label}>Child's Gender/मुलाचा लिंग</Text>
             <Text style={styles.text}>{formData.child_gender}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Parents Phone no.</Text>
-            <Text style={styles.text}>{formData.child_phone}</Text>
-          </View>
+        <Text style={styles.label}>Child's Phone Number/मुलाचा फोन नंबर:</Text>
+        {isEditingPhoneNumber ? (
+          // If editing mode is enabled, display a TextInput to edit the phone number
+          <TextInput
+            style={[styles.input, { color: 'black' }]}
+            value={editedPhoneNumber}
+            onChangeText={(value) => setEditedPhoneNumber(value)}
+            keyboardType="phone-pad"
+          />
+        ) : (
+          // Display the current phone number as text
+          <Text style={styles.text}>{formData.child_phone}</Text>
+        )}
+        {isEditingPhoneNumber ? (
+          // If editing mode is enabled, display a save button to save changes
+          <TouchableOpacity style={styles.addButton} onPress={handleSavePhoneNumber}>
+            <Text style={styles.saveChangesButtonText}>Save Phone Number</Text>
+          </TouchableOpacity>
+        ) : (
+          // Display an update button to enable editing mode for the phone number
+          <TouchableOpacity style={styles.addButton} onPress={handleUpdatePhoneNumber}>
+            <Text style={styles.addButtonLabel}>Update Phone Number</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
           <Text style={styles.subSectionTitle}>Parent Information / अभिभावकांची माहिती</Text>
 
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mother's Name: </Text>
+            <Text style={styles.label}>Mother's Name/आईचे नाव: </Text>
             <Text style={styles.text}>{formData.mother_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mother's Education:</Text>
+            <Text style={styles.label}>Mother's Education/आईचे शिक्षण:</Text>
             <Text style={styles.text}>{formData.mother_education}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mothers's Occupation:</Text>
+            <Text style={styles.label}>Mothers's Occupation/आईचे व्यवसाय:</Text>
             <Text style={styles.text}>{formData.mother_occupation}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mothers age at Marriage:</Text>
+            <Text style={styles.label}>Mothers age at Marriage/विवाहाची वय:</Text>
             <Text style={styles.text}>{formData.mother_age_at_marriage}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mothers age during First Pregnancy:</Text>
+            <Text style={styles.label}>Mothers age during First Pregnancy/प्रथम गर्भधारणाची वय:</Text>
             <Text style={styles.text}>{formData.mother_age_at_first_pregnancy}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Child's weight after Birth:</Text>
+            <Text style={styles.label}>Child's weight after Birth/जन्मानंतर मुलाची वजन:</Text>
             <Text style={styles.text}>{formData.child_weight_after_birth}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Father's Name: </Text>
+            <Text style={styles.label}>Father's Name/वडिलांचे नाव: </Text>
             <Text style={styles.text}>{formData.father_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Fathers's Occupation:</Text>
+            <Text style={styles.label}>Fathers's Occupation/वडिलांचे व्यवसाय:</Text>
             <Text style={styles.text}>{formData.father_occupation}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Father's Education :</Text>
+            <Text style={styles.label}>Father's Education/वडिलांचे शिक्षण :</Text>
             <Text style={styles.text}>{formData.father_education}</Text>
           </View>
 
@@ -239,12 +387,12 @@ const ViewForm = ({ route }) => {
 
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>No. of Total Family Members:</Text>
+            <Text style={styles.label}>No. of Total Family Members/संपूर्ण कुटुंबाचे सदस्य:</Text>
             <Text style={styles.text}>{formData.total_family_members}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Total Number of Siblings:</Text>
+            <Text style={styles.label}>Total Number of Siblings/सर्व सहोदर/सहोदरी:</Text>
             <Text style={styles.text}>{formData.TotalSiblings}</Text>
         </View>
         {siblingsData.map((sibling, index) => (
@@ -265,15 +413,17 @@ const ViewForm = ({ route }) => {
     </View>
   </View>
 ))}
-
+<Text style={[styles.errorText,{fontSize:14}]}>*Slide right if child is Malnourished</Text>
 {siblings.map((sibling, index) => (
+  
   <View key={index} style={styles.siblingTableRow}>
     {/* Sibling Name */}
     <TextInput
-      style={[styles.siblingTableCell, { flex: 2 },]}
+      style={[styles.siblingTableCell, { flex: 2,color:'black' },]}
       value={sibling.name}
       onChangeText={(value) => handleSiblingFieldChange(index, 'name', value)}
-      placeholder={`Enter name`}
+      placeholder={`name`}
+      placeholderTextColor="grey"
     />
     {/* Sibling Age */}
     <TextInput
@@ -281,6 +431,7 @@ const ViewForm = ({ route }) => {
       value={sibling.age}
       onChangeText={(value) => handleSiblingFieldChange(index, 'age', value)}
       placeholder={`Age`}
+      placeholderTextColor="grey"
       keyboardType="numeric"
     />
     {/* Malnourished */}
@@ -301,28 +452,28 @@ const ViewForm = ({ route }) => {
         <Text style={styles.addButtonLabel}>Add</Text>
       </TouchableOpacity>
    {/* Save Changes Button */}
-   <TouchableOpacity style={styles.saveChangesButton} onPress={handleSaveChanges}>
+   <TouchableOpacity style={styles.addButton} onPress={handleSaveChanges}>
             <Text style={styles.saveChangesButtonText}>Save Changes</Text>
           </TouchableOpacity>
 
          
         <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Disease History :</Text>
+            <Text style={styles.label}>Disease History/रोग इतिहास :</Text>
             <Text style={styles.text}>{formData.prevHistory}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Addictions:</Text>
+            <Text style={styles.label}>Addictions/व्यसने:</Text>
             <Text style={styles.text}>{formData.addictions}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Source of Drinking Water:</Text>
+            <Text style={styles.label}>Source of Drinking Water/प्या पाण्याची स्त्रोत:</Text>
             <Text style={styles.text}>{formData.source_of_drinking_water}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Other:</Text>
+            <Text style={styles.label}>Other/इतर:</Text>
             <Text style={styles.text}>{formData.other}</Text>
           </View>
           {/* Add more data fields here with labels and text */}
@@ -340,6 +491,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f4f4',
     padding: 20,
   },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 10,
+    marginTop: 2,
+    marginBottom: 10,
+  },
   formDataContainer: {
     backgroundColor: 'white',
     padding: 20,
@@ -351,6 +508,9 @@ const styles = StyleSheet.create({
   },
   fieldContainer: {
     marginBottom: 15,
+  },
+  input:{
+    color:'black'
   },
   label: {
     fontSize: 18,
@@ -392,7 +552,8 @@ const styles = StyleSheet.create({
   siblingLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#555',
+    color: 'black',
+  
   },
   siblingValue: {
     fontSize: 16,
@@ -408,6 +569,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    color:'black'
   },
   addButton: {
     backgroundColor: 'teal',
@@ -431,13 +593,14 @@ const styles = StyleSheet.create({
     marginRight: 85,
     borderBottomWidth: 1,
     paddingBottom: 8,
+    color:'black'
   },
   siblingTableHeaderCell: {
     fontSize: 16,
     fontWeight: 'bold',
     paddingVertical: 8,
     paddingHorizontal: 8,
-   
+    color:'black'
   },
   siblingTableRow: {
     flexDirection: 'row',
@@ -445,11 +608,13 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     borderBottomWidth: 1,
     borderColor: '#ccc',
+    color:'black'
   },
   siblingTableCell: {
     fontSize: 16,
     paddingVertical: 10,
     paddingHorizontal: 10,
+    color:COLORS.black
     // flex: 1,
   },
   removeButton: {

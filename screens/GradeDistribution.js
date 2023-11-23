@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView } from 
 import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import { PieChart } from 'react-native-chart-kit';
-
+import { API_URL } from './config';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -15,6 +15,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color:'black'
   },
   dropdownContainer: {
     width: 300,
@@ -24,9 +25,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCCCCC',
     marginBottom: 20,
+    color:'black'
   },
   dropdownText: {
     fontSize: 16,
+    color:'black'
   },
   dropdownOptions: {
     borderWidth: 1,
@@ -35,9 +38,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     width: 300,
+    color:'black'
   },
   dropdownOptionText: {
     fontSize: 16,
+    color:'black'
   },
   chartSection: {
     alignItems: 'center',
@@ -57,6 +62,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
+    color:'black'
   },
   legendContainer: {
     position: 'absolute',
@@ -102,6 +108,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+    
   },
   tableRow: {
     flexDirection: 'row',
@@ -114,6 +121,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
     textAlign: 'center',
+    color:'black'
   },
 });
 
@@ -130,10 +138,10 @@ const GradeDistribution = () => {
   const resetVisitDate = () => {
     setVisitDate([]);
   };
-
+  
   useEffect(() => {
     setLoading(true);
-    axios.get('http://192.168.1.34:3000/bit_name')
+    axios.get(`${API_URL}/bit_name`)
       .then((response) => {
         setBitName(response.data);
         setLoading(false);
@@ -143,10 +151,10 @@ const GradeDistribution = () => {
         setLoading(false);
       });
   }, []);
-
+ 
   useEffect(() => {
     if (selectedBitName) {
-      axios.get(`http://192.168.1.34:3000/visitDate/${selectedBitName}`)
+      axios.get( `${API_URL}/visitDate/${selectedBitName}`)
         .then((response) => {
           setVisitDate(response.data);
         })
@@ -158,7 +166,7 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     if (selectedDate) {
-      axios.get(`http://192.168.1.34:3000/child_distribution/${selectedBitName}/${selectedDate}`)
+      axios.get(`${API_URL}/child_distribution/${selectedBitName}/${selectedDate}`)
         .then((response) => {
           const formattedData = response.data.map((item) => ({
             grade: item.grade,
