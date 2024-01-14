@@ -111,14 +111,14 @@ const ChildPresent = ({toggleMenu}) => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.formContainer}>
           <View style={styles.field}>
-            <Text style={styles.label}>Anganwadi No.</Text>
+            <Text style={styles.label}>Anganwadi No or Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Anganwadi No."
+              placeholder="Enter Anganwadi No/Name"
               placeholderTextColor={COLORS.black}
               value={anganwadiNo}
               onChangeText={(text) => setAnganwadiNo(text)}
-              keyboardType="numeric" // This line ensures the numeric keyboard
+              //keyboardType="numeric" // This line ensures the numeric keyboard
             />
           </View>
 

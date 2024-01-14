@@ -5,19 +5,19 @@ import user from '../assets/user.png';
 import heartbeat from '../assets/heartbeat.png';
 import file from '../assets/file.png';
 import clipboard from '../assets/clipboard.png';
-const CustomMenuButton = ({ toggleMenu }) => {
-  const handleMenuToggle = () => {
-    if (toggleMenu) {
-      toggleMenu(); // Call the toggleMenu function received as a prop
-    }
-  };
+// const CustomMenuButton = ({ toggleMenu }) => {
+//   const handleMenuToggle = () => {
+//     if (toggleMenu) {
+//       toggleMenu(); // Call the toggleMenu function received as a prop
+//     }
+//   };
 
-  return (
-    <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
-      <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
-    </TouchableOpacity>
-  );
-};
+//   return (
+//     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
+//       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
+//     </TouchableOpacity>
+//   );
+// };
 
 
 
@@ -25,6 +25,9 @@ const CustomMenuButton = ({ toggleMenu }) => {
 const HomePage = ({ route,toggleMenu}) => {
   const { role, name } = route.params;
   const navigation = useNavigation();
+  const goToAboutUs = () => {
+    navigation.navigate('AboutUsScreen');
+  };
 
   
   const goToConsolidatedReports = () => {
@@ -56,7 +59,7 @@ const HomePage = ({ route,toggleMenu}) => {
   return (
     <ScrollView style={styles.scrollView}>
     <View style={styles.container}>
-    <CustomMenuButton toggleMenu={toggleMenu} />
+    
       <Image
         source={require('../assets/bg11.jpg')}
         style={styles.image}
@@ -65,6 +68,10 @@ const HomePage = ({ route,toggleMenu}) => {
       <View style={styles.overlay}>
         <Image source={selectedIcon} style={styles.userIcon} />
         <Text style={styles.userName}>Hello, {name}</Text>
+        <TouchableOpacity style={styles.aboutUsContainer} onPress={goToAboutUs}>
+            <Image source={require('../assets/info.png')} style={styles.infoIcon} />
+            <Text style={styles.AboutUs}>About Us</Text>
+          </TouchableOpacity>
       </View>
       <Text style={styles.menuHeading}>Menu</Text>
       <View style={styles.menuContainer}>
@@ -114,6 +121,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+ 
   image: {
     width: '100%',
     height: 280,
@@ -130,6 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'left',
     marginLeft: 10, // Added margin
   },
+ 
   menuHeading: {
     fontSize: 23,
     fontWeight: 'bold',
@@ -206,6 +215,30 @@ const styles = StyleSheet.create({
     color: 'white',
     marginTop:15,
   },
+  aboutUsContainer: {
+    position: 'absolute',
+    top: -180,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderColor: 'white',
+  },
+
+  AboutUs: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight:'bold'
+  },
+  infoIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 5,
+  },
+
 });
 
 export default HomePage;

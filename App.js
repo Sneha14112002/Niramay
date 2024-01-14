@@ -32,6 +32,8 @@ import BMIChartvsPerVisit from './screens/BMIChartvsPerVisit';
 import AnganwadiCountPerBit from './screens/AnganwadiCountPerBit';
 import ChangePassword from './screens/ChangePassword';
 import SideMenu from 'react-native-side-menu';
+import AboutUsScreen from './screens/AboutUsScreen';
+
 export default function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [showDrawerButton, setShowDrawerButton] = useState(false); // Add state to control drawer button visibility
@@ -451,12 +453,18 @@ export default function App() {
                 title: "Consolidated Report",
               }}
             />
-
-
-
-
-
-        </Stack.Navigator>
+             <Stack.Screen
+              name="AboutUsScreen"
+              component={AboutUsScreen}
+              options={{
+                headerStyle: {
+                  backgroundColor: COLORS.theme,
+                },
+                headerTintColor: COLORS.white,
+                title: "About Us",
+              }}
+            />
+          </Stack.Navigator>
         </SideMenu>
       </NavigationContainer>
     </View>

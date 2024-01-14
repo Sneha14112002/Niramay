@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, ScrollView,Image} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, ScrollView,Image,Alert} from 'react-native';
 import { VictoryLine, VictoryChart, VictoryAxis, VictoryScatter, VictoryLabel } from 'victory-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import ViewShot from 'react-native-view-shot';
 import { API_URL } from './config';
 import { useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+
+import {Calendar, LocaleConfig} from 'react-native-calendars';
+
 
 const GradePerChild = ({ route, toggleMenu }) => {
   const { anganwadiNo, childsName, gender, dob } = route.params;
@@ -13,38 +17,77 @@ const GradePerChild = ({ route, toggleMenu }) => {
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const chartRef = useRef();
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const requestData = {
-          anganwadiNo,
-          childsName,
-        };
-
-        const response = await fetch(`${API_URL}/getVisitsData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        if (response.status === 200) {
-          const data = await response.json();
-          setFormData(data);
-        } else {
-          console.log('Data not found in the database');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+  const formatDate = utcDate => {
+    const options = {
+      timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     };
 
-    fetchData();
-  }, [anganwadiNo, childsName]);
+    return new Date(utcDate).toLocaleDateString('en-IN', options);
+  };
+
+  const onDayPress = day => {
+    // Callback function when a day is pressed on the calendar
+    if (!selectedFromDate) {
+      // If "from" date is not selected, set it
+      setSelectedFromDate(day.dateString);
+    } else if (!selectedToDate) {
+      // If "from" date is selected but "to" date is not, set "to" date
+      setSelectedToDate(day.dateString);
+    } else {
+      // If both "from" and "to" dates are selected, reset selection
+      setSelectedFromDate(day.dateString);
+      setSelectedToDate(null);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch data based on selected date range
+    fetchData(selectedFromDate, selectedToDate);
+  }, [selectedFromDate, selectedToDate]);
+
+  const fetchData = async (fromDate, toDate) => {
+    try {
+      const requestData = {
+        anganwadiNo,
+        childsName,
+        fromDate,
+        toDate,
+      };
+
+      const response = await fetch(`${API_URL}/getVisitsData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        console.log('Data not found in the database');
+        showFlashMessage('No data found between the selected date range.');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showFlashMessage('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showFlashMessage = message => {
+    Alert.alert('Flash Message', message);
+  };
+
 
   const data = formData?.data;
   const grades = data ? data.map((entry) => entry.grade) : [];
@@ -62,7 +105,7 @@ const GradePerChild = ({ route, toggleMenu }) => {
     }
   });
  
-
+  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
   const chartData = data ? data.map((_, index) => ({ x: index + 1, y: gradeValues[index] })) : [];
   const chartScatterData = data ? data.map((_, index) => ({ x: index + 1, y: gradeValues[index], grade: grades[index] })) : [];
   const gradeColors = {
@@ -216,13 +259,31 @@ const GradePerChild = ({ route, toggleMenu }) => {
         };
 
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+  
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/${childsName}_GradeChart.pdf`;
+  
+        await RNFS.moveFile(pdfPath, newPdfPath);
+  
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+        'PDF Downloaded',
+        'The PDF has been downloaded in your downloads folder.'
+      );
       } else {
         console.error('Chart capture failed.');
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
+  };
+
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
   };
 
   return (
@@ -238,7 +299,56 @@ const GradePerChild = ({ route, toggleMenu }) => {
               <Text style={styles.infoText}>Gender: {gender}</Text>
               <Text style={styles.infoText}>Date of Birth: {dob}</Text>
             </View>
+            <Text style={{...styles.infoText, marginLeft: 15}}>
+              Select Date Range (From-To)
+            </Text>
+            {showCalendar ? (
+              <Calendar
+                onDayPress={day => {
+                  if (!selectedFromDate) {
+                    setSelectedFromDate(day.dateString);
+                  } else if (!selectedToDate) {
+                    setSelectedToDate(day.dateString);
+                    setShowCalendar(false);
+                  } else {
+                    resetDateSelection();
+                  }
+                }}
+                markedDates={{
+                  [selectedFromDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                  [selectedToDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                }}
+                style={{
+                  borderRadius: 50,
+                  width: 350,
+                  marginLeft: 5,
+                  marginTop: 20,
+                }}
+              />
+            ) : (
+              <View style={styles.dateSelectionContainer}>
+                <Text style={styles.dateSelectionText}>
+                  {`Selected Dates: ${formatDate(
+                    selectedFromDate,
+                  )} - ${formatDate(selectedToDate)}`}
+                </Text>
+                <TouchableOpacity onPress={resetDateSelection}>
+                  <Text style={styles.resetDateSelectionText}>
+                    Change Dates
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <ScrollView horizontal={true}>
+
               <View style={styles.chart}>
                 <Text style={styles.chartTitle}>Grade Chart</Text>
                 <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.8 }}>
@@ -254,9 +364,12 @@ const GradePerChild = ({ route, toggleMenu }) => {
                     <VictoryAxis
                       label="Visits"
                       style={{
-                        axisLabel: { padding: 30 },
+                        axisLabel: {padding: 30},
                       }}
-                      tickFormat={(value) => `Visit${value}`}
+                      tickValues={Array.from(new Set(visitDates)).map(
+                        date => visitDates.indexOf(date) + 1,
+                      )}
+                      tickFormat={value => `Visit${Math.floor(value)}`} // Use Math.floor to ensure whole numbers
                     />
                     <VictoryAxis
                       dependentAxis
@@ -283,16 +396,25 @@ const GradePerChild = ({ route, toggleMenu }) => {
                   <Text style={styles.tableHeaderText}>Grade</Text>
                 </View>
               </View>
-              {data.map((item, index) => (
-                <View style={styles.tableRow} key={index}>
-                  <View style={[styles.tableCell, { flex: 2 }]}>
-                    <Text style={styles.tableCellText}>{item.visitDate}</Text>
-                  </View>
-                  <View style={[styles.tableCell, { flex: 1 }]}>
-                    <Text style={styles.tableCellText}>{item.grade}</Text>
-                  </View>
-                </View>
-              ))}
+              {data.map((item, index) => {
+  const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return (
+    <View style={styles.tableRow} key={index}>
+      <View style={[styles.tableCell, { flex: 2 }]}>
+        <Text style={styles.tableCellText}>{formattedDate}</Text>
+      </View>
+      <View style={[styles.tableCell, { flex: 1 }]}>
+        <Text style={styles.tableCellText}>{item.grade}</Text>
+      </View>
+    </View>
+  );
+})}
+
             </View>
           </View>
 
@@ -441,6 +563,35 @@ childInfo: {
       pdfButtonText: {
         color: 'white',
         fontSize: 16,
+      },
+  
+      selectedDatesContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        elevation: 4,
+        margin: 16,
+        padding: 16,
+      },
+      selectedDatesText: {
+        fontSize: 16,
+        color: 'black',
+      },
+      resetDateSelectionText: {
+        fontSize: 16,
+        color: 'blue',
+        marginTop: 8,
+        textAlign: 'center',
+      },
+      dateSelectionContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        elevation: 4,
+        margin: 16,
+        padding: 16,
+      },
+      dateSelectionText: {
+        fontSize: 16,
+        color: 'black',
       },
 });
 

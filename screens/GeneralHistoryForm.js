@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, StatusBar, ScrollView, Button, windowWidth } from 'react-native';
+import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, StatusBar, ScrollView, Button, windowWidth,Alert} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Checkbox } from 'react-native-paper';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -8,6 +8,13 @@ import COLORS from '../constants/colors';
 import { API_URL } from './config';
 const checkmarkImage = require('../assets/check-mark.png');
 import CheckBox from 'react-native-check-box';
+import { useEffect } from 'react';
+import { RadioButton} from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
+import moment from 'moment';
+
+
 
 const CollapsibleSectionWithIcon = ({ title, children }) => {
   const [collapsed, setCollapsed] = useState(true);
@@ -69,17 +76,41 @@ const SupplementCounter = ({ value, onIncrement, onDecrement }) => {
 };
 
 const VisitRow = ({ visit, index, handleVisitFieldChange }) => {
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(visit.date);
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setShowCalendar(false);
+    handleVisitFieldChange(index, 'date', date); // Update the date in the visits array
+  };
+
   return (
     <View>
-      <Text style={styles.label}>Date:</Text>
-      <TextInput
-        value={visit.date}
-        onChangeText={(text) => handleVisitFieldChange(index, 'date', text)}
-        placeholder="DD-MM-YYYY"
-        keyboardType="phone-pad"
-        maxLength={10}
-        style={styles.textInput}
-      />
+    <Text style={styles.label}>Visit Date:</Text>
+    <View style={styles.dateContainer}>
+  <TouchableOpacity onPress={() => setShowCalendar(true)}>
+    <Text >Select Visit Date:</Text>
+    <Text style={{ color: '#000', marginLeft: 10 ,marginBottom:10}}>{selectedDate}</Text>
+  </TouchableOpacity>
+</View>
+
+      
+      {showCalendar && (
+        <View>
+          <Calendar
+            onDayPress={(day) => handleDateSelect(day.dateString)}
+            current={selectedDate}
+            hideExtraDays
+            markedDates={{
+              [selectedDate]: { selected: true },
+            }}
+          />
+          <TouchableOpacity onPress={() => setShowCalendar(false)}>
+            <Text>Close Calendar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <Text style={styles.label}>Haemoglobin:</Text>
       <TextInput
@@ -133,13 +164,37 @@ const VisitRow = ({ visit, index, handleVisitFieldChange }) => {
         style={styles.textInput}
       />
 
-      <Text style={styles.label}>Weight (Kg):</Text>
+      {/* <Text style={styles.label}>Weight (Kg):</Text>
       <TextInput
         value={visit.weight}
         onChangeText={(text) => handleVisitFieldChange(index, 'weight', text)}
         keyboardType="phone-pad"
         style={styles.textInput}
-      />
+      /> */}
+
+      <Text style={styles.label}>Weight:</Text>
+      <View style={styles.supplementContainer}>
+        <TextInput
+          value={visit.tempWeightKg}
+          onChangeText={(text) => {
+            console.log('Text input for kg changed:', text);
+            handleVisitFieldChange(index, 'tempWeightKg', text);
+          }}
+          keyboardType="phone-pad"
+          style={styles.textInput}
+        />
+        <Text style={{ marginHorizontal: 10, fontSize: 16, color: 'black' }}>kg</Text>
+        <TextInput
+          value={visit.tempWeightGrams}
+          onChangeText={(text) => {
+            console.log('Text input for grams changed:', text);
+            handleVisitFieldChange(index, 'tempWeightGrams', text);
+          }}
+          keyboardType="phone-pad"
+          style={[styles.textInput, { marginLeft: 15 }]}
+        />
+        <Text style={{ marginHorizontal: 10, fontSize: 16, color: 'black' }}>grams</Text>
+      </View>
 
       <Text style={styles.label}>Height (cm):</Text>
       <TextInput
@@ -199,6 +254,13 @@ const VisitsTable = ({ visits, handleAddVisit, handleRemoveVisit, handleVisitFie
 };
 
 const GeneralHistoryForm = () => {
+  const [appetiteValue, setAppetiteValue] = React.useState('yes'); // State to store the selected value
+  const navigation = useNavigation();
+  const handleRadioButtonChange = (value) => {
+    setAppetiteValue(value);
+    handleTextInputChange('appetiteTest', value); // Assuming handleTextInputChange is a function to handle state changes
+  };
+
   const [generalHistory, setGeneralHistory] = useState({
     vomiting: false,
     fever: false,
@@ -218,6 +280,7 @@ const GeneralHistoryForm = () => {
     motion: '',
     otherSigns: '',
     visits: [],
+    totalWeight: '',
     vaccination: {
       BCG: false,
       POLIO: false,
@@ -235,26 +298,27 @@ const GeneralHistoryForm = () => {
   const handleAddVisit = () => {
     const newVisit = {
       date: '',
-      totalNoOfJars: '',
-      haemoglobin: '',
-      muac: '',
-      weight: '',
-      height: '',
+      totalNoOfJars: '0',
+      haemoglobin: '0',
+      muac: '0',
+      weight: '0',
+      height: '0',
       difference: '',
-      grade: '',
+      grade: '0',
       observations: '',
       iron: 0,
       multivitamin: 0,
       calcium: 0,
       protein: 0,
-
+      tempWeightKg: 0,
+      tempWeightGrams: 0,
     };
     setGeneralHistory((prevHistory) => ({
       ...prevHistory,
       visits: [...prevHistory.visits, newVisit],
     }));
   };
-  
+
 
   const route = useRoute();
   const { anganwadiNo, childsName } = route.params;
@@ -272,7 +336,7 @@ const GeneralHistoryForm = () => {
         cough: generalHistory.cough,
         oedema: generalHistory.oedema,
         vaccinationDone: generalHistory.vaccinationDone,
-        appetiteTest: generalHistory.appetiteTest,
+        appetiteTest: appetiteValue,
         thirst: generalHistory.thirst,
         //haemoglobin: generalHistory.haemoglobin,
         anyOther: generalHistory.anyOther,
@@ -295,7 +359,7 @@ const GeneralHistoryForm = () => {
         dpt: generalHistory.vaccination.DPT,
         td: generalHistory.vaccination.TD,
       };
-      console.log(generalHistoryData);
+      //console.log(generalHistoryData);
       //console.log('API URL', API_URL);
       const response = await fetch(`${API_URL}/generalHistory`, {
         method: 'POST',
@@ -304,14 +368,14 @@ const GeneralHistoryForm = () => {
         },
         body: JSON.stringify(generalHistoryData),
       });
-      
+
 
       if (response.status === 200) {
         //console.log(response.body);
         console.log('Form submitted successfully');
         // Add any additional logic or navigation here after successful submission
       } else {
-        console.log(response);
+        //console.log(response);
         console.error('Error submitting form - response error');
       }
     } catch (error) {
@@ -325,14 +389,16 @@ const GeneralHistoryForm = () => {
   const handleGeneralHistoryVisits = async () => {
     console.log('Anganwadi No: ', anganwadiNo);
     console.log('Child name: ', childsName);
+    
+
     try {
       for (const visit of generalHistory.visits) {
-        const [day, month, year] = visit.date.split('-');
-        const formattedDate = `${year}-${month}-${day}`;
+        console.log("VISITTTTT: ",visit);
+       
         const visitData = {
           anganwadiNo: anganwadiNo,
           childName: childsName,
-          visitDate: formattedDate,
+          visitDate: visit.date,
           haemoglobin: visit.haemoglobin,
           totalNoOfJars: visit.totalNoOfJars,
           muac: visit.muac,
@@ -346,7 +412,7 @@ const GeneralHistoryForm = () => {
           calcium: visit.calcium,
           protein: visit.protein,
         };
-        console.log(visitData);
+        //console.log(visitData);
         const response = await fetch(`${API_URL}/visits`, {
           method: 'POST',
           headers: {
@@ -357,6 +423,15 @@ const GeneralHistoryForm = () => {
 
         if (response.status === 200) {
           console.log('Visit data submitted successfully');
+          Alert.alert('Success', 'Visit data submitted successfully', [
+            {
+              text: 'Okay',
+              onPress: () => {
+                navigation.navigate('ChildPresent'); // Replace 'HomePage' with your actual home screen name
+              },
+            },
+          ]);
+          
           // Add any additional logic or navigation here after each successful submission
         } else {
           console.error('Error submitting visit data - response error');
@@ -367,6 +442,12 @@ const GeneralHistoryForm = () => {
     }
   };
 
+  const handleToggle = (field) => {
+    setGeneralHistory((prevHistory) => ({
+      ...prevHistory,
+      [field]: !prevHistory[field],
+    }));
+  };
 
 
   const handleRemoveVisit = () => {
@@ -376,25 +457,55 @@ const GeneralHistoryForm = () => {
     }));
   };
 
+  // const handleVisitFieldChange = (index, field, value) => {
+  //   // Assuming the date field is 'visit.date'
+  //   const newVisits = [...generalHistory.visits];
+  //   newVisits[index][field] = value;
+  //   setGeneralHistory((prevHistory) => ({
+  //     ...prevHistory,
+  //     visits: newVisits,
+  //   }));
+  // };
+
   const handleVisitFieldChange = (index, field, value) => {
-    // Assuming the date field is 'visit.date'
-   
-    const newVisits = [...generalHistory.visits];
-    newVisits[index][field] = value;
-    setGeneralHistory((prevHistory) => ({
-      ...prevHistory,
-      visits: newVisits,
-    }));
+    setGeneralHistory((prevHistory) => {
+      const newVisits = [...prevHistory.visits];
+      newVisits[index] = {
+        ...newVisits[index],
+        [field]: value,
+      };
+ 
+      return {
+        ...prevHistory,
+        visits: newVisits,
+      };
+    });
   };
-  
-
-  const handleToggle = (field) => {
-    setGeneralHistory((prevHistory) => ({
-      ...prevHistory,
-      [field]: !prevHistory[field],
-    }));
-  };
-
+ 
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setGeneralHistory((prevHistory) => {
+        const newVisits = [...prevHistory.visits];
+        newVisits.forEach((visit, index) => {
+          let weightKg = parseFloat(visit.tempWeightKg) || 0;
+          let weightGrams = parseFloat(visit.tempWeightGrams) || 0;
+          let totalWeight = weightKg + weightGrams / 1000;
+          newVisits[index] = {
+            ...visit,
+            weight: totalWeight.toFixed(3),
+          };
+        });
+ 
+        return {
+          ...prevHistory,
+          visits: newVisits,
+        };
+      });
+    }, 300);
+ 
+    return () => clearTimeout(timeoutId);
+  }, [generalHistory.visits]);
+ 
 
   const handleTextInputChange = (field, value) => {
     setGeneralHistory((prevHistory) => ({
@@ -487,13 +598,16 @@ const GeneralHistoryForm = () => {
           </View>
 
           <Text style={styles.label}>Appetite Test:</Text>
-          <TextInput
-            label="Appetite Test"
-            multiline={true}
-            value={generalHistory.appetiteTest}
-            onChangeText={(text) => handleTextInputChange('appetiteTest', text)}
-            style={styles.multilineTextInput}
-          />
+      <RadioButton.Group onValueChange={handleRadioButtonChange} value={appetiteValue}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <RadioButton value="yes" />
+          <Text style={{ color: '#000', marginLeft: 10 }} >Yes</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <RadioButton value="loss Of Appetite" />
+          <Text style={{ color: '#000', marginLeft: 10 }}>Loss of Appetite</Text>
+        </View>
+      </RadioButton.Group>
 
 
           <Text style={styles.label}>Thirst :</Text>
@@ -796,8 +910,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: 'white', // Set the text color to white
     // textAlign: 'center',
-    // textAlignVertical: 'center', 
-    
+    // textAlignVertical: 'center',
+
   },
   counterValue: {
     fontSize: 18,
@@ -805,7 +919,13 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     //lineHeight: 30,
   },
-
+  dateContainer: {
+    borderWidth: 1,
+    borderRadius: 8,
+    borderColor: 'lightgrey',
+    padding: 5,
+  },
+ 
 });
 
 export default GeneralHistoryForm;

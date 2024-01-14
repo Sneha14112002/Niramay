@@ -1,28 +1,56 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,Alert } from 'react-native';
 import { Table, Row } from 'react-native-table-component';
 import axios from 'axios';
-import { VictoryBar, VictoryChart, VictoryStack, VictoryAxis, VictoryLegend, VictoryLabel } from 'victory-native';
+import {
+  VictoryBar,
+  VictoryChart,
+  VictoryStack,
+  VictoryAxis,
+  VictoryLegend,
+  VictoryLabel,
+} from 'victory-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import ModalDropdown from 'react-native-modal-dropdown';
 import { API_URL } from './config';
 import { captureRef } from 'react-native-view-shot';
-
+import RNFS from 'react-native-fs';
+import ModalSelector from 'react-native-modal-selector';
 const GradeTransition = () => {
   const [data, setData] = useState([]);
+  const [distinctYears, setDistinctYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState('');
   const chartContainerRef = useRef();
 
   useEffect(() => {
     fetchData();
+    fetchDistinctYears();
   }, []);
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/getTransitionCount`);
-      setData(response.data);
+      const response = await axios.get(`${API_URL}/getTransitionCount`, {
+        params: { year: selectedYear },
+      });
+      setData(response.data.data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      // Handle the error, you might want to set an error state or display an error message.
     }
+  };
+
+  const fetchDistinctYears = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/getDistinctYears`);
+      setDistinctYears(response.data);
+    } catch (error) {
+      console.error('Error fetching distinct years:', error);
+    }
+  };
+
+  const onYearChange = (index, value) => {
+    setSelectedYear(value);
+    // Fetch data again when the year changes
+    fetchData();
   };
 
   // Log the data to check if it's available
@@ -236,11 +264,38 @@ const GradeTransition = () => {
         const options = {
           html: htmlContent,
           fileName: 'GradeTransitionReport',
-          directory: 'Documents',
+          directory: 'Documents/ConsolidatedReports',
         };
-
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+  
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/GradeTransitionReport.pdf`;
+  
+        await RNFS.moveFile(pdfPath, newPdfPath);
+  
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+          'PDF Generated!',
+          `PDF has been downloaded in Downloads Folder`,
+          [
+            // {
+            //   text: 'Click here to open the PDF',
+            //   onPress: () => {
+            //     // Open the generated PDF when the button in the alert dialog is pressed
+            //     Linking.openURL(`file://${newPdfPath}`);
+            //   },
+            // },
+            {
+              text: 'OK',
+              onPress: () => {
+                // Do something when the OK button is pressed
+                // This can be left empty if you don't need any action
+              },
+            },
+          ]
+        );
       } else {
         console.error('Chart capture failed.');
       }
@@ -254,6 +309,18 @@ const GradeTransition = () => {
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
         <Text style={styles.heading}>Grade Transitions</Text>
+        <Text style={styles.label}>Select Year:</Text>
+        
+        {/* Dropdown for selecting year */}
+        <ModalSelector
+          data={['All Years', ...distinctYears.map((year) => ({ key: year.toString(), label: year.toString() }))]}
+          initValue={selectedYear || 'All Years'}
+          onChange={(option) => onYearChange(option.key, option.label)}
+          style={styles.yearDropdown} // Apply styles for ModalSelector container
+          selectTextStyle={styles.dropdownText} // Apply styles for selected text
+          optionContainerStyle={styles.optionContainer} // Apply styles for option container
+          optionTextStyle={styles.optionText} // Apply styles for option text
+        />
 
         {/* Container for the Bar Chart */}
         <ScrollView horizontal={true}>
@@ -296,7 +363,7 @@ const GradeTransition = () => {
               {/* No need to add Y-axis label again here */}
               <VictoryLegend
                 x={10}
-                y={-5}
+                y={1}
                 centerTitle
                 orientation="horizontal"
                 gutter={20}
@@ -452,6 +519,41 @@ const styles = StyleSheet.create({
   pdfButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  yearDropdown: {
+    height: 60, // Change the height as needed
+    width: '90%', // Change the width as needed
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    color: 'black',
+  },
+  
+  dropdownText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  optionContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    padding: 10,
+  },
+  optionText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft:20,
+    color: 'black',
   },
 });
 

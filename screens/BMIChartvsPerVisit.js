@@ -1,54 +1,111 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { VictoryChart, VictoryBar, VictoryAxis, VictoryLabel } from 'victory-native';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
+import {
+  VictoryChart,
+  VictoryBar,
+  VictoryAxis,
+  VictoryLabel,
+} from 'victory-native';
 import ViewShot from 'react-native-view-shot';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import { API_URL } from './config';
-import { useNavigation } from '@react-navigation/native';
+import {API_URL} from './config';
+import {useNavigation} from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+import {Calendar, LocaleConfig} from 'react-native-calendars';
 
-const BMIChartvsPerVisit = ({ route }) => {
-  const { anganwadiNo, childsName, gender, dob } = route.params;
+const BMIChartvsPerVisit = ({route}) => {
+  const {anganwadiNo, childsName, gender, dob} = route.params;
   const navigation = useNavigation();
 
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const chartRef = useRef();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const requestData = {
-          anganwadiNo,
-          childsName,
-        };
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
 
-        const response = await fetch(`${API_URL}/getVisitsData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        if (response.status === 200) {
-          const data = await response.json();
-          setFormData(data);
-        } else {
-          console.log('Data not found in the database');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+  const formatDate = utcDate => {
+    const options = {
+      timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     };
 
-    fetchData();
-  }, [anganwadiNo, childsName]);
+    return new Date(utcDate).toLocaleDateString('en-IN', options);
+  };
 
-  const { data } = formData || {};
-  const heights = data ? data.map((entry) => parseFloat(entry.height)) : [];
-  const weights = data ? data.map((entry) => parseFloat(entry.weight)) : [];
+  const onDayPress = day => {
+    // Callback function when a day is pressed on the calendar
+    if (!selectedFromDate) {
+      // If "from" date is not selected, set it
+      setSelectedFromDate(day.dateString);
+    } else if (!selectedToDate) {
+      // If "from" date is selected but "to" date is not, set "to" date
+      setSelectedToDate(day.dateString);
+    } else {
+      // If both "from" and "to" dates are selected, reset selection
+      setSelectedFromDate(day.dateString);
+      setSelectedToDate(null);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch data based on selected date range
+    fetchData(selectedFromDate, selectedToDate);
+  }, [selectedFromDate, selectedToDate]);
+
+  const fetchData = async (fromDate, toDate) => {
+    try {
+      const requestData = {
+        anganwadiNo,
+        childsName,
+        fromDate,
+        toDate,
+      };
+
+      const response = await fetch(`${API_URL}/getVisitsData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        console.log('Data not found in the database');
+        showFlashMessage('No data found between the selected date range.');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showFlashMessage('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showFlashMessage = message => {
+    Alert.alert('Flash Message', message);
+  };
+
+  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
+
+  const {data} = formData || {};
+  const heights = data ? data.map(entry => parseFloat(entry.height)) : [];
+  const weights = data ? data.map(entry => parseFloat(entry.weight)) : [];
 
   const calculateBMI = (height, weight) => {
     const heightInMeters = height / 100;
@@ -64,7 +121,7 @@ const BMIChartvsPerVisit = ({ route }) => {
     y: parseFloat(value),
   }));
 
-  const chartLabels = bmis.map((value) => `${value} kg/m²`);
+  const chartLabels = bmis.map(value => `${value} kg/m²`);
 
   const captureChart = async () => {
     try {
@@ -75,20 +132,28 @@ const BMIChartvsPerVisit = ({ route }) => {
     }
   };
 
-  const generateHTML = (chartImageUri) => {
+  const generateHTML = chartImageUri => {
     const chartHtml = `
       <div style="margin: 16px; background-color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 16px;">
         <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
       </div>
     `;
 
-    const tableRows = data.map((item, index) => `
+    const tableRows = data
+      .map(
+        (item, index) => `
       <tr>
         <td style="padding: 8px; text-align: center;">${item.visitDate}</td>
-        <td style="padding: 8px; text-align: center;">${parseFloat(item.height).toFixed(2)} cm</td>
-        <td style="padding: 8px; text-align: center;">${parseFloat(item.weight).toFixed(2)} kg</td>
+        <td style="padding: 8px; text-align: center;">${parseFloat(
+          item.height,
+        ).toFixed(2)} cm</td>
+        <td style="padding: 8px; text-align: center;">${parseFloat(
+          item.weight,
+        ).toFixed(2)} kg</td>
         <td style="padding: 8px; text-align: center;">${bmis[index]}</td>
-      </tr>`).join('');
+      </tr>`,
+      )
+      .join('');
 
     const tableHtml = `
       <div class="table">
@@ -264,13 +329,31 @@ const BMIChartvsPerVisit = ({ route }) => {
         };
 
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/${childsName}_BMIChart.pdf`;
+
+        await RNFS.moveFile(pdfPath, newPdfPath);
+
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+          'PDF Downloaded',
+          'The PDF has been downloaded in your downloads folder.',
+        );
       } else {
         console.error('Chart capture failed.');
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
+  };
+
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
   };
 
   return (
@@ -287,32 +370,101 @@ const BMIChartvsPerVisit = ({ route }) => {
               <Text style={styles.infoText}>Date of Birth: {dob}</Text>
             </View>
 
+            <Text style={{...styles.infoText, marginLeft: 15}}>
+              Select Date Range (From-To)
+            </Text>
+            {showCalendar ? (
+              <Calendar
+                onDayPress={day => {
+                  if (!selectedFromDate) {
+                    setSelectedFromDate(day.dateString);
+                  } else if (!selectedToDate) {
+                    setSelectedToDate(day.dateString);
+                    setShowCalendar(false);
+                  } else {
+                    resetDateSelection();
+                  }
+                }}
+                markedDates={{
+                  [selectedFromDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                  [selectedToDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                }}
+                style={{
+                  borderRadius: 50,
+                  width: 350,
+                  marginLeft: 5,
+                  marginTop: 20,
+                }}
+              />
+            ) : (
+              <View style={styles.dateSelectionContainer}>
+                <Text style={styles.dateSelectionText}>
+                  {`Selected Dates: ${formatDate(
+                    selectedFromDate,
+                  )} - ${formatDate(selectedToDate)}`}
+                </Text>
+                <TouchableOpacity onPress={resetDateSelection}>
+                  <Text style={styles.resetDateSelectionText}>
+                    Change Dates
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.chart}>
               <Text style={styles.chartTitle}>BMI Chart</Text>
               <ScrollView horizontal={true}>
-                <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.8 }}>
-                  <VictoryChart padding={{ top: 20, bottom: 50, left: 70, right: 40 }} domainPadding={{ x: 33 }} width={bmis.length * 80}>
+                <ViewShot
+                  ref={chartRef}
+                  options={{format: 'png', quality: 0.8}}>
+                  <VictoryChart
+                    padding={{top: 20, bottom: 50, left: 70, right: 40}}
+                    domainPadding={{x: 20}}
+                    width={Math.max(bmis.length * 80, 300)} // Minimum width for the chart
+                    domain={{x: [0, bmis.length + 1]}} // Add 1 for padding
+                    scale={{x: 'band'}} // Use scaleBand for x-axis
+                  >
                     <VictoryBar
-                      data={bmis.map((value, index) => ({ x: index + 1, y: parseFloat(value) }))}
-                      style={{ data: { fill: '#3eb489' } }}
+                      data={bmis.map((value, index) => ({
+                        x: index + 1,
+                        y: parseFloat(value),
+                      }))}
+                      style={{
+                        data: {fill: '#3eb489'},
+                        labels: {fontSize: 10}, // Set the desired font size for labels
+                      }}
+                      barWidth={20}
                       labelComponent={<VictoryLabel dy={-10} />}
-                      labels={({ datum }) => `${datum.y}\nkg/m²`}
+                      labels={({datum}) => `${datum.y}\nkg/m²`}
                     />
 
                     <VictoryAxis
                       label="Visits"
                       style={{
-                        axisLabel: { padding: 30 },
+                        axisLabel: {padding: 30},
                       }}
-                      tickFormat={(value) => `Visit${value}`}
+                      tickValues={Array.from(new Set(visitDates)).map(
+                        date => visitDates.indexOf(date) + 1,
+                      )}
+                      tickFormat={value => `Visit${Math.floor(value)}`} // Use Math.floor to ensure whole numbers
                     />
                     <VictoryAxis
                       label="BMI (in kg/m²)"
                       style={{
-                        axisLabel: { padding: 35, y: -20 },
+                        axisLabel: {padding: 35, y: -20},
                       }}
                       dependentAxis
-                      domain={{ y: [Math.min(...bmis) - 5, Math.max(...bmis) + 5] }}
+                      domain={{
+                        y: [Math.min(...bmis) - 5, Math.max(...bmis) + 5],
+                      }}
                     />
                   </VictoryChart>
                 </ViewShot>
@@ -328,14 +480,23 @@ const BMIChartvsPerVisit = ({ route }) => {
                   <Text style={styles.tableHeaderText}>Weight</Text>
                   <Text style={styles.tableHeaderText}>BMI</Text>
                 </View>
-                {data.map((item, index) => (
-                  <View style={styles.tableRow} key={index}>
-                    <Text style={styles.tableCell}>{item.visitDate}</Text>
-                    <Text style={styles.tableCell}>{`${parseFloat(item.height).toFixed(2)} cm`}</Text>
-                    <Text style={styles.tableCell}>{`${parseFloat(item.weight).toFixed(2)} kg`}</Text>
-                    <Text style={styles.tableCell}>{bmis[index]}</Text>
-                  </View>
-                ))}
+                {data.map((item, index) => {
+  const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return (
+    <View style={styles.tableRow} key={index}>
+      <Text style={styles.tableCell}>{formattedDate}</Text>
+      <Text style={styles.tableCell}>{`${parseFloat(item.height).toFixed(2)} cm`}</Text>
+      <Text style={styles.tableCell}>{`${parseFloat(item.weight).toFixed(2)} kg`}</Text>
+      <Text style={styles.tableCell}>{bmis[index]}</Text>
+    </View>
+  );
+})}
+
               </View>
             </View>
 
@@ -349,8 +510,7 @@ const BMIChartvsPerVisit = ({ route }) => {
                 alignItems: 'center',
                 marginBottom: 90,
               }}
-              onPress={generatePDF}
-            >
+              onPress={generatePDF}>
               <Image
                 source={require('../assets/printer1.png')}
                 style={{
@@ -359,12 +519,20 @@ const BMIChartvsPerVisit = ({ route }) => {
                   borderRadius: 10,
                   backgroundColor: '#f4f4f4',
                   marginEnd: 40,
-                  marginBottom: 40
+                  marginBottom: 40,
                 }}
               />
-              <Text style={{ color: 'black', fontSize: 14, marginTop: -40, marginEnd: 45 }}> PDF</Text>
+              <Text
+                style={{
+                  color: 'black',
+                  fontSize: 14,
+                  marginTop: -40,
+                  marginEnd: 45,
+                }}>
+                {' '}
+                PDF
+              </Text>
             </TouchableOpacity>
-
           </View>
         )}
       </ScrollView>
@@ -456,7 +624,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 16,
     marginBottom: 8,
-    color: 'black'
+    color: 'black',
   },
   scrollView: {
     flex: 1,
@@ -473,8 +641,7 @@ const styles = StyleSheet.create({
   menuIcon: {
     width: 28,
     height: 30,
-  }
-  ,
+  },
   pdfButton: {
     marginTop: 20,
     backgroundColor: '#007BFF',
@@ -485,6 +652,34 @@ const styles = StyleSheet.create({
   pdfButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  selectedDatesContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  selectedDatesText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  resetDateSelectionText: {
+    fontSize: 16,
+    color: 'blue',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  dateSelectionContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  dateSelectionText: {
+    fontSize: 16,
+    color: 'black',
   },
 });
 

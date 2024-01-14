@@ -13,6 +13,7 @@ const IsChildAlreadyPresent = ({ toggleMenu }) => {
   const [isUpdateVisible, setIsUpdateVisible] = useState(false);
 
   const handleFormSubmit = async () => {
+   const anganwadiNo_name=anganwadiNo;
     try {
       // Check if the fields are empty
       if (!anganwadiNo || !childsName) {
@@ -53,7 +54,7 @@ const IsChildAlreadyPresent = ({ toggleMenu }) => {
         );
       } else {
         // Data does not exist in the database
-        navigation.navigate('CustomerForm');
+        navigation.navigate('CustomerForm',{anganwadiNo_name, childsName });
         console.log("Data doesn't exist in the database");
       }
     } catch (error) {
@@ -76,14 +77,14 @@ const IsChildAlreadyPresent = ({ toggleMenu }) => {
 
         <View style={styles.formContainer}>
           <View style={styles.field}>
-            <Text style={styles.label}>Anganwadi No.</Text>
+          <Text style={styles.label}>Anganwadi No or Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Anganwadi No."
+              placeholder="Enter Anganwadi No/Name"
               placeholderTextColor={COLORS.black}
               value={anganwadiNo}
               onChangeText={(text) => setAnganwadiNo(text)}
-              keyboardType="numeric" // This line ensures the numeric keyboard
+              //keyboardType="numeric" // This line ensures the numeric keyboard
             />
           </View>
 

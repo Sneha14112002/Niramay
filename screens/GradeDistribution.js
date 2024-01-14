@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  TouchableOpacity, // Add this import
+  Image, // Add this import
+  Alert
+} from 'react-native';
 import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import { PieChart } from 'react-native-chart-kit';
 import { API_URL } from './config';
+import { captureRef } from 'react-native-view-shot';
+import RNFS from 'react-native-fs';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -123,12 +138,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color:'black'
   },
+  printButton: {
+    position: 'absolute',
+    top: 10,
+    right: -5,
+    borderRadius: 25,
+    backgroundColor: '#f4f4f4',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1, // Ensure the button is above other components
+  },
+  printButtonText: {
+    color: 'black',
+    fontSize: 16,
+  },
 });
-
 const colors = {
-  NORMAL: '#33FF57', // Green color for NORMAL grade
-  MAM: '#FFC300',    // Orange color for MAM grade
-  SAM: '#FF5733',    // Red color for SAM grade
+  NORMAL: '#33FF57',
+  MAM: '#FFC300',
+  SAM: '#FF5733',
 };
 
 const GradeDistribution = () => {
@@ -142,10 +172,13 @@ const GradeDistribution = () => {
   const resetVisitDate = () => {
     setVisitDate([]);
   };
-  
+
+  const chartRef = useRef(null);
+
   useEffect(() => {
     setLoading(true);
-    axios.get(`${API_URL}/bit_name`)
+    axios
+      .get(`${API_URL}/bit_name`)
       .then((response) => {
         setBitName(response.data);
         setLoading(false);
@@ -155,10 +188,11 @@ const GradeDistribution = () => {
         setLoading(false);
       });
   }, []);
- 
+
   useEffect(() => {
     if (selectedBitName) {
-      axios.get( `${API_URL}/visitDate/${selectedBitName}`)
+      axios
+        .get(`${API_URL}/visitDate/${selectedBitName}`)
         .then((response) => {
           const formattedVisitDates = response.data.map((dateString) => {
             const date = new Date(dateString);
@@ -178,7 +212,8 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     if (selectedDate) {
-      axios.get(`${API_URL}/child_distribution/${selectedBitName}/${selectedDate}`)
+      axios
+        .get(`${API_URL}/child_distribution/${selectedBitName}/${selectedDate}`)
         .then((response) => {
           const formattedData = response.data.map((item) => ({
             grade: item.grade,
@@ -191,106 +226,285 @@ const GradeDistribution = () => {
         });
     }
   }, [selectedDate, selectedBitName]);
-// ... (Previous code remains unchanged)
+
+  const pieChartData = data.map((item, index) => ({
+    name: item.grade,
+    count: item.count,
+    color: colors[item.grade],
+  }));
+
+  const captureChartImage = async () => {
+    try {
+      const image = await captureRef(chartRef, { format: 'png', quality: 1 });
+      return image;
+    } catch (error) {
+      console.error('Error capturing chart image:', error);
+      return null;
+    }
+  };
+
+  const generatePDF = async () => {
+    try {
+      if (!selectedBitName || !selectedDate) {
+        Alert.alert(
+          'Error',
+          'Please select an Anganwadi Name and Visit Date before generating PDF.'
+        );
+        return;
+      }
+
+      const chartImage = await captureChartImage();
+
+      const options = {
+        html: generateHTMLContent(chartImage),
+        fileName: `${selectedBitName}_${selectedDate}.pdf`,
+        directory: RNFS.DownloadDirectoryPath,
+      };
+
+      const pdf = await RNHTMLtoPDF.convert(options);
+
+      const downloadsPath = RNFS.DownloadDirectoryPath;
+      const newPdfPath = `${downloadsPath}/GradeDistribution_${selectedBitName}_${selectedDate}.pdf`;
+
+      await RNFS.moveFile(pdf.filePath, newPdfPath);
+
+      Alert.alert('PDF Downloaded', 'The PDF has been downloaded in your downloads folder.');
+
+      console.log('PDF generated:', pdf.filePath);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+  };
 
 
-
-const pieChartData = data.map((item, index) => ({
-  name: item.grade,
-  count: item.count,
-  color: colors[item.grade], // Assign color based on the grade
-}));
-
-
+  const generateHTMLContent = (chartImage) => `
+  <html>
+    <head>
+      <style>
+        body {
+          font-family: 'Arial, sans-serif';
+          padding: 20px;
+        }
+        .headerContainer {
+          display: flex;
+          align-items: left;
+          border-bottom: 1px solid orange; /* Thin line below the heading */
+          padding-bottom: 15px; /* Adjust as needed */
+        }
+        h1 {
+          font-size: 24px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          text-align: center;
+          color: black;
+        }
+        p {
+          font-size: 16px;
+          margin-bottom: 20px;
+          color: black;
+        }
+        img {
+          width: 100%;
+          max-width: 500px; /* Adjust as needed */
+          height: auto;
+          margin-bottom: 20px;
+        }
+        .chart-section {
+          align-items: center;
+          padding: 20px;
+          background-color: white;
+          border-radius: 15px;
+          box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+          margin-top: 20px;
+        }
+        .chart-image {
+          width: 100%; 
+          max-width: 100%; 
+          height: auto;
+          margin-bottom: 20px;
+        }
+        .label {
+          font-size: 16px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: black;
+        }
+        .table-container {
+          border-radius: 8px;
+          padding-bottom: 20px;
+          margin-top: 20px;
+          background-color: white;
+          border-radius: 15px;
+          box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+          overflow-x: auto; /* Enable horizontal scroll for the table */
+        }
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        .table-header {
+          background-color: teal;
+          color: white;
+          font-weight: bold;
+          text-align: center;
+        }
+        .table-row {
+          border-bottom: 1px solid #ccc;
+        }
+        .table-cell {
+          padding: 8px;
+          text-align: center;
+          color: black;
+        }
+        img {
+          width: 100px; 
+          height: 100px;
+        }
+        .headingLine {
+          font-size: 30;
+          color: orange;
+          margin-left: 20px;
+          margin-top: 20px;
+          padding-bottom: 3px;
+        }
+        .subheading {
+          font-size: 18px;
+          color: orange;
+          margin-left: 20px;
+        }
+        .textContainer {
+          margin-left: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="headerContainer">
+        <img src="file:///android_asset/images/logo2.jpg" />
+        <div class="textContainer">
+          <div class="headingLine">Niramay Bharat</div>
+          <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
+        </div>
+      </div>
+      <h1>Grade Distribution</h1>
+      <p>Anganwadi Name: ${selectedBitName}</p>
+      ${chartImage ? `<div class="chart-section"><img class="chart-image" src="${chartImage}" alt="Grade Distribution Chart" /></div>` : ''}
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr class="table-header">
+              <th class="table-cell">Grade</th>
+              <th class="table-cell">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map((item) => `
+              <tr class="table-row">
+                <td class="table-cell">${item.grade}</td>
+                <td class="table-cell">${item.count}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </body>
+  </html>
+  `;
   
   
 
   return (
     <ScrollView style={styles.container}>
-    <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView}>
       <Text style={styles.header}>Grade Distribution</Text>
-      <View>
-        <Text style={styles.label}>Select Anganwadi Name:</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color="#0072ff" />
-        ) : (
-          <View style={styles.dropdownContainer}>
-            <ModalDropdown
-              options={bitName}
-              defaultValue="Select an Anganwadi Name"
-              onSelect={(index, value) => {
-                setSelectedBitName(value);
-                resetVisitDate();
-              }}
-              textStyle={styles.dropdownText}
-              dropdownStyle={styles.dropdownOptions}
-              dropdownTextStyle={styles.dropdownOptionText}
+        <TouchableOpacity
+          style={styles.printButton}
+          onPress={() => generatePDF()}
+          activeOpacity={0.2}
+        >
+          <Image
+            source={require('../assets/printer1.png')}
+            style={{ width: 35, height: 35, borderRadius: 10, backgroundColor: '#f4f4f4' }}
+          />
+          <Text style={styles.printButtonText}> PDF</Text>
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.label}>Select Anganwadi Name:</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color="#0072ff" />
+          ) : (
+            <View style={styles.dropdownContainer}>
+              <ModalDropdown
+                options={bitName}
+                defaultValue="Select an Anganwadi Name"
+                onSelect={(index, value) => {
+                  setSelectedBitName(value);
+                  resetVisitDate();
+                }}
+                textStyle={styles.dropdownText}
+                dropdownStyle={styles.dropdownOptions}
+                dropdownTextStyle={styles.dropdownOptionText}
+              />
+            </View>
+          )}
+        </View>
+
+        {visitDate.length > 0 && (
+          <View>
+            <Text style={styles.label}>Select Visit Date:</Text>
+            <View style={styles.dropdownContainer}>
+              <ModalDropdown
+                options={visitDate}
+                defaultValue="Select the Visit Date"
+                onSelect={(index, value) => setSelectedDate(value)}
+                textStyle={styles.dropdownText}
+                dropdownStyle={styles.dropdownOptions}
+                dropdownTextStyle={styles.dropdownOptionText}
+              />
+            </View>
+          </View>
+        )}
+
+        {data.length > 0 && (
+          <View style={styles.chartSection}>
+            <Text style={styles.label}>Grade Distribution Chart</Text>
+            <View ref={chartRef} collapsable={false}>
+              <PieChart
+                data={pieChartData}
+                width={300}
+                height={200}
+                chartConfig={{
+                  backgroundGradientFrom: '#1E2923',
+                  backgroundGradientTo: '#08130D',
+                  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                }}
+                accessor="count"
+                backgroundColor="transparent"
+                paddingLeft="5"
+                absolute
+              />
+            </View>
+           
+          </View>
+        )}
+
+        {data.length > 0 && (
+          <View style={styles.tableContainer}>
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Grade Summary</Text>
+            </View>
+            <FlatList
+              data={data}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.tableRow}>
+                  <Text style={styles.tableCell}>{item.grade}</Text>
+                  <Text style={styles.tableCell}>{item.count}</Text>
+                </View>
+              )}
             />
           </View>
         )}
-      </View>
-
-      {visitDate.length > 0 && (
-        <View>
-          <Text style={styles.label}>Select Visit Date:</Text>
-          <View style={styles.dropdownContainer}>
-            <ModalDropdown
-              options={visitDate}
-              defaultValue="Select the Visit Date"
-              onSelect={(index, value) => setSelectedDate(value)}
-              textStyle={styles.dropdownText}
-              dropdownStyle={styles.dropdownOptions}
-              dropdownTextStyle={styles.dropdownOptionText}
-            />
-          </View>
-        </View>
-      )}
-
-      {data.length > 0 && (
-        <View style={styles.chartSection}>
-          <Text style={styles.label}>Grade Distribution Chart</Text>
-          <PieChart
-            data={pieChartData}
-            width={300}
-            height={200}
-            chartConfig={{
-              backgroundGradientFrom: '#1E2923',
-              backgroundGradientTo: '#08130D',
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            }}
-            accessor="count"
-            backgroundColor="transparent"
-            paddingLeft="5"
-            absolute
-          />
-          <View style={styles.legendContainer}>
-            {pieChartData.map((item, index) => (
-              <View key={index} style={styles.legendItem}>
-                {/* <View style={{ backgroundColor: item.color, ...styles.legendColor }}></View> */}
-                {/* <Text style={styles.legendText}>{`${item.name} (${item.count})`}</Text> */}
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {data.length > 0 && (
-        <View style={styles.tableContainer}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Grade Summary</Text>
-          </View>
-          <FlatList
-            data={data}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCell}>{item.grade}</Text>
-                <Text style={styles.tableCell}>{item.count}</Text>
-              </View>
-            )}
-          />
-        </View>
-      )}
       </ScrollView>
     </ScrollView>
   );

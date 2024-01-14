@@ -1,69 +1,139 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ScrollView,Image } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Alert
+} from 'react-native';
 import axios from 'axios';
 import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-native';
 import { FlatList } from 'react-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import ViewShot from 'react-native-view-shot';
-import Clipboard from '@react-native-community/clipboard'; // Added import
 import { useNavigation } from '@react-navigation/native';
+import ModalSelector from 'react-native-modal-selector'; // Import the ModalSelector
 import { API_URL } from './config';
-const CustomMenuButton = ({ toggleMenu}) => {
+import ModalDropdown from 'react-native-modal-dropdown'; // Import the ModalDropdown
+import RNFS from 'react-native-fs';
+
+const CustomMenuButton = ({ toggleMenu }) => {
   const handleMenuToggle = () => {
-    toggleMenu(); // Call the toggleMenu function received as a prop
+    toggleMenu();
   };
 
   return (
     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
     </TouchableOpacity>
-    
   );
 };
+
+const YearDropdown = ({ selectedYear, onYearChange, uniqueYears }) => {
+  const filteredYears = uniqueYears.filter((year) => year !== null && year !== undefined);
+  const dropdownData = filteredYears.map((year) => ({ key: year.toString(), label: year.toString() }));
+
+  const renderDropdown = () => {
+    if (dropdownData.length === 0) {
+      return <Text>No years available</Text>;
+    }
+
+    return (
+      <View style={styles.dropdownContainer}>
+        <ModalSelector
+          data={dropdownData}
+          initValue={selectedYear ? selectedYear.toString() : "Select Year"} // Show selected year if exists, otherwise show "Select Year"
+          onChange={(option) => onYearChange(option.label)}
+        />
+      </View>
+    );
+  };
+
+  return renderDropdown();
+};
+
+
+
+
 const BitNamevsGender = ({ toggleMenu }) => {
   const [data, setData] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [uniqueYears, setUniqueYears] = useState([]);
   const navigation = useNavigation();
   const chartRef = useRef();
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />, // Place the menu button in the header
-      // You can add other header configurations here as needed
+      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />,
     });
   }, [navigation]);
   useEffect(() => {
-    axios
-      .get(`${API_URL}/childData`)
-      .then((response) => {
-        if (response.data instanceof Array) {
-          setData(response.data);
-        } else if (response.data instanceof Object) {
-          const dataArray = Object.values(response.data);
-          setData(dataArray);
-        } else {
-          console.error('Invalid data format:', response.data);
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-      });
+    const fetchUniqueYears = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/availableYears`);
+        setUniqueYears(response.data);
+        console.log('hello',response.data)
+      } catch (error) {
+        console.error('Error fetching unique years:', error);
+      }
+    };
+
+    fetchUniqueYears();
   }, []);
 
-  const chartData = data.map((item) => ({
-    bit_name: item.bit_name,
-    total_children_count: parseInt(item.total_children_count),
-  }));
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/childData`, {
+          params: { year: selectedYear },
+        });
 
-  const xAxisTickValues = data.map((item, index) => ({ x: index + 1, label: item.bit_name }));
+        setData(response.data);
+        console.log(response.data);
+        // Extract unique years from the dataset
+        const years = [...new Set(response.data.map((item) => item.extracted_year))];
+        //setUniqueYears(years);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [selectedYear]);
+
+  const chartData = selectedYear
+    ? data.map((item) => ({
+      bit_name: item.bit_name,
+      total_children_count: parseInt(item.total_children_count),
+    }))
+    : data.reduce((result, item) => {
+      const existingItem = result.find((x) => x.bit_name === item.bit_name);
+      if (existingItem) {
+        existingItem.total_children_count += parseInt(item.total_children_count);
+      } else {
+        result.push({
+          bit_name: item.bit_name,
+          total_children_count: parseInt(item.total_children_count),
+        });
+      }
+      return result;
+    }, []);
+
+  const xAxisTickValues = selectedYear
+    ? data.map((item, index) => ({ x: index + 1, label: item.bit_name }))
+    : chartData.map((item, index) => ({ x: index + 1, label: item.bit_name }));
 
   const generateHTML = (chartImageUri) => {
-    
+
     const chartHtml = `
     <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
     <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
   </div>
 `;
 
-    
+
     const tableHtml = `
     <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
       <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Bit Name vs Count of Children</Text>
@@ -81,9 +151,9 @@ const BitNamevsGender = ({ toggleMenu }) => {
       </table>
     </div>
   `;
-  
 
-const htmlContent = `
+
+    const htmlContent = `
   <html>
     <head>
       <style>
@@ -143,8 +213,8 @@ const htmlContent = `
   </html>
 `;
 
-return htmlContent;
-};
+    return htmlContent;
+  };
 
   const captureChart = async () => {
     try {
@@ -160,16 +230,44 @@ return htmlContent;
     try {
       // Capture the chart before generating the PDF
       const chartImageUri = await captureChart();
-
+  
       if (chartImageUri) {
         const options = {
           html: generateHTML(chartImageUri),
-          fileName: 'BitNamevsGenderReport',
-          directory: 'Documents',
+          fileName: 'TotalChildrenPerBit',
+          directory: 'Documents/ConsolidatedReports',
         };
-
+  
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+  
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/TotalChildrenPerBit.pdf`;
+  
+        await RNFS.moveFile(pdfPath, newPdfPath);
+  
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+          'PDF Generated!',
+          `PDF has been downloaded in Downloads Folder`,
+          [
+            // {
+            //   text: 'Click here to open the PDF',
+            //   onPress: () => {
+            //     // Open the generated PDF when the button in the alert dialog is pressed
+            //     Linking.openURL(`file://${newPdfPath}`);
+            //   },
+            // },
+            {
+              text: 'OK',
+              onPress: () => {
+                // Do something when the OK button is pressed
+                // This can be left empty if you don't need any action
+              },
+            },
+          ]
+        );
       } else {
         console.error('Chart capture failed.');
       }
@@ -181,6 +279,13 @@ return htmlContent;
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.chartTitle}>Total Children by Bit Name</Text>
+
+      <Text style={styles.label}>Select Year:</Text>
+      <YearDropdown
+  selectedYear={selectedYear}
+  onYearChange={(year) => setSelectedYear(year)}
+  uniqueYears={uniqueYears}
+/>
       <ScrollView horizontal={true}>
         <View style={styles.chartContainer} collapsable={false}>
           <ViewShot
@@ -227,7 +332,7 @@ return htmlContent;
       <View style={styles.tableContainer}>
         <Text style={styles.tableTitle}>Bit Name vs Count of Children</Text>
         <FlatList
-          data={data}
+          data={chartData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View style={styles.tableRow}>
@@ -255,10 +360,10 @@ return htmlContent;
             height: 35,
             borderRadius: 10,
             backgroundColor: '#f4f4f4',
-            marginEnd:40,
+            marginEnd: 40,
           }}
         />
-        <Text style={{ color: 'black', fontSize: 14, marginTop: 3 ,marginEnd:45}}> PDF</Text>
+        <Text style={{ color: 'black', fontSize: 14, marginTop: 3, marginEnd: 45 }}> PDF</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -356,6 +461,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  dropdownContainer: {
+    margin: 16,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    elevation: 4,
+    width:250,
+  },
+  dropdown: {
+    padding: 10,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  dropdownMenu: {
+    borderRadius: 5,
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  dropdownMenuItemText: {
+    fontSize: 16,
+    color: 'black',
+    padding: 10,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft:20,
+    color: 'black',
   },
 });
 

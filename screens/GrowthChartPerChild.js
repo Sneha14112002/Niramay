@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView ,Alert} from 'react-native';
 import { VictoryLine, VictoryChart, VictoryAxis, VictoryLegend, VictoryArea } from 'victory-native';
 import { API_URL } from './config';
 import { useNavigation } from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-
+import RNFS from 'react-native-fs';
 const GrowthChartPerChild = ({ route, toggleMenu }) => {
   const { anganwadiNo, childsName, gender, dob } = route.params;
   const navigation = useNavigation();
@@ -302,7 +302,19 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
         };
 
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+  
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/${childsName}_GrowthChart.pdf`;
+  
+        await RNFS.moveFile(pdfPath, newPdfPath);
+  
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+        'PDF Downloaded',
+        'The PDF has been downloaded in your downloads folder.'
+      );
       } else {
         console.error('Chart capture failed.');
       }

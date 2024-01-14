@@ -1,54 +1,102 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, ScrollView, TouchableOpacity,Image } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
 import ViewShot from 'react-native-view-shot';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import { API_URL } from './config';
 import { useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+import {Calendar, LocaleConfig} from 'react-native-calendars';
+
 
 const HaemoglobinPerChild = ({ route, toggleMenu }) => {
   const { anganwadiNo, childsName, gender, dob } = route.params;
   const navigation = useNavigation();
-
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
+ 
   const chartRef = useRef();
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
+
+  const formatDate = utcDate => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
+    };
+  
+    return new Date(utcDate).toLocaleDateString('en-IN', options);
+  };
+  
+  const onDayPress = day => {
+    // Callback function when a day is pressed on the calendar
+    if (!selectedFromDate) {
+      // If "from" date is not selected, set it
+      setSelectedFromDate(day.dateString);
+    } else if (!selectedToDate) {
+      // If "from" date is selected but "to" date is not, set "to" date
+      setSelectedToDate(day.dateString);
+    } else {
+      // If both "from" and "to" dates are selected, reset selection
+      setSelectedFromDate(day.dateString);
+      setSelectedToDate(null);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const requestData = {
-          anganwadiNo,
-          childsName,
-        };
-        const response = await fetch(`${API_URL}/getVisitsData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
+    // Fetch data based on selected date range
+    fetchData(selectedFromDate, selectedToDate);
+  }, [selectedFromDate, selectedToDate]);
 
-        if (response.status === 200) {
-          const data = await response.json();
-          const sortedData = data.data.sort((a, b) => new Date(a.visitDate) - new Date(b.visitDate));
-          setFormData({ data: sortedData });
-        } else {
-          console.log('Data not found in the database');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
+  const fetchData = async (fromDate, toDate) => {
+    try {
+      const requestData = {
+        anganwadiNo,
+        childsName,
+        fromDate,
+        toDate,
+      };
+
+      const response = await fetch(`${API_URL}/getVisitsData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        console.log('Data not found in the database');
+        showFlashMessage('No data found between the selected date range.');
       }
-    };
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showFlashMessage('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [anganwadiNo, childsName]);
+  const showFlashMessage = message => {
+    Alert.alert('Flash Message', message);
+  };
+
 
   const { data } = formData || {};
-  const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null && entry.haemoglobin !== "0") : [];
+  const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null && entry.haemoglobin !== "0" && entry.haemoglobin !== "0.0" && entry.haemoglobin !== "") : [];
+  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
+
   const tableData = haemoglobinData || [];
+  console.log("Haemoglobin Data: ", haemoglobinData);
+  console.log("Visit Dates: ", visitDates);
+  console.log("Table Data: ", tableData);
+
 
   const captureChart = async () => {
     try {
@@ -73,10 +121,10 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
     `;
 
     const tableRows = tableData.map((item, index) => `
-      <tr>
-        <td style="padding: 8px; text-align: center;">${item.visitDate}</td>
-        <td style="padding: 8px; text-align: center;">${item.haemoglobin}</td>
-      </tr>`).join('');
+    <tr>
+      <td style="padding: 8px; text-align: center;">${item.visitDate}</td>
+      <td style="padding: 8px; text-align: center;">${item.haemoglobin}</td>
+    </tr>`).join('');
 
     const tableHtml = `
       <div class="table">
@@ -241,7 +289,7 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
 
     return htmlContent;
   };
-  
+
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
@@ -254,7 +302,19 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
         };
 
         const pdf = await RNHTMLtoPDF.convert(options);
-        console.log(pdf.filePath);
+        const pdfPath = pdf.filePath;
+
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/${childsName}_HaemoglobinChart.pdf`;
+
+        await RNFS.moveFile(pdfPath, newPdfPath);
+
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+          'PDF Downloaded',
+          'The PDF has been downloaded in your downloads folder.'
+        );
       } else {
         console.error('Chart capture failed.');
       }
@@ -262,6 +322,13 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
       console.error('Error generating PDF:', error);
     }
   };
+
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
+  };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -276,6 +343,54 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
               <Text style={styles.infoText}>Gender: {gender}</Text>
               <Text style={styles.infoText}>Date of Birth: {dob}</Text>
             </View>
+            <Text style={{...styles.infoText, marginLeft: 15}}>
+              Select Date Range (From-To)
+            </Text>
+            {showCalendar ? (
+              <Calendar
+                onDayPress={day => {
+                  if (!selectedFromDate) {
+                    setSelectedFromDate(day.dateString);
+                  } else if (!selectedToDate) {
+                    setSelectedToDate(day.dateString);
+                    setShowCalendar(false);
+                  } else {
+                    resetDateSelection();
+                  }
+                }}
+                markedDates={{
+                  [selectedFromDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                  [selectedToDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                }}
+                style={{
+                  borderRadius: 50,
+                  width: 350,
+                  marginLeft: 5,
+                  marginTop: 20,
+                }}
+              />
+            ) : (
+              <View style={styles.dateSelectionContainer}>
+                <Text style={styles.dateSelectionText}>
+                  {`Selected Dates: ${formatDate(
+                    selectedFromDate,
+                  )} - ${formatDate(selectedToDate)}`}
+                </Text>
+                <TouchableOpacity onPress={resetDateSelection}>
+                  <Text style={styles.resetDateSelectionText}>
+                    Change Dates
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <View style={styles.chart}>
               <Text style={styles.chartTitle}>Haemoglobin Chart</Text>
@@ -302,13 +417,15 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
                       size={5}
                       style={{ data: { fill: '#3eb489' } }}
                     />
-                    <VictoryAxis
+                   <VictoryAxis
                       label="Visits"
                       style={{
-                        axisLabel: { padding: 55 },
-                        tickLabels: { angle: -90, textAnchor: 'end' },
+                        axisLabel: {padding: 30},
                       }}
-                      tickValues={haemoglobinData.map((_, index) => `Visit ${index + 1}`)}
+                      tickValues={Array.from(new Set(visitDates)).map(
+                        date => visitDates.indexOf(date) + 1,
+                      )}
+                      tickFormat={value => `Visit${Math.floor(value)}`} // Use Math.floor to ensure whole numbers
                     />
                     <VictoryAxis
                       label="Haemoglobin (in g/dL)"
@@ -322,57 +439,66 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
                 </ViewShot>
               </ScrollView>
             </View>
-          <View style={styles.table}>
-            <Text style={styles.tableTitle}>Summary Table</Text>
-            <View style={styles.tableContainer}>
-              <View style={styles.tableRow}>
-                <View style={[styles.tableHeader, { flex: 2 }]}>
-                  <Text style={styles.tableHeaderText}>Visit Date</Text>
+            <View style={styles.table}>
+              <Text style={styles.tableTitle}>Summary Table</Text>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableRow}>
+                  <View style={[styles.tableHeader, { flex: 2 }]}>
+                    <Text style={styles.tableHeaderText}>Visit Date</Text>
+                  </View>
+                  <View style={[styles.tableHeader, { flex: 1 }]}>
+                    <Text style={styles.tableHeaderText}>Haemoglobin</Text>
+                  </View>
                 </View>
-                <View style={[styles.tableHeader, { flex: 1 }]}>
-                  <Text style={styles.tableHeaderText}>Haemoglobin</Text>
-                </View>
+                {tableData.map((item, index) => {
+  const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return (
+    <View style={styles.tableRow} key={index}>
+      <View style={[styles.tableCell, { flex: 2 }]}>
+        <Text style={styles.tableCellText}>{formattedDate}</Text>
+      </View>
+      <View style={[styles.tableCell, { flex: 1 }]}>
+        <Text style={styles.tableCellText}>{item.haemoglobin}</Text>
+      </View>
+    </View>
+  );
+})}
+
               </View>
-              {tableData.map((item, index) => (
-                <View style={styles.tableRow} key={index}>
-                  <View style={[styles.tableCell, { flex: 2 }]}>
-                    <Text style={styles.tableCellText}>{item.visitDate}</Text>
-                  </View>
-                  <View style={[styles.tableCell, { flex: 1 }]}>
-                    <Text style={styles.tableCellText}>{item.haemoglobin}</Text>
-                  </View>
-                </View>
-              ))}
             </View>
+            <TouchableOpacity
+              style={{
+                ...styles.printButton,
+                position: 'absolute',
+                top: -10,
+                right: -20,
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginBottom: 90,
+              }}
+              onPress={generatePDF}
+            >
+              <Image
+                source={require('../assets/printer1.png')}
+                style={{
+                  width: 35,
+                  height: 35,
+                  borderRadius: 10,
+                  backgroundColor: '#f4f4f4',
+                  marginEnd: 40,
+                  marginBottom: 40
+                }}
+              />
+              <Text style={{ color: 'black', fontSize: 14, marginTop: -40, marginEnd: 45 }}> PDF</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-        style={{
-          ...styles.printButton,
-          position: 'absolute',
-          top: -10,
-          right: -20,
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginBottom:90,
-        }}
-        onPress={generatePDF}
-      >
-        <Image
-          source={require('../assets/printer1.png')}
-          style={{
-            width: 35,
-            height: 35,
-            borderRadius: 10,
-            backgroundColor: '#f4f4f4',
-            marginEnd:40,
-            marginBottom:40
-          }}
-        />
-        <Text style={{ color: 'black', fontSize: 14, marginTop: -40 ,marginEnd:45}}> PDF</Text>
-      </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
     </ScrollView>
   );
 };
@@ -465,32 +591,61 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   childInfo: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 4,
-        margin: 16,
-        padding: 16,
-      },
-      infoText: {
-        fontSize: 16,
-        marginBottom: 8,
-        color: 'black'
-      },
-      scrollView: {
-        flex: 1,
-        width: '100%',
-      },
-      pdfButton: {
-        marginTop: 20,
-        backgroundColor: '#007BFF',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-      },
-      pdfButtonText: {
-        color: 'white',
-        fontSize: 16,
-      },
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  infoText: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: 'black'
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  pdfButton: {
+    marginTop: 20,
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  pdfButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  selectedDatesContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  selectedDatesText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  resetDateSelectionText: {
+    fontSize: 16,
+    color: 'blue',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  dateSelectionContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  dateSelectionText: {
+    fontSize: 16,
+    color: 'black',
+  },
+ 
 });
 
 export default HaemoglobinPerChild;

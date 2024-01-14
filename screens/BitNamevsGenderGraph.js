@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView,Image, Button,TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView,Image, Button,TouchableOpacity,Alert} from 'react-native';
 import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +8,8 @@ import { API_URL } from './config';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import { captureRef } from 'react-native-view-shot';
 import logo2 from '../assets/logo2.jpg'; 
+import RNFS from 'react-native-fs';
+import ModalSelector from 'react-native-modal-selector';
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -28,14 +30,15 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: {
     width: 300,
+    height: 50,  // Add a height value
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     padding: 10,
     borderWidth: 1,
     borderColor: '#CCCCCC',
     marginBottom: 20,
-    
   },
+
   dropdownText: {
     fontSize: 16,
     color: 'black',
@@ -138,13 +141,27 @@ const styles = StyleSheet.create({
     height: 30,
     // Add styles for your icon if needed
   },
+  modalSelectorContainer: {
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+    height: 50,
+    justifyContent: 'center',
+  },
+  modalSelectorText: {
+    fontSize: 16,
+    color: 'black',
+  },
 });
 const colors = ['#3498db', '#ff69b4']; // Blue for male, Pink for female
-import RNFS from 'react-native-fs';
+
 
 // Function to convert image to base64
 
-const CustomMenuButton = ({ toggleMenu,handlePDFGeneration}) => {
+const CustomMenuButton = ({ toggleMenu, handlePDFGeneration }) => {
   const handleMenuToggle = () => {
     toggleMenu(); // Call the toggleMenu function received as a prop
   };
@@ -153,13 +170,15 @@ const CustomMenuButton = ({ toggleMenu,handlePDFGeneration}) => {
     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
     </TouchableOpacity>
-    
+
   );
 };
-const BitNamevsGenderGraph = ({toggleMenu}) => {
+const BitNamevsGenderGraph = ({ toggleMenu }) => {
   const navigation = useNavigation();
   const [bitName, setBitName] = useState([]);
+  const [years, setYears] = useState([]);
   const [selectedBitName, setSelectedBitName] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [chartImage, setChartImage] = useState(null);
@@ -185,9 +204,24 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
   }, []);
 
   useEffect(() => {
-    if (selectedBitName) {
+    if (bitName.length > 0) {
       axios
-        .get(`${API_URL}/gender_distribution/${selectedBitName}`)
+        .get(`${API_URL}/years`)
+        .then((response) => {
+          setYears(response.data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+  }, [bitName]);
+
+
+
+  useEffect(() => {
+    if (selectedBitName && (selectedYear || selectedYear === '')) {
+      axios
+        .get(`${API_URL}/gender_distribution/${selectedBitName}/${selectedYear || ''}`)
         .then((response) => {
           setData(response.data);
         })
@@ -195,14 +229,15 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
           console.error(error);
         });
     }
-  }, [selectedBitName]);
+  }, [selectedBitName, selectedYear]);
+
 
   const pieChartData = data.map((item, index) => ({
     name: item.gender,
     count: item.count,
     color: item.gender === 'male' ? colors[0] : colors[1], // Blue for Male, Pink for Female
   }));
-  
+
 
   useEffect(() => {
     console.log('bitName:', bitName);
@@ -220,8 +255,8 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
     }
   };
 
-  const generateHTMLContent =() => {
-  
+  const generateHTMLContent = () => {
+
     return `
       <html>
         <head>
@@ -343,7 +378,7 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
           <h1>Gender Distribution</h1>
           <p>Anganwadi Name: ${selectedBitName}</p>
           <div class="gender-chart-section">
-          ${chartImage ? `<img class="chart-image" src="${chartImage}" alt="Gender Distribution Chart" />` : ''}
+          ${chartImage ? <img class="chart-image" src="${chartImage}" alt="Gender Distribution Chart" /> : ''}
         </div>
           
           <div class="table-container">
@@ -383,17 +418,32 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
   
       const options = {
         html: generateHTMLContent(),
-        fileName: `${selectedBitName}`,
-        directory: 'Documents/GenderDistributionReport',
+        fileName: `${selectedBitName}.pdf`, // Ensure the file has a .pdf extension
+        directory: RNFS.DownloadDirectoryPath, // Save in the downloads directory
       };
   
       const file = await RNHTMLtoPDF.convert(options);
+      const pdf = await RNHTMLtoPDF.convert(options);
+      const pdfPath = pdf.filePath;
+
+      // Move the generated PDF to the Downloads directory
+      const downloadsPath = RNFS.DownloadDirectoryPath;
+      const newPdfPath = `${downloadsPath}/GenderGraphOf_${selectedBitName}.pdf`;
+
+      await RNFS.moveFile(pdfPath, newPdfPath);
+
+      // Display an alert after successful PDF generation and downloading
+      Alert.alert(
+        'PDF Downloaded',
+        'The PDF has been downloaded in your downloads folder.'
+      );
+      
       console.log('PDF generated:', file.filePath);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
   };
-  
+
   let chartRef;
 
   return (
@@ -416,9 +466,22 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
               />
             </View>
           )}
+
+          <Text style={styles.label}>Select Year:</Text>
+        
+          <ModalSelector
+        data={years.map((year) => ({ key: year.toString(), label: year.toString() }))}
+        initValue={selectedYear ? selectedYear : 'Select a Year'} // Update initValue dynamically
+        onChange={(option) => setSelectedYear(option.label)}
+        style={styles.modalSelectorContainer} // Apply the container style
+        selectTextStyle={styles.modalSelectorText} // Apply the text style
+        optionTextStyle={styles.modalSelectorText} // Apply the text style for options
+      />
+
+
         </View>
 
-        {data.length > 0 && (
+        {selectedBitName && (selectedYear || selectedYear === '') && data.length > 0 && (
           <View style={styles.genderChartSection}>
             <Text style={styles.label}>Gender Distribution Chart</Text>
             <View ref={(ref) => (chartRef = ref)} onLayout={captureChartImage}>
@@ -440,7 +503,7 @@ const BitNamevsGenderGraph = ({toggleMenu}) => {
           </View>
         )}
 
-        {data.length > 0 && (
+        {selectedBitName && (selectedYear || selectedYear === '') && data.length > 0 && (
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Gender Summary</Text>

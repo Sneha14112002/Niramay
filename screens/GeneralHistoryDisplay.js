@@ -10,32 +10,57 @@ import {
     Button,
     StatusBar,
     FlatList,
+    Alert,
 } from 'react-native';
+import CheckBox from 'react-native-check-box';
 import COLORS from '../constants/colors';
 import { API_URL } from './config';
-
+import { useNavigation } from '@react-navigation/native';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
 const GeneralHistoryDisplay = ({ route }) => {
     const { anganwadiNo, childsName } = route.params;
     const [generalHistoryData, setGeneralHistoryData] = useState(null);
     const [visitsData, setVisitsData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [addVisitMode, setAddVisitMode] = useState(false);
+    const navigate=useNavigation();
     const [newVisit, setNewVisit] = useState({
         date: '',
-        totalNoOfJars: '',
-        haemoglobin: '',
-        muac: '',
-        weight: '',
-        height: '',
-        difference: '',
-        grade: '',
-        observations: '',
-        iron: 0,
-        multivitamin: 0,
-        calcium: 0,
-        protein: 0,
+      totalNoOfJars: '0',
+      haemoglobin: '0',
+      muac: '0',
+      weight: '0',
+      height: '0',
+      difference: '',
+      grade: '0',
+      observations: '',
+      iron: 0,
+      multivitamin: 0,
+      calcium: 0,
+      protein: 0,
+      tempWeightKg: 0,
+      tempWeightGrams: 0,
     });
+    const [editVaccinationList, setEditVaccinationList] = useState(false);
+    const [vaccinationStatus, setVaccinationStatus] = useState({});
+    const [originalVaccinationStatus, setOriginalVaccinationStatus] = useState({});
+    const [tempVaccinationStatus, setTempVaccinationStatus] = useState({});
+    const [calendarVisible, setCalendarVisible] = useState(false);
 
+    // New state to store the selected date
+    const [selectedDate, setSelectedDate] = useState('');
+
+    // Function to handle opening the calendar
+    const openCalendar = () => {
+        setCalendarVisible(true);
+    };
+
+    // Function to handle selecting a date from the calendar
+    const onDayPress = (day) => {
+        setSelectedDate(day.dateString);
+        setNewVisit({ ...newVisit, date: day.dateString });
+        setCalendarVisible(false);
+    };
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -55,6 +80,43 @@ const GeneralHistoryDisplay = ({ route }) => {
                     const data = await response.json();
                     console.log("General History Data: ", data);
                     setGeneralHistoryData(data);
+                    const latestHealthData = data[data.length - 1];
+                    setVaccinationStatus({
+                        BCG: latestHealthData?.BCG === 1,
+                        POLIO: latestHealthData?.POLIO === 1,
+                        IPV: latestHealthData?.IPV === 1,
+                        PCV: latestHealthData?.PCV === 1,
+                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
+                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
+                        MR: latestHealthData?.MR === 1,
+                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
+                        DPT: latestHealthData?.DPT === 1,
+                        TD: latestHealthData?.TD === 1,
+                    });
+                    setOriginalVaccinationStatus({
+                        BCG: latestHealthData?.BCG === 1,
+                        POLIO: latestHealthData?.POLIO === 1,
+                        IPV: latestHealthData?.IPV === 1,
+                        PCV: latestHealthData?.PCV === 1,
+                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
+                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
+                        MR: latestHealthData?.MR === 1,
+                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
+                        DPT: latestHealthData?.DPT === 1,
+                        TD: latestHealthData?.TD === 1,
+                    });
+                    setTempVaccinationStatus({
+                        BCG: latestHealthData?.BCG === 1,
+                        POLIO: latestHealthData?.POLIO === 1,
+                        IPV: latestHealthData?.IPV === 1,
+                        PCV: latestHealthData?.PCV === 1,
+                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
+                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
+                        MR: latestHealthData?.MR === 1,
+                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
+                        DPT: latestHealthData?.DPT === 1,
+                        TD: latestHealthData?.TD === 1,
+                    });
                 } else {
                     console.log('Data not found in the database');
                 }
@@ -103,6 +165,7 @@ const GeneralHistoryDisplay = ({ route }) => {
     };
 
     const handleCancelAddVisit = () => {
+        
         setAddVisitMode(false);
         setNewVisit({
             date: '',
@@ -118,15 +181,23 @@ const GeneralHistoryDisplay = ({ route }) => {
             multivitamin: 0,
             calcium: 0,
             protein: 0,
+            weightKg: '',
+            weightGrams: '',
         });
     };
 
     const handleSaveVisit = async () => {
         try {
             const [day, month, year] = newVisit.date.split('-');
-        const formattedDate = `${year}-${month}-${day}`;
+
+            // Formatting the date as 'YYYY-MM-DD'
+            const formattedDate = `${day}-${month}-${year}`;
+    
+            const weightKg = parseFloat(newVisit.weightKg) || 0;
+            const weightGrams = parseFloat(newVisit.weightGrams) || 0;
+            const totalWeight = weightKg + weightGrams / 1000;
+    
             const requestData = {
-                
                 anganwadiNo,
                 childName: childsName,
                 visitDate: formattedDate,
@@ -142,8 +213,9 @@ const GeneralHistoryDisplay = ({ route }) => {
                 multivitamin: newVisit.multivitamin,
                 calcium: newVisit.calcium,
                 protein: newVisit.protein,
+                weight: totalWeight.toFixed(3), // Change this line to update the 'weight' property
             };
-
+    
             const response = await fetch(`${API_URL}/visits`, {
                 method: 'POST',
                 headers: {
@@ -151,27 +223,39 @@ const GeneralHistoryDisplay = ({ route }) => {
                 },
                 body: JSON.stringify(requestData),
             });
-
+    
             if (response.status === 200) {
+                Alert.alert
                 // Successfully inserted into the server, you can update the local state as well.
-                console.log('SILVIIIIIIIIIIIIIIIIIIII');
-                setVisitsData([...visitsData, newVisit]);
-                setNewVisit({
+                console.log('Response: ', response.body);
+                setVisitsData([...visitsData, newVisit]); // This line might need a different approach to update the visitsData state properly
+                setNewVisit({  // Clear the form after successful save
                     date: '',
-                    totalNoOfJars: '',
-                    haemoglobin: '',
-                    muac: '',
-                    weight: '',
-                    height: '',
+                    totalNoOfJars: '0',
+                    haemoglobin: '0',
+                    muac: '0',
+                    weight: '0',
+                    height: '0',
                     difference: '',
-                    grade: '',
+                    grade: '0',
                     observations: '',
                     iron: 0,
                     multivitamin: 0,
                     calcium: 0,
                     protein: 0,
+                    weightKg: '0',
+                    weightGrams: '0',
                 });
                 setAddVisitMode(false);
+                Alert.alert('Success', 'Visit data submitted successfully', [
+                    {
+                      text: 'Okay',
+                      onPress: () => {
+                navigate.navigate('ChildPresent'); // Replace 'HomePage' with your actual home screen name
+                      },
+                    },
+                  ]);
+                //navigate.navigate('ChildPresent');
             } else {
                 console.log('Failed to insert data into the server');
             }
@@ -179,64 +263,81 @@ const GeneralHistoryDisplay = ({ route }) => {
             console.error('Error saving visit:', error);
         }
     };
+    
 
 
-    const renderVisitItem = ({ item }) => (
-        <View style={styles.visitContainer}>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Visit Date: </Text>
-                <Text style={styles.text}>{item.visitDate}</Text>
+    const renderVisitItem = ({ item }) => {
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            } else {
+                return 'Invalid Date';
+            }
+        };
+        
+
+
+        return (
+            <View style={styles.visitContainer}>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Visit Date: </Text>
+                    <Text style={styles.text}>{formatDate(item.visitDate)}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Height: </Text>
+                    <Text style={styles.text}>{item.height}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Weight: </Text>
+                    <Text style={styles.text}>{item.weight}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Haemoglobin: </Text>
+                    <Text style={styles.text}>{item.haemoglobin}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>MUAC: </Text>
+                    <Text style={styles.text}>{item.muac}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>No. of Jars of Iron: </Text>
+                    <Text style={styles.text}>{item.iron}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>No. of Jars of Multivitamin: </Text>
+                    <Text style={styles.text}>{item.multivitamin}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>No. of Jars of Calcium: </Text>
+                    <Text style={styles.text}>{item.calcium}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>No. of Jars of Protein: </Text>
+                    <Text style={styles.text}>{item.protein}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Total No. of Supplements: </Text>
+                    <Text style={styles.text}>{item.totalNoOfJars}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Difference: </Text>
+                    <Text style={styles.text}>{item.difference}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Grade: </Text>
+                    <Text style={styles.text}>{item.grade}</Text>
+                </View>
+                <View style={styles.visitRow}>
+                    <Text style={styles.label}>Observations & Suggestions: </Text>
+                    <Text style={styles.text}>{item.observations}</Text>
+                </View>
             </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Height: </Text>
-                <Text style={styles.text}>{item.height}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Weight: </Text>
-                <Text style={styles.text}>{item.weight}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Haemoglobin: </Text>
-                <Text style={styles.text}>{item.haemoglobin}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>MUAC: </Text>
-                <Text style={styles.text}>{item.muac}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>No. of Jars of Iron: </Text>
-                <Text style={styles.text}>{item.iron}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>No. of Jars of Multivitamin: </Text>
-                <Text style={styles.text}>{item.multivitamin}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>No. of Jars of Calcium: </Text>
-                <Text style={styles.text}>{item.calcium}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>No. of Jars of Protein: </Text>
-                <Text style={styles.text}>{item.protein}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Total No. of Supplements: </Text>
-                <Text style={styles.text}>{item.totalNoOfJars}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Difference: </Text>
-                <Text style={styles.text}>{item.difference}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Grade: </Text>
-                <Text style={styles.text}>{item.grade}</Text>
-            </View>
-            <View style={styles.visitRow}>
-                <Text style={styles.label}>Observations & Suggestions: </Text>
-                <Text style={styles.text}>{item.observations}</Text>
-            </View>
-        </View>
-    );
+        );
+    };
 
     if (loading) {
         return <ActivityIndicator size="large" />;
@@ -254,6 +355,62 @@ const GeneralHistoryDisplay = ({ route }) => {
                 </TouchableOpacity>
             </View>
         );
+    };
+
+    const handleVaccinationCheck = (vaccine) => {
+        setVaccinationStatus((prevStatus) => ({
+            ...prevStatus,
+            [vaccine]: !prevStatus[vaccine],
+        }));
+    };
+
+    const handleSaveEditing = async () => {
+        try {
+            const requestData = {
+                anganwadiNo: anganwadiNo,
+                childsName: childsName,
+                BCG: vaccinationStatus.BCG ? 1 : 0,
+                POLIO: vaccinationStatus.POLIO ? 1 : 0,
+                IPV: vaccinationStatus.IPV ? 1 : 0,
+                PCV: vaccinationStatus.PCV ? 1 : 0,
+                PENTAVALENT: vaccinationStatus.PENTAVALENT ? 1 : 0,
+                ROTAVIRUS: vaccinationStatus.ROTAVIRUS ? 1 : 0,
+                MR: vaccinationStatus.MR ? 1 : 0,
+                VITAMIN_A: vaccinationStatus.VITAMIN_A ? 1 : 0,
+                DPT: vaccinationStatus.DPT ? 1 : 0,
+                TD: vaccinationStatus.TD ? 1 : 0,
+            };
+
+            const response = await fetch(`${API_URL}/updateVaccinationData`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+            });
+
+            if (response.status === 200) {
+                const responseData = await response.json();
+                console.log("Response Data: ", responseData);
+                console.log('Vaccination data updated successfully');
+                // Save the current state as the original state
+                setOriginalVaccinationStatus({ ...vaccinationStatus });
+                // Also, update the vaccinationStatus state
+                setVaccinationStatus({ ...vaccinationStatus });
+                // Switch back to display mode
+                setEditVaccinationList(false);
+            } else {
+                console.log('Failed to update vaccination data');
+            }
+        } catch (error) {
+            console.error('Error updating vaccination data:', error);
+        }
+    };
+
+    const handleCancelEditing = () => {
+        // Restore the original state when Cancel button is clicked
+        setVaccinationStatus({ ...originalVaccinationStatus });
+        setEditVaccinationList(false);
     };
 
     return (
@@ -299,6 +456,58 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <Text style={styles.text}>{healthData.motion}</Text>
                             <Text style={styles.label}>Observations and Suggestions:</Text>
                             <Text style={styles.text}>{healthData.observationsAndSuggestions}</Text>
+
+                            <View style={styles.fieldContainer}>
+                                <Text style={styles.subSectionTitle}>Vaccinations Completed:</Text>
+                                {editVaccinationList ? (
+                                    Object.keys(vaccinationStatus).map((vaccine) => (
+                                        <CheckBox
+                                            key={vaccine}
+                                            style={{ flex: 1, padding: 10 }}
+                                            onClick={() => handleVaccinationCheck(vaccine)}
+                                            isChecked={vaccinationStatus[vaccine]}
+                                            leftText={vaccine}
+                                            leftTextStyle={{ color: 'black' }}
+                                            checkBoxColor="teal"
+                                        />
+                                    ))
+                                ) : (
+                                    Object.keys(vaccinationStatus).map((vaccine) => (
+                                        <View key={vaccine} style={styles.vaccineItem}>
+                                            <Text style={styles.vaccineLabel}>{vaccine}:</Text>
+                                            <Text style={styles.vaccineText}>
+                                                {vaccinationStatus[vaccine] ? 'Yes' : 'No'}
+                                            </Text>
+                                        </View>
+                                    ))
+                                )}
+                            </View>
+                            {editVaccinationList && (
+                                <View style={styles.editButtonsContainer}>
+                                    <TouchableOpacity
+                                        onPress={handleSaveEditing}
+                                        style={styles.saveEditButton}
+                                    >
+                                        <Text style={styles.buttonText}>Save</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditing}
+                                        style={styles.cancelEditButton}
+                                    >
+                                        <Text style={styles.buttonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                onPress={() => setEditVaccinationList(!editVaccinationList)}
+                                style={styles.editVaccinationListButton}
+                            >
+                                <Text style={styles.buttonText}>
+                                    {editVaccinationList ? 'Done Editing' : 'Edit Vaccination List'}
+                                </Text>
+                            </TouchableOpacity>
+
                         </View>
                     ))}
                     <View style={styles.fieldContainer}>
@@ -314,41 +523,45 @@ const GeneralHistoryDisplay = ({ route }) => {
                         <View style={styles.addVisitContainer}>
                             <Text style={styles.subSectionTitle}>Add Visit</Text>
                             <Text style={styles.label}>Visit Date:</Text>
-                            <TextInput
-                                value={newVisit.date}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, date: text })}
-                                placeholder="DD-MM-YYYY"
-                                placeholderTextColor={COLORS.black}
-                                keyboardType="phone-pad"
-                                maxLength={10}
-                                style={styles.textInput}
-                            />
+                            <TouchableOpacity onPress={openCalendar} style={styles.textInput}>
+                                <Text>{selectedDate !== '' ? selectedDate : 'Select Date'}</Text>
+                                {selectedDate !== '' && (
+                                <Text style={styles.selectedDateText}>{selectedDate}</Text>
+                            )}
+                            {calendarVisible && (
+                                <Calendar
+                                    onDayPress={onDayPress}
+                                    markedDates={{ [selectedDate]: { selected: true } }}
+                                />
+                            )}
+                            </TouchableOpacity>
+                            
                             <Text style={styles.label}>Iron:</Text>
                             <SupplementCounter
                                 value={newVisit.iron}
-                                onIncrement={() => setNewVisit({...newVisit, iron: newVisit.iron + 1})}
-                                onDecrement={() => setNewVisit({...newVisit, iron: Math.max(0, newVisit.iron - 1)})}
+                                onIncrement={() => setNewVisit({ ...newVisit, iron: newVisit.iron + 1 })}
+                                onDecrement={() => setNewVisit({ ...newVisit, iron: Math.max(0, newVisit.iron - 1) })}
                             />
 
                             <Text style={styles.label}>Calcium:</Text>
                             <SupplementCounter
                                 value={newVisit.calcium}
-                                onIncrement={() => setNewVisit({...newVisit, calcium: newVisit.calcium + 1})}
-                                onDecrement={() => setNewVisit({...newVisit, calcium: Math.max(0, newVisit.calcium - 1)})}
+                                onIncrement={() => setNewVisit({ ...newVisit, calcium: newVisit.calcium + 1 })}
+                                onDecrement={() => setNewVisit({ ...newVisit, calcium: Math.max(0, newVisit.calcium - 1) })}
                             />
 
                             <Text style={styles.label}>Protein:</Text>
                             <SupplementCounter
                                 value={newVisit.protein}
-                                onIncrement={() => setNewVisit({...newVisit, protein: newVisit.protein + 1})}
-                                onDecrement={() => setNewVisit({...newVisit, protein: Math.max(0, newVisit.protein - 1)})}
+                                onIncrement={() => setNewVisit({ ...newVisit, protein: newVisit.protein + 1 })}
+                                onDecrement={() => setNewVisit({ ...newVisit, protein: Math.max(0, newVisit.protein - 1) })}
                             />
 
                             <Text style={styles.label}>Multivitamin:</Text>
                             <SupplementCounter
                                 value={newVisit.multivitamin}
-                                onIncrement={() => setNewVisit({...newVisit, multivitamin: newVisit.multivitamin + 1})}
-                                onDecrement={() => setNewVisit({...newVisit, multivitamin: Math.max(0, newVisit.multivitamin - 1)})}
+                                onIncrement={() => setNewVisit({ ...newVisit, multivitamin: newVisit.multivitamin + 1 })}
+                                onDecrement={() => setNewVisit({ ...newVisit, multivitamin: Math.max(0, newVisit.multivitamin - 1) })}
                             />
 
                             <Text style={styles.label}>Total No. of Supplements:</Text>
@@ -376,13 +589,24 @@ const GeneralHistoryDisplay = ({ route }) => {
                                 style={styles.textInput}
                             />
 
-                            <Text style={styles.label}>Weight (Kg):</Text>
-                            <TextInput
-                                value={newVisit.weight}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, weight: text })}
-                                keyboardType="phone-pad"
-                                style={styles.textInput}
-                            />
+                            <Text style={styles.label}>Weight:</Text>
+                            <View style={styles.weightContainer}>
+                                <TextInput
+                                    value={newVisit.weightKg}
+                                    onChangeText={(text) => setNewVisit({ ...newVisit, weightKg: text })}
+                                    keyboardType="numeric"
+                                    style={styles.weightInput}
+                                />
+                                <Text style={styles.label}>kg</Text>
+                                <TextInput
+                                    value={newVisit.weightGrams}
+                                    onChangeText={(text) => setNewVisit({ ...newVisit, weightGrams: text })}
+                                    keyboardType="numeric"
+                                    style={styles.weightInput}
+                                />
+                                <Text style={styles.label}>grams</Text>
+                            </View>
+
 
                             <Text style={styles.label}>Height (cm):</Text>
                             <TextInput
@@ -519,6 +743,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
     },
+    selectedDateText: {
+        marginTop:-17,        
+        fontSize: 16,
+        color: 'black'
+    },
     cancelVisitButton: {
         backgroundColor: 'red',
         paddingVertical: 10,
@@ -550,13 +779,13 @@ const styles = StyleSheet.create({
     supplementContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-      },
-      supplementCounter: {
+    },
+    supplementCounter: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 5,
-      },
-      counterButton: {
+    },
+    counterButton: {
         backgroundColor: 'teal',  // Set the background color to teal
         borderRadius: 8,
         //padding: 5,
@@ -565,21 +794,82 @@ const styles = StyleSheet.create({
         width: 40,
         justifyContent: 'center', // Center the content vertically
         alignItems: 'center', // Center the content horizontally
-      },
-      buttonText: {
+    },
+    buttonText: {
         fontSize: 22,
         color: 'white', // Set the text color to white
         // textAlign: 'center',
         // textAlignVertical: 'center', 
-        
-      },
-      counterValue: {
+
+    },
+    counterValue: {
         fontSize: 18,
         paddingHorizontal: 15,
         color: COLORS.black,
         //lineHeight: 30,
-      },
-    
+    },
+    vaccineItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    vaccineLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 5,
+        color: COLORS.black,
+    },
+    vaccineText: {
+        fontSize: 16,
+        color: COLORS.black,
+    },
+    editVaccinationListButton: {
+        backgroundColor: 'teal',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    editButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 10,
+    },
+    saveEditButton: {
+        backgroundColor: 'teal',
+        padding: 10,
+        borderRadius: 5,
+    },
+    cancelEditButton: {
+        backgroundColor: 'gray',
+        padding: 10,
+        borderRadius: 5,
+    },
+    buttonText: {
+        color: 'white',
+        textAlign: 'center',
+    },
+    weightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+        marginBottom: 8,
+    },
+
+    weightInput: {
+        flex: 0.4,
+        borderWidth: 1,
+        borderColor: COLORS.black,
+        borderRadius: 5,
+        paddingHorizontal: 8,
+        height: 40,
+        marginRight: 0.1,
+        color: COLORS.black,
+    },
+
 });
 
 export default GeneralHistoryDisplay;
