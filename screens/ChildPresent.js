@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageBackground, ToastAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ImageBackground,
+  ToastAndroid,
+  Alert,
+  Image
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import codegenNativeCommands from 'react-native/Libraries/Utilities/codegenNativeCommands';
+import COLORS from '../constants/colors';
 import { API_URL } from './config';
 
-const ChildPresent = () => {
+
+const ChildPresent = ({toggleMenu}) => {
   const navigation = useNavigation();
   const [isChildPresent, setIsChildPresent] = useState(false);
-  const [isChildPresentInGeneralHistory, setIsChildPresentInGeneralHistory] = useState(false);
   const [anganwadiNo, setAnganwadiNo] = useState('');
   const [childsName, setChildsName] = useState('');
-
-  // const handleUpdateForm = () => {
-
-  // };
 
   const handleViewForm = () => {
     navigation.navigate('GeneralHistoryDisplay', { anganwadiNo, childsName });
@@ -21,62 +28,70 @@ const ChildPresent = () => {
 
   const handleFormSubmit = async () => {
     try {
-      // Prepare the data to send to the server
+      if (!anganwadiNo || !childsName) {
+        Alert.alert('Missing Details', 'Please enter Anganwadi No. and Child\'s Name.', [
+          { text: 'OK', onPress: () => console.log('OK Pressed') },
+        ]);
+        return;
+      }
+
       const requestData = {
         anganwadiNo,
         childsName,
       };
 
-      const response = await fetch(`${API_URL}/checkData`, {
+      const response = await fetch(`${API_URL}/checkData2`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestData),
       });
-      console.log(response.status);
+
       if (response.status === 200) {
-        console.log('DATA PRESENT IN CUSTOMERS TABLE');
-        //check if the child is present in the GeneralHistory table
-        const response1 = await fetch(`${API_URL}/checkDataInGeneralHistory`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
-        console.log(response1.status);
-
-        if (response1.status == 200) {
-          setIsChildPresentInGeneralHistory(true);
-          //data exists in GeneralHistory table
-          ToastAndroid.showWithGravityAndOffset(
-            'General History information already filled.',
-            ToastAndroid.LONG,
-            ToastAndroid.BOTTOM,
-            50,
-            180
+        const data = await response.json();
+        setIsChildPresent(true);
+        console.log(data);
+        if (data.customerDataPresent && data.generalHistoryDataPresent) {
+          console.log('dadad');
+          Alert.alert(
+            'Data Present',
+            'Data is present in both tables. Do you want to view the form?',
+            [
+              {
+                text: 'Cancel',
+                onPress: () => console.log('Cancel Pressed'),
+                style: 'cancel',
+              },
+              {
+                text: 'View Form',
+                onPress: () =>
+                  navigation.navigate('GeneralHistoryDisplay', {
+                    anganwadiNo: anganwadiNo,
+                    childsName: childsName,
+                  }),
+              },
+            ]
           );
-        }
-        else {
-
-          setIsChildPresent(true);
-          // Data exists in the database, you can navigate to the GeneralHistoryForm screen
-          console.log('Data exists in the database');
-          console.log('Anganwadi Number: ', anganwadiNo);
-          console.log('Child Name: ', childsName);
+        } else if (data.customerDataPresent && !data.generalHistoryDataPresent) {
+          console.log('sdad');
           navigation.navigate('GeneralHistoryForm', {
             anganwadiNo: anganwadiNo,
             childsName: childsName,
           });
+        } else {
+          // No data in the customer table
+          Alert.alert(
+            'Missing Customer Data',
+            'Please fill in the Personal Information form first.',
+            [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+          );
         }
-
-
       } else {
-        console.log('DATA NOT PRESENT IN CUSTOMERS TABLE');
-        // Data does not exist in the database
+        setIsChildPresent(false);
+        console.log('adad');
         ToastAndroid.showWithGravityAndOffset(
-          'Data not present in database. Add personal infroamtion of the child.',
+          'Data not present in the database. Add personal information of the child first.',
           ToastAndroid.LONG,
           ToastAndroid.BOTTOM,
           50,
@@ -88,22 +103,23 @@ const ChildPresent = () => {
       console.error('Error submitting form:', error);
     }
   };
-
-
+  
   return (
     <ImageBackground
-      source={require('../assets/bg21.jpg')} // Replace with the path to your image asset
+      source={require('../assets/bg21.jpg')}
       style={styles.backgroundImage}
     >
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.formContainer}>
           <View style={styles.field}>
-            <Text style={styles.label}>Anganwadi No.</Text>
+            <Text style={styles.label}>Anganwadi No or Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Anganwadi No."
+              placeholder="Enter Anganwadi No/Name"
+              placeholderTextColor={COLORS.black}
               value={anganwadiNo}
               onChangeText={(text) => setAnganwadiNo(text)}
+              //keyboardType="numeric" // This line ensures the numeric keyboard
             />
           </View>
 
@@ -112,40 +128,22 @@ const ChildPresent = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter Child's Name"
+              placeholderTextColor={COLORS.black}
               value={childsName}
               onChangeText={(text) => setChildsName(text)}
             />
           </View>
 
-          {/* <TouchableOpacity style={styles.submitButton} onPress={handleFormSubmit}>
+          <TouchableOpacity style={styles.submitButton} onPress={handleFormSubmit}>
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
 
-          {isChildPresentInGeneralHistory && (
-            <TouchableOpacity style={styles.submitButton} onPress={handleViewForm}>
-              <Text style={styles.buttonText}>View Form</Text>
-            </TouchableOpacity>
-          )} */}
-
-          {!isChildPresentInGeneralHistory && (
-            <TouchableOpacity style={styles.submitButton} onPress={handleFormSubmit}>
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-          )}
-
-          {isChildPresentInGeneralHistory && (
-            <TouchableOpacity style={styles.submitButton} onPress={handleViewForm}>
-              <Text style={styles.buttonText}>View Form</Text>
-            </TouchableOpacity>
-          )}
-
-
+        
         </View>
       </ScrollView>
     </ImageBackground>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -158,7 +156,7 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 3, // Add elevation for a subtle shadow on Android
     minHeight: 300, // Increase the minimum height of the form container
-
+    
   },
   field: {
     marginBottom: 20,
@@ -167,6 +165,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     fontWeight: 'bold',
+    color:COLORS.black,
   },
   input: {
     height: 40,
@@ -174,6 +173,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
+    color:COLORS.black,
   },
   submitButton: {
     backgroundColor: 'teal',
@@ -205,6 +205,19 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     resizeMode: 'cover', // or 'stretch'
+  },
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
   },
 });
 

@@ -1,17 +1,35 @@
 import React from 'react';
-import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-//import IsChildAlreadyPresent from './IsChildAlreadyPresent';
+import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity,ScrollView,Button,toggleMenu} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import user from '../assets/user.png';
 import heartbeat from '../assets/heartbeat.png';
 import file from '../assets/file.png';
 import clipboard from '../assets/clipboard.png';
+// const CustomMenuButton = ({ toggleMenu }) => {
+//   const handleMenuToggle = () => {
+//     if (toggleMenu) {
+//       toggleMenu(); // Call the toggleMenu function received as a prop
+//     }
+//   };
 
-const HomePage = ({ route }) => {
+//   return (
+//     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
+//       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
+//     </TouchableOpacity>
+//   );
+// };
+
+
+
+
+const HomePage = ({ route,toggleMenu}) => {
   const { role, name } = route.params;
   const navigation = useNavigation();
+  const goToAboutUs = () => {
+    navigation.navigate('AboutUsScreen');
+  };
 
+  
   const goToConsolidatedReports = () => {
     navigation.navigate('ConsolidatedReports');
   };
@@ -23,7 +41,7 @@ const HomePage = ({ route }) => {
   };
 
   const selectedIcon = roleIcons[role];
-
+ 
   const goToPersonalInformation = () => {
     navigation.navigate('IsChildAlreadyPresent');
   };
@@ -39,14 +57,21 @@ const HomePage = ({ route }) => {
   };
 
   return (
+    <ScrollView style={styles.scrollView}>
     <View style={styles.container}>
+    
       <Image
         source={require('../assets/bg11.jpg')}
         style={styles.image}
       />
+   
       <View style={styles.overlay}>
         <Image source={selectedIcon} style={styles.userIcon} />
         <Text style={styles.userName}>Hello, {name}</Text>
+        <TouchableOpacity style={styles.aboutUsContainer} onPress={goToAboutUs}>
+            <Image source={require('../assets/info.png')} style={styles.infoIcon} />
+            <Text style={styles.AboutUs}>About Us</Text>
+          </TouchableOpacity>
       </View>
       <Text style={styles.menuHeading}>Menu</Text>
       <View style={styles.menuContainer}>
@@ -63,7 +88,7 @@ const HomePage = ({ route }) => {
         <View style={styles.row}>
           <TouchableOpacity style={styles.menuItem3} onPress={goToReports}>
           <Image source={file} style={{ width: 50, height: 50 }} />
-            <Text style={styles.menuItemText}>Reports</Text>
+            <Text style={styles.menuItemText}>Individual Reports</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem4} onPress={goToConsolidatedReports}>
           <Image source={clipboard} style={{ width: 50, height: 50 }} />
@@ -72,13 +97,31 @@ const HomePage = ({ route }) => {
         </View>
       </View>
     </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  menuButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 1,
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 30,
+    height: 30,
+    // Add styles for your icon if needed
+  },
   container: {
     flex: 1,
   },
+ 
   image: {
     width: '100%',
     height: 280,
@@ -95,6 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'left',
     marginLeft: 10, // Added margin
   },
+ 
   menuHeading: {
     fontSize: 23,
     fontWeight: 'bold',
@@ -169,8 +213,32 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
-    marginTop:25,
+    marginTop:15,
   },
+  aboutUsContainer: {
+    position: 'absolute',
+    top: -180,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderColor: 'white',
+  },
+
+  AboutUs: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight:'bold'
+  },
+  infoIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 5,
+  },
+
 });
 
 export default HomePage;

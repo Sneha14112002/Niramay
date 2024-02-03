@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { StatusBar, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -23,16 +23,34 @@ import HaemoglobinPerChild from './screens/HaemoglobinPerChild'
 import GradePerChild from './screens/GradePerChild'
 import AnganwadiCountvsBit_name from './screens/AnganwadiCountvsBit_name';
 import BitNamevsGenderGraph from './screens/BitNamevsGenderGraph';
-const Stack = createNativeStackNavigator();
 import GrowthChartPerChild from './screens/GrowthChartPerChild';
+import PhoneCheck from './screens/PhoneCheck';
+import GradeTransition from './screens/GradeTransition';
+const Stack = createNativeStackNavigator();
+import Menu from './screens/menu';
 import BMIChartvsPerVisit from './screens/BMIChartvsPerVisit';
 import AnganwadiCountPerBit from './screens/AnganwadiCountPerBit';
+import ChangePassword from './screens/ChangePassword';
+import SideMenu from 'react-native-side-menu';
+import AboutUsScreen from './screens/AboutUsScreen';
+
 export default function App() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showDrawerButton, setShowDrawerButton] = useState(false); // Add state to control drawer button visibility
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
   return (
     <View style={{ flex: 1 }}>
       <StatusBar backgroundColor="teal" barStyle="light-content" />
       <StatusBar hidden={true} />
       <NavigationContainer>
+      <SideMenu
+      isOpen={isOpen}
+      menu={<Menu toggleMenu={toggleMenu} />}
+      onChange={(isOpen) => setIsOpen(isOpen)}
+    >
         <Stack.Navigator initialRouteName='Welcome'>
           <Stack.Screen
             name="Welcome"
@@ -42,23 +60,28 @@ export default function App() {
               shadowColor: 'transparent'
             }}
           />
-
+          
+         
           <Stack.Screen
-            name="HomePage"
-            component={HomePage}
+            name="Menu"
+            component={Menu}
             options={{
               headerShown: false,
-
-
-              // headerStyle: {
-              //   backgroundColor: COLORS.theme, // Set your desired background color
-              //   paddingVertical: 10, // Add vertical padding to the header
-              // },
-              // headerTintColor: COLORS.white,
-              // title: 'Home'
-              // // headerTintColor: COLORS.white,
+              shadowColor: 'transparent'
             }}
           />
+          
+
+          <Stack.Screen
+  name="HomePage"
+  options={{
+    headerShown: false,
+  }}
+>
+  {(props) => (
+    <HomePage {...props} toggleMenu={toggleMenu} />
+  )}
+</Stack.Screen>
 
           <Stack.Screen
             name="CustomerForm"
@@ -207,7 +230,7 @@ export default function App() {
 
           <Stack.Screen
             name="BitNamevsGender"
-            component={BitNamevsGender}
+   
             options={{
               // headerShown: false,
               headerStyle: {
@@ -217,7 +240,11 @@ export default function App() {
               headerTintColor: COLORS.white,
               title: "Report",
             }}
-          />
+            >
+  {(props) => (
+    <BitNamevsGender {...props} toggleMenu={toggleMenu} />
+  )}
+</Stack.Screen>
           <Stack.Screen
             name="GradeDistribution"
             component={GradeDistribution}
@@ -247,7 +274,7 @@ export default function App() {
 
           <Stack.Screen
             name="Reports"
-            component={Reports}
+            
             options={{
               // headerShown: false,
               headerStyle: {
@@ -257,8 +284,11 @@ export default function App() {
               headerTintColor: COLORS.white,
               title: "Report",
             }}
-          />
-
+            >
+  {(props) => (
+    <Reports {...props} toggleMenu={toggleMenu} />
+  )}
+</Stack.Screen>
           <Stack.Screen
             name="HeightPerChild"
             component={HeightPerChild}
@@ -319,7 +349,7 @@ export default function App() {
 
           <Stack.Screen
             name="BitNamevsGenderGraph"
-            component={BitNamevsGenderGraph}
+           
             options={{
               // headerShown: false,
               headerStyle: {
@@ -329,7 +359,11 @@ export default function App() {
               headerTintColor: COLORS.white,
               title: "Report",
             }}
-          />
+            >
+  {(props) => (
+    <BitNamevsGenderGraph {...props} toggleMenu={toggleMenu} />
+  )}
+</Stack.Screen>
 
 <Stack.Screen
             name="GrowthChartPerChild"
@@ -361,7 +395,7 @@ export default function App() {
 
           <Stack.Screen
             name="AnganwadiCountPerBit"
-            component={AnganwadiCountPerBit}
+        
             options={{
               // headerShown: false,
               headerStyle: {
@@ -371,13 +405,67 @@ export default function App() {
               headerTintColor: COLORS.white,
               title: "Report",
             }}
-          />
+            >
+  {(props) => (
+    <AnganwadiCountPerBit {...props} toggleMenu={toggleMenu} />
+  )}
+</Stack.Screen>
 
 
+<Stack.Screen
+              name="PhoneCheck"
+              component={PhoneCheck}
+              options={{
+                // headerShown: false,
+                headerStyle: {
+                  backgroundColor: COLORS.theme, // Set your desired background color
 
+                },
+                headerTintColor: COLORS.white,
+                title: "Verification",
+              }}
+            />
 
+<Stack.Screen
+              name="ChangePassword"
+              component={ChangePassword}
+              options={{
+                // headerShown: false,
+                headerStyle: {
+                  backgroundColor: COLORS.theme, // Set your desired background color
 
-        </Stack.Navigator>
+                },
+                headerTintColor: COLORS.white,
+                title: "Verification",
+              }}
+            />
+
+<Stack.Screen
+              name="GradeTransition"
+              component={GradeTransition}
+              options={{
+                // headerShown: false,
+                headerStyle: {
+                  backgroundColor: COLORS.theme, // Set your desired background color
+
+                },
+                headerTintColor: COLORS.white,
+                title: "Consolidated Report",
+              }}
+            />
+             <Stack.Screen
+              name="AboutUsScreen"
+              component={AboutUsScreen}
+              options={{
+                headerStyle: {
+                  backgroundColor: COLORS.theme,
+                },
+                headerTintColor: COLORS.white,
+                title: "About Us",
+              }}
+            />
+          </Stack.Navigator>
+        </SideMenu>
       </NavigationContainer>
     </View>
   );

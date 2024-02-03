@@ -4,7 +4,8 @@ const COLORS = {
     primary: "#007260",
     secondary: "#39B68D",
     grey: "#CCCCCC",
-    theme:"teal"
+    theme:"teal",
+    bg:"#009D90"
     
 }
 

@@ -7,6 +7,7 @@ const options = [
   { key: 'option2', label: 'Grade Distribution Per Bit and Visit', image: require('../assets/Distribution.png') },
   { key: 'option3', label: 'BitName VS GenderGraph ',image: require('../assets/Gender.png') },
   { key: 'option4', label: 'BitName VS Anganwadi Count ', image: require('../assets/Anganwadi.png') },
+  { key: 'option5', label: 'Grade Transition Per Bit Name ', image: require('../assets/Distribution.png') },
   // { key: 'option4', label: 'Option 4', icon: 'heart' },
   // Add more options as needed
 ];
@@ -36,6 +37,10 @@ const ConsolidatedReports = ({ navigation }) => {
 
               if (item.key === 'option4') {
                 navigation.navigate('AnganwadiCountPerBit'); // Navigate to BitNamevsGender screen
+              }
+
+              if (item.key === 'option5') {
+                navigation.navigate('GradeTransition'); // Navigate to BitNamevsGender screen
               }
               // You can add similar logic for other options if needed
               // if (item.key === 'option3') {

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, SafeAreaView, Pressable } from 'react-native';
+import React, { useState,useEffect } from 'react';
+import { View, Text, Image, TextInput, TouchableOpacity, SafeAreaView, Pressable ,Alert} from 'react-native';
+
 import COLORS from '../constants/colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Checkbox from '@react-native-community/checkbox';
@@ -15,6 +16,14 @@ const Login = ({ navigation }) => {
     const [password, setPassword] = useState(''); // State for password input
     const [isPasswordShown, setIsPasswordShown] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
+    const [isEmailEntered, setIsEmailEntered] = useState(false); // Track if email is entered
+    useEffect(() => {
+        setIsEmailEntered(!!email); // Update isEmailEntered based on whether email is present or not
+    }, [email]);
+    const handleForgotPassword = () => {
+        // Navigate to the Forgot Password screen or show a modal
+        navigation.navigate('PhoneCheck'); // Replace 'ForgotPassword' with the actual screen name
+    };
     const handleLogin = () => {
         // Prepare login data from form inputs
         const loginData = {
@@ -33,20 +42,24 @@ const Login = ({ navigation }) => {
             .then((response) => {
                 console.log(response);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Network response was not ok 123');
                 }
                 return response.json();
             })
             .then((data) => {
-                const { role, name } = data.user; // Assuming the server response includes 'role' and 'name' fields
-                console.log(role, name);
+                const { role, name } = data.user;
                 navigation.navigate('HomePage', { role, name });
             })
-            .catch((error) => {
-                console.log("hello");
-                // Handle error (e.g., display error message)
-                console.error('Error logging in: ', error);
-            });
+              .catch((error) => {
+                // console.error('Error logging in: ', error);
+                // Show error alert with custom style
+                Alert.alert(
+                  'Error',
+                  'Incorrect username or password',
+                  [{ text: 'OK', style: 'default', onPress: () => console.log('OK Pressed') }],
+                  { cancelable: false, style: 'error' } // Add a custom style property
+                );
+              });
     };
 
     return (
@@ -63,7 +76,8 @@ const Login = ({ navigation }) => {
                         color: COLORS.black,
                         fontSize: 17,
                         fontWeight: 400,
-                        marginVertical: 8
+                        marginVertical: 15, 
+
                     }}>Email address / ईमेल</Text>
 
                     <View style={{
@@ -137,24 +151,19 @@ const Login = ({ navigation }) => {
                             }
 
                         </TouchableOpacity>
+                       
+                
                     </View>
                 </View>
+                {isEmailEntered && (
+                    <TouchableOpacity onPress={handleForgotPassword}>
+                        <Text style={{ fontSize: 14, color: COLORS.theme, textAlign: 'left', marginTop: 5, marginBottom: 10 }}>Forgot Password?</Text>
+                    </TouchableOpacity>
+                )}
+                
 
-                <View style={{
-                    flexDirection: 'row',
-                    marginVertical: 6
-                }}>
-                    <Checkbox
-                        style={{ color: COLORS.black, marginRight: 8 }}
-                        value={isChecked}
-                        onValueChange={setIsChecked}
-                        color={isChecked ? COLORS.theme : undefined}
-                    />
-
-                    <Text style={{ color: COLORS.black, fontSize: 14 }}>
-                        Remember Me
-                    </Text>
-                </View>
+                    
+              
 
                 <Button
                     title="Login"
@@ -166,63 +175,6 @@ const Login = ({ navigation }) => {
                     }}
                     onPress={handleLogin}
                 />
-
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
-                    <View
-                        style={{
-                            flex: 1,
-                            height: 1,
-                            backgroundColor: COLORS.grey,
-                            marginHorizontal: 10
-                        }}
-                    />
-                    <Text style={{ color: COLORS.black, fontSize: 14 }}>Or Login with</Text>
-                    <View
-                        style={{
-                            flex: 1,
-                            height: 1,
-                            backgroundColor: COLORS.grey,
-                            marginHorizontal: 10
-                        }}
-                    />
-                </View>
-
-                <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'center'
-                }}>
-
-
-                    <TouchableOpacity
-                        onPress={() => console.log("Pressed")}
-                        style={{
-                            flex: 1,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexDirection: 'row',
-                            height: 52,
-                            width: 2,
-                            borderWidth: 1,
-                            borderColor: COLORS.grey,
-
-
-                            borderRadius: 10
-                        }}
-                    >
-                        <Image
-                            source={require("../assets/google.png")}
-                            style={{
-                                height: 36,
-                                width: 36,
-                                marginRight: 8
-                            }}
-                            resizeMode='contain'
-                        />
-
-                        <Text style={{ color: COLORS.black, fontSize: 14 }}>Google</Text>
-                    </TouchableOpacity>
-                </View>
 
                 <View style={{
                     flexDirection: "row",

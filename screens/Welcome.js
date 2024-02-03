@@ -1,171 +1,95 @@
-// import { View, Text, Pressable, Image, Dimensions, StyleSheet } from 'react-native';
-// import React from 'react';
-// import { LinearGradient } from "expo-linear-gradient";
-// import COLORS from '../constants/colors';
-// import Button from '../components/Button';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import COLORS from '../constants/colors';
 
-// const Welcome = ({ navigation }) => {
-//     const windowHeight = Dimensions.get('window').height;
+const Welcome = () => {
+  const navigation = useNavigation();
 
-//     return (
-//         <View style={styles.container}>
-//             <Image
-//                 source={require('../assets/bg1.jpg')}
-//                 style={styles.backgroundImage}
-//             />
-//             <LinearGradient
-//                 style={styles.overlay}
-//                 colors={[COLORS.black, COLORS.black]}
-//             >
-//                 <View style={styles.contentContainer}>
-//                     <View style={styles.logoContainer}>
-//                         <Image
-//                             source={require('../assets/logo1.jpg')}
-//                             style={styles.logoImage}
-//                         />
-//                     </View>
-//                     <Text style={styles.title}>NIRAMAY</Text>
-//                     <Text style={styles.title}>BHARAT</Text>
-//                     <Text style={styles.subtitle}>सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</Text>
-//                     <Button
-//                         title="Join Now"
-//                         onPress={() => navigation.navigate("Signup")}
-//                         filled
-//                         style={styles.joinButton}
-//                     />
-//                     <View style={styles.loginContainer}>
-//                         <Text style={styles.loginText}>Already have an account?</Text>
-//                         <Pressable
-//                             onPress={() => navigation.navigate("Login")}
-//                         >
-//                             <Text style={styles.loginLink}>Login</Text>
-//                         </Pressable>
-//                     </View>
-//                 </View>
-//             </LinearGradient>
-//         </View>
-//     );
-// }
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <ImageBackground
+        source={require('../assets/bg27.jpg')}
+        style={styles.backgroundImage}
+      >
+        <View style={styles.innerContainer}>
+          <Image source={require('../assets/logo2.jpg')} style={styles.logo} />
+          <Text style={styles.title}>Niramay Bharat</Text>
+          <Text style={styles.tagline}>सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</Text>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Signup')}>
+              <Text style={styles.buttonText}>Sign Up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ImageBackground>
+    </ScrollView>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    backgroundImage: {
-        flex: 1,
-        resizeMode: 'cover',
-        position: 'absolute',
-        width: '100%',
-        height: '68%',
-    },
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        paddingHorizontal: 22,
-        position: "absolute",
-        bottom: 0,
-        width: "100%",
-        height: "65%",
-    },
-    contentContainer: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    logoContainer: {
-        alignSelf: 'center',
-        marginBottom: 10,
-    },
-    logoImage: {
-        width: 90,
-        height: 95,
-    },
-    title: {
-        fontSize: 46,
-        fontWeight: '800',
-        color: COLORS.white,
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 22,
-        color: COLORS.white,
-        textAlign: 'center',
-        marginTop: 15,
-    },
-    joinButton: {
-        marginTop: 15,
-        width: "100%",
-        backgroundColor: COLORS.theme,
-        fontWeight: "bold",
-        alignSelf: 'center',
-    },
-    loginContainer: {
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 10,
-    },
-    loginText: {
-        fontSize: 16,
-        color: COLORS.white,
-    },
-    loginLink: {
-        fontSize: 16,
-        color: COLORS.white,
-        fontWeight: "bold",
-        marginLeft: 4,
-    },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
+  innerContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.3)', // Adjust the last value for opacity
+  },
+  logo: {
+    // marginTop: -10,
+    width: 100,
+    height: 100,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#fff',
+  },
+  tagline: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 32,
+    color: '#fff',
+  },
+  buttonContainer: {
+    marginTop: 320,
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  button: {
+    backgroundColor: 'transparent',
+    padding: 10,
+    borderRadius: 25, // Adjust this value for curved edges
+    width: 250,
+    marginBottom: 16,
+    marginLeft: 10,
+    marginRight: 10,
+    alignItems: 'center',
+    borderWidth: 2, // Border width
+    borderColor: '#fff',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
-
-
-
-import { View, Text, Pressable, Image, Dimensions, StyleSheet } from 'react-native';
-import React from 'react';
-import LinearGradient from 'react-native-linear-gradient'; // Import from the library
-import COLORS from '../constants/colors';
-import Button from '../components/Button';
-
-const Welcome = ({ navigation }) => {
-    const windowHeight = Dimensions.get('window').height;
-
-    return (
-        <View style={styles.container}>
-            <Image
-                source={require('../assets/bg1.jpg')}
-                style={styles.backgroundImage}
-            />
-            <LinearGradient
-                style={styles.overlay}
-                colors={[COLORS.black, COLORS.black]}
-            >
-                <View style={styles.contentContainer}>
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('../assets/logo1.jpg')}
-                            style={styles.logoImage}
-                        />
-                    </View>
-                    <Text style={styles.title}>NIRAMAY</Text>
-                    <Text style={styles.title}>BHARAT</Text>
-                    <Text style={styles.subtitle}>सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</Text>
-                    <Button
-                        title="Join Now"
-                        onPress={() => navigation.navigate("Signup")}
-                        filled
-                        style={styles.joinButton}
-                    />
-                    <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>Already have an account?</Text>
-                        <Pressable
-                            onPress={() => navigation.navigate("Login")}
-                        >
-                            <Text style={styles.loginLink}>Login</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </LinearGradient>
-        </View>
-    );
-}
-
-// Rest of your styles and export statement remains the same
 
 export default Welcome;

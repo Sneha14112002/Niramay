@@ -1,22 +1,37 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageBackground,ToastAndroid} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageBackground, ToastAndroid, Alert, Image, toggleMenu } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import COLORS from '../constants/colors';
 import { API_URL } from './config';
-const IsChildAlreadyPresent = () => {
+
+
+const IsChildAlreadyPresent = ({ toggleMenu }) => {
   const navigation = useNavigation();
-  const [isChildPresent, setIsChildPresent] = useState(false); 
+  const [isChildPresent, setIsChildPresent] = useState(false);
   const [anganwadiNo, setAnganwadiNo] = useState('');
   const [childsName, setChildsName] = useState('');
   const [isUpdateVisible, setIsUpdateVisible] = useState(false);
+
   const handleFormSubmit = async () => {
+   const anganwadiNo_name=anganwadiNo;
     try {
+      // Check if the fields are empty
+      if (!anganwadiNo || !childsName) {
+        // Show a toast or an alert to indicate that details are required
+        Alert.alert(
+          'Missing Details',
+          'Please enter Anganwadi No. and Child\'s Name.',
+          [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+        );
+        return; // Stop further execution
+      }
+
       // Prepare the data to send to the server
       const requestData = {
         anganwadiNo,
         childsName,
       };
-      
+
       const response = await fetch(`${API_URL}/checkData`, {
         method: 'POST',
         headers: {
@@ -31,7 +46,7 @@ const IsChildAlreadyPresent = () => {
         // Data exists in the database, you can navigate to the next screen or perform other actions
         console.log('Data exists in the database');
         ToastAndroid.showWithGravityAndOffset(
-          'Data already exists in database. Click on View Form or Update.',
+          'Data already exists in the database. Click on View Form or Update.',
           ToastAndroid.LONG,
           ToastAndroid.BOTTOM,
           50,
@@ -39,9 +54,8 @@ const IsChildAlreadyPresent = () => {
         );
       } else {
         // Data does not exist in the database
-        navigation.navigate('CustomerForm');
+        navigation.navigate('CustomerForm',{anganwadiNo_name, childsName });
         console.log("Data doesn't exist in the database");
-        console.log("88888888888");
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -51,25 +65,26 @@ const IsChildAlreadyPresent = () => {
   const handleViewForm = () => {
     navigation.navigate('ViewForm', { anganwadiNo, childsName });
   };
-  const handleUpdate = () => {
-    // Perform the update action here or navigate to the update screen
-    // You can customize this based on your requirements
-  };
+
+ 
   return (
+
     <ImageBackground
-      source={require('../assets/bg21.jpg')} // Replace with the path to your image asset
+      source={require('../assets/bg21.jpg')}
       style={styles.backgroundImage}
     >
       <ScrollView contentContainerStyle={styles.container}>
+
         <View style={styles.formContainer}>
           <View style={styles.field}>
-            <Text style={styles.label}>Anganwadi No.</Text>
+          <Text style={styles.label}>Anganwadi No or Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Anganwadi No."
+              placeholder="Enter Anganwadi No/Name"
               placeholderTextColor={COLORS.black}
               value={anganwadiNo}
               onChangeText={(text) => setAnganwadiNo(text)}
+              //keyboardType="numeric" // This line ensures the numeric keyboard
             />
           </View>
 
@@ -94,7 +109,7 @@ const IsChildAlreadyPresent = () => {
                 <Text style={styles.buttonText}>View Form</Text>
               </TouchableOpacity>
 
-              
+
             </View>
           )}
         </View>
@@ -103,7 +118,21 @@ const IsChildAlreadyPresent = () => {
   );
 };
 
+
 const styles = StyleSheet.create({
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
   container: {
     flex: 1,
     padding: 16,
@@ -115,7 +144,7 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 3, // Add elevation for a subtle shadow on Android
     minHeight: 300, // Increase the minimum height of the form container
-    
+
   },
   field: {
     marginBottom: 20,
@@ -124,7 +153,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     fontWeight: 'bold',
-    color:COLORS.black,
+    color: COLORS.black,
   },
   input: {
     height: 40,
@@ -132,7 +161,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    color:COLORS.black,
+    color: COLORS.black,
   },
   submitButton: {
     backgroundColor: 'teal',
