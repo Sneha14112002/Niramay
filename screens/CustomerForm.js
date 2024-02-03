@@ -34,11 +34,8 @@ const CustomerForm = ({route}) => {
   const [bitName, setBitName] = useState('');
   const [anganwadiNo, setAnganwadiNo] = useState(anganwadiNo_name || '');
   const [registrationDate, setRegistrationDate] = useState('');
-  const [anganwadiNo, setAnganwadiNo] = useState(anganwadiNo_name || '');
-  const [registrationDate, setRegistrationDate] = useState('');
   const [assistantName, setAssistantName] = useState('');
   const [assistantPhone, setAssistantPhone] = useState('');
-  const [childName, setChildName] = useState(childsName || '');
   const [childName, setChildName] = useState(childsName || '');
   const [childDob, setChildDob] = useState('');
   const [childGender, setChildGender] = useState('');
@@ -57,8 +54,6 @@ const CustomerForm = ({route}) => {
   const [showBitSection, setShowBitSection] = useState(false);
   const [showAssistantSection, setShowAssistantSection] = useState(false);
   const [showChildSection, setShowChildSection] = useState(false);
-  const [total_siblings, setTotalSiblings] = useState(0);
-  const [chief_assistantName, setChiefAssistantname] = useState('');
   const [total_siblings, setTotalSiblings] = useState(0);
   const [chief_assistantName, setChiefAssistantname] = useState('');
   const [showFamilySection, setShowFamilySection] = useState(false);
@@ -252,7 +247,6 @@ const CustomerForm = ({route}) => {
     if (siblings.length >= total_siblings) {
       // Display an error message when the limit is reached
       Alert.alert('Siblings limit reached');
-      Alert.alert('Siblings limit reached');
     } else {
       setSiblings([...siblings, {name: '', age: '', malnourished: false}]);
     }
@@ -292,7 +286,6 @@ const CustomerForm = ({route}) => {
     totalFamilyMembers: '',
     childHb: '',
     childPhone: '',
-    chief_assistantName: '',
     chief_assistantName: '',
   });
   const handleForSubmit = async () => {
@@ -365,28 +358,7 @@ const CustomerForm = ({route}) => {
         father_occupation: fatherOccupation,
         father_education: fatherEducation,
         total_family_members: totalFamilyMembers,
-        bit_name: bitName,
-        chief_assistantName: chief_assistantName,
-        anganwadi_no: anganwadiNo,
-        assistant_name: assistantName,
-        date: formattedRegistrationDate,
-        assistant_phone: assistantPhone,
-        child_name: childName,
-        child_dob: formattedChildDob,
-        child_gender: childGender,
-        child_phone: childPhone,
-        mother_name: motherName,
-        mother_education: motherEducation,
-        mother_occupation: motherOccupation,
-        mother_age_at_first_pregnancy: motherAgeAtFirstPregnancy,
-        mother_age_at_marriage: motherAgeAtMarriage,
-        child_weight_after_birth: childWeightAfterBirth,
-        father_name: fatherName,
-        father_occupation: fatherOccupation,
-        father_education: fatherEducation,
-        total_family_members: totalFamilyMembers,
         addictions,
-        source_of_drinking_water: sourceOfDrinkingWater,
         source_of_drinking_water: sourceOfDrinkingWater,
         other,
         TotalSiblings: total_siblings,
@@ -409,18 +381,9 @@ const CustomerForm = ({route}) => {
         body: JSON.stringify(formData),
       });
 
-
       if (response.status === 200) {
         console.log('Form submitted successfully');
         submitSiblingData();
-        Alert.alert('Success', 'Visit data submitted successfully', [
-          {
-            text: 'Okay',
-            onPress: () => {
-              navigation.navigate('IsChildAlreadyPresent'); // Replace 'HomePage' with your actual home screen name
-            },
-          },
-        ]);
         Alert.alert('Success', 'Visit data submitted successfully', [
           {
             text: 'Okay',
@@ -437,7 +400,6 @@ const CustomerForm = ({route}) => {
     }
   };
 
-
   const submitSiblingData = () => {
     const requestBody = JSON.stringify({
       anganwadi_no: anganwadiNo,
@@ -452,7 +414,6 @@ const CustomerForm = ({route}) => {
       },
       body: requestBody,
     };
-
 
     fetch(`${API_URL}/submit-sibling-data`, requestOptions)
       .then(response => {
@@ -470,7 +431,6 @@ const CustomerForm = ({route}) => {
   };
 
   const handleSubmit = async () => {
-  const handleSubmit = async () => {
     handleForSubmit();
     console.log(anganwadiNo_name);
     console.log(childsName);
@@ -480,10 +440,6 @@ const CustomerForm = ({route}) => {
 
     if (bitName === '') {
       newErrors.bitName = 'Please enter Bit Name';
-      hasErrors = true;
-    }
-    if (chief_assistantName === '') {
-      newErrors.chief_assistantName = 'Please enter  Supervisor Name ';
       hasErrors = true;
     }
     if (chief_assistantName === '') {
@@ -600,7 +556,6 @@ const CustomerForm = ({route}) => {
       <StatusBar barStyle="dark-content" backgroundColor="teal" />
 
       <View style={styles.formContainer}>
-        <ScrollView
         <ScrollView
           contentContainerStyle={styles.formContent}
           showsVerticalScrollIndicator={false}>
@@ -1357,7 +1312,6 @@ const styles = StyleSheet.create({
     width: windowWidth * 0.95, // Adjust this value to make the form wider
     alignSelf: 'center',
     marginTop: -1,
-    marginTop: -1,
     overflowY: 'auto', // Enable vertical scrolling if content overflows
     maxHeight: '80vh',
   },
@@ -1513,7 +1467,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
 
-
     borderRadius: 8,
     marginTop: 10,
     alignSelf: 'flex-start',
@@ -1572,9 +1525,7 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     marginLeft: 10, // Add margin to separate checkbox from label
-    marginLeft: 10, // Add margin to separate checkbox from label
     fontSize: 16,
-    color: 'black',
     color: 'black',
   },
   label: {

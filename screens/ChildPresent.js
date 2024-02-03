@@ -11,28 +11,13 @@ import {
   Alert,
   Image
 } from 'react-native';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  ImageBackground,
-  ToastAndroid,
-  Alert,
-  Image
-} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import COLORS from '../constants/colors';
 import { API_URL } from './config';
-import { API_URL } from './config';
 
 
-const ChildPresent = ({toggleMenu}) => {
 const ChildPresent = ({toggleMenu}) => {
   const navigation = useNavigation();
-  const [isChildPresent, setIsChildPresent] = useState(false);
   const [isChildPresent, setIsChildPresent] = useState(false);
   const [anganwadiNo, setAnganwadiNo] = useState('');
   const [childsName, setChildsName] = useState('');
@@ -50,19 +35,10 @@ const ChildPresent = ({toggleMenu}) => {
         return;
       }
 
-      if (!anganwadiNo || !childsName) {
-        Alert.alert('Missing Details', 'Please enter Anganwadi No. and Child\'s Name.', [
-          { text: 'OK', onPress: () => console.log('OK Pressed') },
-        ]);
-        return;
-      }
-
       const requestData = {
         anganwadiNo,
         childsName,
       };
-
-      const response = await fetch(`${API_URL}/checkData2`, {
 
       const response = await fetch(`${API_URL}/checkData2`, {
         method: 'POST',
@@ -73,7 +49,6 @@ const ChildPresent = ({toggleMenu}) => {
       });
 
       if (response.status === 200) {
-        const data = await response.json();
         const data = await response.json();
         setIsChildPresent(true);
         console.log(data);
@@ -112,25 +87,10 @@ const ChildPresent = ({toggleMenu}) => {
             [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
           );
         }
-          });
-        } else {
-          // No data in the customer table
-          Alert.alert(
-            'Missing Customer Data',
-            'Please fill in the Personal Information form first.',
-            [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
-          );
-        }
       } else {
         setIsChildPresent(false);
         console.log('adad');
         ToastAndroid.showWithGravityAndOffset(
-          'Data not present in the database. Add personal information of the child first.',
-          ToastAndroid.LONG,
-          ToastAndroid.BOTTOM,
-          50,
-          180
-        );
           'Data not present in the database. Add personal information of the child first.',
           ToastAndroid.LONG,
           ToastAndroid.BOTTOM,
@@ -144,10 +104,8 @@ const ChildPresent = ({toggleMenu}) => {
     }
   };
   
-  
   return (
     <ImageBackground
-      source={require('../assets/bg21.jpg')}
       source={require('../assets/bg21.jpg')}
       style={styles.backgroundImage}
     >
@@ -155,15 +113,12 @@ const ChildPresent = ({toggleMenu}) => {
         <View style={styles.formContainer}>
           <View style={styles.field}>
             <Text style={styles.label}>Anganwadi No or Name</Text>
-            <Text style={styles.label}>Anganwadi No or Name</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Anganwadi No/Name"
               placeholder="Enter Anganwadi No/Name"
               placeholderTextColor={COLORS.black}
               value={anganwadiNo}
               onChangeText={(text) => setAnganwadiNo(text)}
-              //keyboardType="numeric" // This line ensures the numeric keyboard
               //keyboardType="numeric" // This line ensures the numeric keyboard
             />
           </View>
@@ -183,7 +138,6 @@ const ChildPresent = ({toggleMenu}) => {
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
 
-        
         
         </View>
       </ScrollView>
@@ -251,19 +205,6 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     resizeMode: 'cover', // or 'stretch'
-  },
-  menuButton: {
-    position: 'absolute',
-    bottom: -20,
-    right: 1,
-    zIndex: 1,
-
-    // Add any additional styles you need for positioning and appearance
-  },
-  menuIcon: {
-    width: 28,
-    height: 30,
-    // Add styles for your icon if needed
   },
   menuButton: {
     position: 'absolute',

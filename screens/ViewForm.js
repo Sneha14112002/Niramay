@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ActivityIndicator, StyleSheet, ScrollView, TouchableOpacity, Switch, Image } from 'react-native';
-import { View, Text, TextInput, ActivityIndicator, StyleSheet, ScrollView, TouchableOpacity, Switch, Image } from 'react-native';
 // import NetInfo from '@react-native-community/netinfo';
 import { API_URL } from './config.js';
-import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors.js';
-import { color } from 'react-native-elements/dist/helpers/index.js';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import COLORS from '../constants/colors.js';
-import RNPrint from 'react-native-print';
-import { RadioButton } from 'react-native-paper'; // Import RadioButton from react-native-paper
-import CheckBox from 'react-native-check-box';
-import moment from 'moment-timezone';
-
 import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors.js';
 import { color } from 'react-native-elements/dist/helpers/index.js';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
@@ -25,10 +15,7 @@ const ViewForm = ({ route }) => {
   const { anganwadiNo, childsName } = route.params;
   const [selectedSource, setSelectedSource] = useState(''); // State to track selected source
   const [otherSourceValue, setOtherSourceValue] = useState('');
-  const [selectedSource, setSelectedSource] = useState(''); // State to track selected source
-  const [otherSourceValue, setOtherSourceValue] = useState('');
   const [formData, setFormData] = useState(null);
-  const [siblingsData, setSiblingsData] = useState([]);
   const [siblingsData, setSiblingsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [siblings, setSiblings] = useState([]);
@@ -184,11 +171,6 @@ const ViewForm = ({ route }) => {
     setNewTotalFamilyMembers(formData.total_family_members + 1);
     setFormData({ ...formData, TotalSiblings: newTotalSiblings + 1, total_family_members: newTotalFamilyMembers + 1 });
 
-    setUpdatedSiblings([...updatedSiblings, newSibling]);
-    setNewTotalSiblings(formData.TotalSiblings + 1);
-    setNewTotalFamilyMembers(formData.total_family_members + 1);
-    setFormData({ ...formData, TotalSiblings: newTotalSiblings + 1, total_family_members: newTotalFamilyMembers + 1 });
-
 
   };
 
@@ -196,9 +178,6 @@ const ViewForm = ({ route }) => {
     const updatedSiblings = [...siblings];
     updatedSiblings.splice(index, 1);
     setSiblings(updatedSiblings);
-    setNewTotalSiblings(formData.TotalSiblings - 1);
-    setNewTotalFamilyMembers(formData.total_family_members - 1);
-    setFormData({ ...formData, TotalSiblings: newTotalSiblings - 1, total_family_members: newTotalFamilyMembers - 1 });
     setNewTotalSiblings(formData.TotalSiblings - 1);
     setNewTotalFamilyMembers(formData.total_family_members - 1);
     setFormData({ ...formData, TotalSiblings: newTotalSiblings - 1, total_family_members: newTotalFamilyMembers - 1 });
@@ -210,7 +189,6 @@ const ViewForm = ({ route }) => {
     setSiblings(updatedSiblings);
   };
 
-
   const handleSaveChanges = async () => {
     try {
       // Prepare the data to be sent to the server
@@ -221,13 +199,9 @@ const ViewForm = ({ route }) => {
       };
 
 
-
-
       console.log("hello");
       console.log(requestData);
-      console.log(requestData);
       // Send a POST request to save the siblings data
-
 
       const response = await fetch(`${API_URL}/submit-sibling`, {
         method: 'POST',
@@ -236,7 +210,6 @@ const ViewForm = ({ route }) => {
         },
         body: JSON.stringify(requestData),
       });
-
 
       if (response.status === 200) {
         // Data saved successfully, you can perform any additional actions here
@@ -268,29 +241,7 @@ const ViewForm = ({ route }) => {
       console.log('Failed to save siblings data');
     }
 
-    const updateSIbling = {
-      anganwadiNo,
-      childsName,
-      newTotalFamilyMembers,
-      newTotalSiblings
-    };
-    const response = await fetch(`${API_URL}/updateSibling`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updateSIbling),
-    });
-
-    if (response.status === 200) {
-      // Data saved successfully, you can perform any additional actions here
-      console.log('Siblings data saved successfully');
-    } else {
-      console.log('Failed to save siblings data');
-    }
-
   };
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -312,7 +263,6 @@ const ViewForm = ({ route }) => {
           const data = await response.json();
           setFormData(data);
 
-
         } else {
           console.log('Data not found in the database');
         }
@@ -326,15 +276,11 @@ const ViewForm = ({ route }) => {
     fetchData();
   }, [anganwadiNo, childsName]);
   console.log("Form Data: ", formData);
-  console.log("Form Data: ", formData);
   useEffect(() => {
     // Fetch sibling data here
     const fetchSiblingData = async () => {
       try {
         const requestData = {
-          anganwadiNo,
-          childsName,
-        };
           anganwadiNo,
           childsName,
         };
@@ -618,263 +564,6 @@ const ViewForm = ({ route }) => {
     'Paternal Grandfather': 'पाट्या',
   };
 
-  const [editedPhoneNumber, setEditedPhoneNumber] = useState(""); // Initialize with the existing phone number
-  // Add a state variable to track whether the phone number is in editing mode
-  const [isEditingPhoneNumber, setIsEditingPhoneNumber] = useState(false);
-  const [newAssitantPhNo, setnewAssistantPhNo] = useState("");
-  const [isEditingAssistantPhNo, setIsEditingAssistantPhNo] = useState(false);
-  // Function to handle the update button press and enable editing mode for the phone number
-  const handleUpdatePhoneNumber = () => {
-    setIsEditingPhoneNumber(true);
-  };
-  const handleUpdateAssistantPhNo = () => {
-    setIsEditingAssistantPhNo(true);
-  };
-  const handleSaveAssistantPhNo = async () => {
-    try {
-      setFormData({ ...formData, assistant_phone: newAssitantPhNo });
-      const requestData = {
-        anganwadiNo, // Assuming these variables are available in scope
-        childsName,
-        updatedPhoneNumber: newAssitantPhNo, // Pass the updated phone number to the backend
-      };
-
-      const response = await fetch(`${API_URL}/updateAssistantNumber`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (response.status === 200) {
-        // Phone number updated successfully in the backend
-        console.log('Phone number updated successfully');
-      } else {
-        console.log('Failed to update phone number');
-      }
-    } catch (error) {
-      console.error('Error updating phone number:', error);
-    }
-
-    setIsEditingAssistantPhNo(false);
-  };
-  // Function to handle saving the changes made to the phone number
-  const handleSavePhoneNumber = async () => {
-    try {
-      // Update the formData state with the edited phone number
-      setFormData({ ...formData, child_phone: editedPhoneNumber });
-
-      // Make an API call to update the phone number in the backend
-      const requestData = {
-        anganwadiNo, // Assuming these variables are available in scope
-        childsName,
-        updatedPhoneNumber: editedPhoneNumber, // Pass the updated phone number to the backend
-      };
-
-      const response = await fetch(`${API_URL}/updatePhoneNumber`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (response.status === 200) {
-        // Phone number updated successfully in the backend
-        console.log('Phone number updated successfully');
-      } else {
-        console.log('Failed to update phone number');
-      }
-    } catch (error) {
-      console.error('Error updating phone number:', error);
-    }
-
-    setIsEditingPhoneNumber(false);
-  };
-
-
-
-
-  const generatePDFContent = () => {
-    let htmlContent = `
-      <html>
-
-      <head>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          background-color: ${styles.container.backgroundColor};
-          color: ${styles.text.color};
-          padding: ${styles.container.padding}px;
-        }
-        .headerContainer {
-          display: flex;
-          align-items: left;
-          
-          border-bottom: 1px solid orange; /* Thin line below the heading */
-          padding-bottom: 15px; /* Adjust as needed */
-        }
-        h1 {
-          font-size: ${styles.subSectionTitle.fontSize + 5}px;
-          font-weight: ${styles.subSectionTitle.fontWeight};
-          color: ${styles.subSectionTitle.color};
-          margin-top: 15px;
-          text-align: center; /* Add this line to center the heading */
-        }
-        h2 {
-          font-size: ${styles.subSectionTitle.fontSize}px;
-          font-weight: ${styles.subSectionTitle.fontWeight};
-          color: ${styles.subSectionTitle.color};
-          background-color: ${styles.subSectionTitle.backgroundColor};
-          border-radius: ${styles.subSectionTitle.borderRadius}px;
-          margin-bottom: ${styles.subSectionTitle.marginBottom}px;
-        }
-        p, label {
-          font-size: ${styles.text.fontSize}px;
-          font-weight: ${styles.subSectionTitle.fontWeight};
-          margin-bottom: ${styles.text.marginBottom}px;
-          color: ${styles.text.color};
-        }
-        .container {
-          background-color: ${styles.formDataContainer.backgroundColor};
-          padding: ${styles.formDataContainer.padding}px;
-          border-radius: ${styles.formDataContainer.borderRadius}px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-          margin-bottom: ${styles.formDataContainer.marginBottom}px;
-        }
-        .fieldContainer {
-          margin-bottom: ${styles.fieldContainer.marginBottom}px;
-        }
-        img {
-         width:100px; 
-         height:100px;
-         
-         }
-         .headingLine {
-          font-size:30;
-          color:orange;
-          margin-left:20px;
-         margin-top:20px;
-         padding-bottom:3px;
-       
-        }
-        .subheading {
-          font-size: 18px;
-          color: orange;
-       
-          margin-left:20px;
-        }
-        .textContainer {
-          margin-left: 10px;
-        }
-        /* Add more styles as needed */
-      </style>
-    </head>
-      </head>
-        <body>
-        <div class="headerContainer">
-       
-        <img src="file:///android_asset/images/logo2.jpg" />
-<div class="textContainer">
-<div class="headingLine">Niramay Bharat</div>
-<div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
-</div>
-</div>
-
-          <h1>Anganwadi Form Data</h1>
-          
-          <h2>Bit Information</h2>
-          <p>Bit Name: ${formData.bit_name}</p>
-          <p>Anganwadi No: ${formData.anganwadi_no}</p>
-  
-          <h2>Anganwadi Assistant Information</h2>
-          <p>Assistant Name: ${formData.assistant_name}</p>
-          <p>Assistant Phone Number: ${formData.assistant_phone}</p>
-  
-          <h2>Child Information</h2>
-          <p>Child's Name: ${formData.child_name}</p>
-          <p>Child's Date of Birth: ${formData.date ? new Date(formData.date).toLocaleDateString('en-US') : 'N/A'}</p>
-          <p>Child's Date of Birth: ${formData.child_dob ? new Date(formData.child_dob).toLocaleDateString('en-US') : 'N/A'}</p>
-          <p>Child's Gender: ${formData.child_gender}</p>
-          <p>Child's Phone Number: ${formData.child_phone}</p>
-  
-          <h2>Parent Information</h2>
-          <p>Mother's Name: ${formData.mother_name}</p>
-          <p>Mother's Education: ${formData.mother_education}</p>
-          <p>Mother's Occupation: ${formData.mother_occupation}</p>
-          <p>Mother's Age at Marriage: ${formData.mother_age_at_marriage}</p>
-          <p>Mother's Age during First Pregnancy: ${formData.mother_age_at_first_pregnancy}</p>
-          <p>Child's Weight after Birth: ${formData.child_weight_after_birth}</p>
-          <p>Father's Name: ${formData.father_name}</p>
-          <p>Father's Occupation: ${formData.father_occupation}</p>
-          <p>Father's Education: ${formData.father_education}</p>
-  
-          <h2>Sibling Information</h2>
-          <div style="margin-bottom: 10px;">
-      `;
-
-    for (const sibling of siblings) {
-      htmlContent += `
-          <div style="margin-bottom: 10px;">
-            <p>Sibling Name: ${sibling.name}</p>
-            <p>Sibling Age: ${sibling.age}</p>
-            <p>Malnourished: ${sibling.malnourished ? 'Yes' : 'No'}</p>
-          </div>
-        `;
-    }
-
-    htmlContent += `
-    <!-- Add Information of Family -->
-    <h2>Information of Family</h2>
-    <p>No. of Total Family Members: ${formData.total_family_members}</p>
-    <p>Total Number of Siblings: ${formData.TotalSiblings}</p>
-
-    <!-- Additional Fields -->
-    <h2>Additional Information</h2>
-    <p>Disease History: ${formData.disease_history || 'N/A'}</p>
-    <p>Addiction: ${formData.addiction || 'N/A'}</p>
-    <p>Source of Drinking Water: ${formData.source_of_drinking_water || 'N/A'}</p>
-
-    <!-- Add more data fields here -->
-`;
-
-
-    return htmlContent;
-  };
-
-
-
-  const generatePDF = async () => {
-    try {
-      console.log('Generating PDF...');
-      const options = {
-        html: generatePDFContent(),
-        fileName: 'FormDataPDF',
-        directory: 'Documents',
-      };
-      const pdf = await RNHTMLtoPDF.convert(options);
-      console.log('PDF generated:', pdf.filePath);
-
-      // Print the PDF
-      await RNPrint.print({
-        filePath: pdf.filePath,
-      });
-    } catch (error) {
-      console.error('Error generating or printing PDF:', error);
-    }
-  };
-
-
-  const diseaseMapping = {
-    'Mother': 'आई',
-    'Father': 'वडिल',
-    'Maternal Grandmother': 'आजी',
-    'Maternal Grandfather': 'आजोबा',
-    'Paternal Grandmother': 'पाटी',
-    'Paternal Grandfather': 'पाट्या',
-  };
-
   return (
     <ScrollView style={styles.container}>
       {loading ? (
@@ -884,13 +573,10 @@ const ViewForm = ({ route }) => {
           <View style={styles.fieldContainer}>
             <Text style={styles.subSectionTitle}>Bit Information / बिट माहिती</Text>
             <Text style={styles.label}>Bit Name/ बिटचे नाव:</Text>
-            <Text style={styles.subSectionTitle}>Bit Information / बिट माहिती</Text>
-            <Text style={styles.label}>Bit Name/ बिटचे नाव:</Text>
             <Text style={styles.text}>{formData.bit_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Anganwadi No./ अंगणवाडी क्र.:</Text>
             <Text style={styles.label}>Anganwadi No./ अंगणवाडी क्र.:</Text>
             <Text style={styles.text}>{formData.anganwadi_no}</Text>
           </View>
@@ -898,7 +584,6 @@ const ViewForm = ({ route }) => {
           <Text style={styles.subSectionTitle}>Anganwadi Assistant Information/अंगणवाडी सहाय्यकांची माहिती </Text>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Name / नाव:</Text>
             <Text style={styles.label}>Name / नाव:</Text>
             <Text style={styles.text}>{formData.assistant_name}</Text>
           </View>
@@ -929,37 +614,11 @@ const ViewForm = ({ route }) => {
                 <Text style={styles.addButtonLabel}>Update Phone Number</Text>
               </TouchableOpacity>
             )}
-            <Text style={styles.label}>Phone Number / फोन नंबर :</Text>
-            {/* //<Text style={styles.text}>{formData.assistant_phone}</Text> */}
-            {isEditingAssistantPhNo ? (
-              // If editing mode is enabled, display a TextInput to edit the phone number
-              <TextInput
-                style={[styles.input, { color: 'black' }]}
-                value={newAssitantPhNo}
-                onChangeText={(value) => setnewAssistantPhNo(value)}
-                keyboardType="phone-pad"
-              />
-            ) : (
-              // Display the current phone number as text
-              <Text style={styles.text}>{formData.assistant_phone}</Text>
-            )}
-            {isEditingAssistantPhNo ? (
-              // If editing mode is enabled, display a save button to save changes
-              <TouchableOpacity style={styles.addButton} onPress={handleSaveAssistantPhNo}>
-                <Text style={styles.saveChangesButtonText}>Save Phone Number</Text>
-              </TouchableOpacity>
-            ) : (
-              // Display an update button to enable editing mode for the phone number
-              <TouchableOpacity style={styles.addButton} onPress={handleUpdateAssistantPhNo}>
-                <Text style={styles.addButtonLabel}>Update Phone Number</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           <Text style={styles.subSectionTitle}>Child Information / मुलांची माहिती</Text>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Child's Name/मुलाचे नाव:</Text>
             <Text style={styles.label}>Child's Name/मुलाचे नाव:</Text>
             <Text style={styles.text}>{formData.child_name}</Text>
           </View>
@@ -1009,30 +668,6 @@ const ViewForm = ({ route }) => {
                 <Text style={styles.addButtonLabel}>Update Phone Number</Text>
               </TouchableOpacity>
             )}
-            <Text style={styles.label}>Child's Phone Number/मुलाचा फोन नंबर:</Text>
-            {isEditingPhoneNumber ? (
-              // If editing mode is enabled, display a TextInput to edit the phone number
-              <TextInput
-                style={[styles.input, { color: 'black' }]}
-                value={editedPhoneNumber}
-                onChangeText={(value) => setEditedPhoneNumber(value)}
-                keyboardType="phone-pad"
-              />
-            ) : (
-              // Display the current phone number as text
-              <Text style={styles.text}>{formData.child_phone}</Text>
-            )}
-            {isEditingPhoneNumber ? (
-              // If editing mode is enabled, display a save button to save changes
-              <TouchableOpacity style={styles.addButton} onPress={handleSavePhoneNumber}>
-                <Text style={styles.saveChangesButtonText}>Save Phone Number</Text>
-              </TouchableOpacity>
-            ) : (
-              // Display an update button to enable editing mode for the phone number
-              <TouchableOpacity style={styles.addButton} onPress={handleUpdatePhoneNumber}>
-                <Text style={styles.addButtonLabel}>Update Phone Number</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           <Text style={styles.subSectionTitle}>Parent Information / अभिभावकांची माहिती</Text>
@@ -1040,54 +675,45 @@ const ViewForm = ({ route }) => {
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Mother's Name/आईचे नाव: </Text>
-            <Text style={styles.label}>Mother's Name/आईचे नाव: </Text>
             <Text style={styles.text}>{formData.mother_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mother's Education/आईचे शिक्षण:</Text>
             <Text style={styles.label}>Mother's Education/आईचे शिक्षण:</Text>
             <Text style={styles.text}>{formData.mother_education}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Mothers's Occupation/आईचे व्यवसाय:</Text>
-            <Text style={styles.label}>Mothers's Occupation/आईचे व्यवसाय:</Text>
             <Text style={styles.text}>{formData.mother_occupation}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Mothers age at Marriage/विवाहाची वय:</Text>
             <Text style={styles.label}>Mothers age at Marriage/विवाहाची वय:</Text>
             <Text style={styles.text}>{formData.mother_age_at_marriage}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Mothers age during First Pregnancy/प्रथम गर्भधारणाची वय:</Text>
-            <Text style={styles.label}>Mothers age during First Pregnancy/प्रथम गर्भधारणाची वय:</Text>
             <Text style={styles.text}>{formData.mother_age_at_first_pregnancy}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Child's weight after Birth/जन्मानंतर मुलाची वजन:</Text>
             <Text style={styles.label}>Child's weight after Birth/जन्मानंतर मुलाची वजन:</Text>
             <Text style={styles.text}>{formData.child_weight_after_birth}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Father's Name/वडिलांचे नाव: </Text>
-            <Text style={styles.label}>Father's Name/वडिलांचे नाव: </Text>
             <Text style={styles.text}>{formData.father_name}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Fathers's Occupation/वडिलांचे व्यवसाय:</Text>
-            <Text style={styles.label}>Fathers's Occupation/वडिलांचे व्यवसाय:</Text>
             <Text style={styles.text}>{formData.father_occupation}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Father's Education/वडिलांचे शिक्षण :</Text>
             <Text style={styles.label}>Father's Education/वडिलांचे शिक्षण :</Text>
             <Text style={styles.text}>{formData.father_education}</Text>
           </View>
@@ -1097,74 +723,12 @@ const ViewForm = ({ route }) => {
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>No. of Total Family Members/संपूर्ण कुटुंबाचे सदस्य:</Text>
-            <Text style={styles.label}>No. of Total Family Members/संपूर्ण कुटुंबाचे सदस्य:</Text>
             <Text style={styles.text}>{formData.total_family_members}</Text>
           </View>
 
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Total Number of Siblings/सर्व सहोदर/सहोदरी:</Text>
-            <Text style={styles.label}>Total Number of Siblings/सर्व सहोदर/सहोदरी:</Text>
             <Text style={styles.text}>{formData.TotalSiblings}</Text>
-          </View>
-          {siblingsData.map((sibling, index) => (
-            <View key={index} style={styles.siblingContainer}>
-              <View style={styles.siblingRow}>
-                <Text style={styles.siblingLabel}>Sibling Name:</Text>
-                <Text style={styles.siblingValue}>{sibling.name}</Text>
-              </View>
-              <View style={styles.siblingRow}>
-                <Text style={styles.siblingLabel}>Sibling Age:</Text>
-                <Text style={styles.siblingValue}>{sibling.age}</Text>
-              </View>
-              <View style={styles.siblingRow}>
-                <Text style={styles.siblingLabel}>Malnourished:</Text>
-                <Text style={styles.siblingValue}>
-                  {sibling.malnourished === 0 ? 'No' : 'Yes'}
-                </Text>
-              </View>
-            </View>
-          ))}
-          <Text style={[styles.errorText, { fontSize: 14 }]}>*Slide right if child is Malnourished</Text>
-          {siblings.map((sibling, index) => (
-
-            <View key={index} style={styles.siblingTableRow}>
-              {/* Sibling Name */}
-              <TextInput
-                style={[styles.siblingTableCell, { flex: 2, color: 'black' },]}
-                value={sibling.name}
-                onChangeText={(value) => handleSiblingFieldChange(index, 'name', value)}
-                placeholder={`name`}
-                placeholderTextColor="grey"
-              />
-              {/* Sibling Age */}
-              <TextInput
-                style={[styles.siblingTableCell, { flex: 1 }]}
-                value={sibling.age}
-                onChangeText={(value) => handleSiblingFieldChange(index, 'age', value)}
-                placeholder={`Age`}
-                placeholderTextColor="grey"
-                keyboardType="numeric"
-              />
-              {/* Malnourished */}
-              <View style={[styles.siblingTableCell, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-                <Switch
-                  value={sibling.malnourished}
-                  onValueChange={(value) => handleSiblingFieldChange(index, 'malnourished', value)}
-                />
-              </View>
-
-              {/* Remove Sibling Button */}
-              <TouchableOpacity onPress={() => handleRemoveSibling(index)} style={styles.removeButton}>
-                <Text style={styles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-          <TouchableOpacity style={styles.addButton} onPress={handleAddSibling}>
-            <Text style={styles.addButtonLabel}>Add</Text>
-          </TouchableOpacity>
-          {/* Save Changes Button */}
-          <TouchableOpacity style={styles.addButton} onPress={handleSaveChanges}>
-            <Text style={[styles.saveChangesButtonText, { color: 'white' }]}>Save Changes</Text>
           </View>
           {siblingsData.map((sibling, index) => (
             <View key={index} style={styles.siblingContainer}>
@@ -1436,68 +1000,10 @@ const ViewForm = ({ route }) => {
             ) : (
               <Text style={styles.text}>{formData.addictions}</Text>
             )}
-            {editMode ? (
-              <TextInput
-                style={[styles.input, { color: 'black' }]}
-                value={editedAddictions}
-                onChangeText={handleAddictionsChange}
-              />
-            ) : (
-              <Text style={styles.text}>{formData.addictions}</Text>
-            )}
           </View>
 
           {/* Source of Drinking Water */}
-          {/* Source of Drinking Water */}
           <View style={styles.fieldContainer}>
-
-            <Text style={styles.label}>Source of Drinking Water/प्या पाण्याची स्त्रोत:</Text>
-            {editMode ? (
-              <View>
-                <View style={{ flexDirection: 'column' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                    <RadioButton
-                      value="tap"
-                      status={selectedSource === 'tap' ? 'checked' : 'unchecked'}
-                      onPress={() => setSelectedSource('tap')}
-                    />
-                    <Text style={{ color: '#000', marginLeft: 10 }}>Tap</Text>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                    <RadioButton
-                      value="tanker"
-                      status={selectedSource === 'tanker' ? 'checked' : 'unchecked'}
-                      onPress={() => setSelectedSource('tanker')}
-                    />
-                    <Text style={{ color: '#000', marginLeft: 10 }}>Tanker</Text>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                    <RadioButton
-                      value="other"
-                      status={selectedSource === 'other' ? 'checked' : 'unchecked'}
-                      onPress={() => {
-                        setSelectedSource('other');
-                        setOtherSourceValue('');
-                      }}
-                    />
-                    <Text style={{ color: '#000', marginLeft: 10 }}>Other</Text>
-                  </View>
-
-                  {selectedSource === 'other' && (
-                    <TextInput
-                      style={[styles.input, { color: 'black', marginBottom: 10 }]}
-                      value={otherSourceValue}
-                      onChangeText={(text) => setOtherSourceValue(text)}
-                      placeholder="Enter Other Source"
-                    />
-                  )}
-                </View>
-              </View>
-            ) : (
-              <Text style={styles.text}>{formData.source_of_drinking_water}</Text>
-            )}
 
             <Text style={styles.label}>Source of Drinking Water/प्या पाण्याची स्त्रोत:</Text>
             {editMode ? (
@@ -1549,7 +1055,6 @@ const ViewForm = ({ route }) => {
           </View>
 
           {/* Other */}
-          {/* Other */}
           <View style={styles.fieldContainer}>
 
             <Text style={styles.label}>Other/इतर:</Text>
@@ -1562,22 +1067,7 @@ const ViewForm = ({ route }) => {
             ) : (
               <Text style={styles.text}>{formData.other}</Text>
             )}
-
-            <Text style={styles.label}>Other/इतर:</Text>
-            {editMode ? (
-              <TextInput
-                style={[styles.input, { color: 'black' }]}
-                value={editedOther}
-                onChangeText={handleOtherChange}
-              />
-            ) : (
-              <Text style={styles.text}>{formData.other}</Text>
-            )}
           </View>
-
-          <TouchableOpacity style={styles.addButton} onPress={handleSaveChangesfield} >
-            <Text style={[styles.saveChangesButtonText, { color: 'white' }]}>Save Changes</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.addButton} onPress={handleSaveChangesfield} >
             <Text style={[styles.saveChangesButtonText, { color: 'white' }]}>Save Changes</Text>
@@ -1587,34 +1077,6 @@ const ViewForm = ({ route }) => {
       ) : (
         <Text style={styles.errorText}>Data not found</Text>
       )}
-
-
-      {/* <TouchableOpacity
-        style={{
-          ...styles.printButton,
-          position: 'absolute',
-          top: 20,
-          right: -30,
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginBottom: 90,
-        }}
-        onPress={generatePDF}
-      >
-        <Image
-          source={require('../assets/printer1.png')}
-          style={{
-            width: 35,
-            height: 35,
-            borderRadius: 10,
-            backgroundColor: '#f4f4f4',
-            marginEnd: 30,
-            marginBottom: 40
-          }}
-        />
-        <Text style={{ color: 'black', fontSize: 14, marginTop: -40, marginEnd: 35 }}> PDF</Text>
-      </TouchableOpacity> */}
-
 
 
       {/* <TouchableOpacity
@@ -1659,12 +1121,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 10,
   },
-  errorText: {
-    color: '#e74c3c',
-    fontSize: 10,
-    marginTop: 2,
-    marginBottom: 10,
-  },
   formDataContainer: {
     backgroundColor: 'white',
     padding: 20,
@@ -1676,14 +1132,6 @@ const styles = StyleSheet.create({
   },
   fieldContainer: {
     marginBottom: 15,
-  },
-  fldContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // other styles
-  },
-  input: {
-    color: 'black'
   },
   fldContainer: {
     flexDirection: 'row',
@@ -1735,8 +1183,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'black',
 
-    color: 'black',
-
   },
   siblingValue: {
     fontSize: 16,
@@ -1753,13 +1199,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     color: 'black'
-    color: 'black'
   },
   addButton: {
     backgroundColor: 'teal',
     paddingVertical: 8,
     paddingHorizontal: 12,
-
 
     borderRadius: 8,
     marginTop: 10,
@@ -1779,14 +1223,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingBottom: 8,
     color: 'black'
-    color: 'black'
   },
   siblingTableHeaderCell: {
     fontSize: 16,
     fontWeight: 'bold',
     paddingVertical: 8,
     paddingHorizontal: 8,
-    color: 'black'
     color: 'black'
   },
   siblingTableRow: {
@@ -1796,13 +1238,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ccc',
     color: 'black'
-    color: 'black'
   },
   siblingTableCell: {
     fontSize: 16,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    color: COLORS.black
     color: COLORS.black
     // flex: 1,
   },
@@ -1831,7 +1271,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
     marginTop: 8
-    marginTop: 8
   },
   checkboxChecked: {
     backgroundColor: 'teal',
@@ -1840,9 +1279,7 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontSize: 16,
     marginTop: 8
-    marginTop: 8
   },
-
 
   input: {
     width: '100%',
@@ -1857,13 +1294,6 @@ const styles = StyleSheet.create({
     height: 45, // Adjust the height as needed
     textAlignVertical: 'center', // Start typing from the top
   },
-  editIcon:
-  {
-    height: 25,
-    width: 25,
-    marginStart: 100,
-  }
-
   editIcon:
   {
     height: 25,

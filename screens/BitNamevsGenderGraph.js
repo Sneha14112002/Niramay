@@ -15,8 +15,6 @@ import Modal from 'react-native-modal';
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-  scrollView: {
-    flex: 1,
     width: '100%',
   },
   container: {
@@ -24,13 +22,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     padding: 20,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    padding: 20,
-  },
-  header: {
-    fontSize: 24,
   header: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -85,34 +76,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
     color: 'black',
-    color: 'black',
   },
-  tableContainer: {
-    borderRadius: 8,
-    paddingBottom: 20,
-    marginTop: 20,
-    backgroundColor: 'white',
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  tableHeader: {
-    backgroundColor: 'teal',
-    paddingVertical: 8,
-  },
-  tableHeaderText: {
-    fontSize: 16,
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  tableRow: {
   tableContainer: {
     borderRadius: 8,
     paddingBottom: 20,
@@ -144,29 +108,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
-  tableCell: {
-    flex: 1,
-    padding: 8,
-    textAlign: 'center',
-    color: 'black',
-  },
-  printButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    borderRadius: 25,
-    backgroundColor: '#f4f4f4',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  printButtonText: {
-    color: 'black',
   tableCell: {
     flex: 1,
     padding: 8,

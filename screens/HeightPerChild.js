@@ -18,30 +18,6 @@ import ViewShot from 'react-native-view-shot';
 import {API_URL} from './config';
 import {useNavigation} from '@react-navigation/native';
 import {Calendar, LocaleConfig} from 'react-native-calendars';
-import React, {useEffect, useState, useRef} from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-} from 'react-native';
-import RNFetchBlob from 'rn-fetch-blob';
-import RNFS from 'react-native-fs';
-import PushNotification from 'react-native-push-notification';
-import {VictoryChart, VictoryBar, VictoryAxis} from 'victory-native';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import ViewShot from 'react-native-view-shot';
-import {API_URL} from './config';
-import {useNavigation} from '@react-navigation/native';
-import {Calendar, LocaleConfig} from 'react-native-calendars';
-
-const HeightPerChild = ({route, toggleMenu}) => {
-  const {anganwadiNo, childsName, gender, dob} = route.params;
-  const navigation = useNavigation();
 
 const HeightPerChild = ({route, toggleMenu}) => {
   const {anganwadiNo, childsName, gender, dob} = route.params;
@@ -93,26 +69,7 @@ const HeightPerChild = ({route, toggleMenu}) => {
         fromDate,
         toDate,
       };
-    // Fetch data based on selected date range
-    fetchData(selectedFromDate, selectedToDate);
-  }, [selectedFromDate, selectedToDate]);
 
-  const fetchData = async (fromDate, toDate) => {
-    try {
-      const requestData = {
-        anganwadiNo,
-        childsName,
-        fromDate,
-        toDate,
-      };
-
-      const response = await fetch(`${API_URL}/getVisitsData`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
       const response = await fetch(`${API_URL}/getVisitsData`, {
         method: 'POST',
         headers: {
@@ -135,41 +92,20 @@ const HeightPerChild = ({route, toggleMenu}) => {
       setLoading(false);
     }
   };
-      if (response.status === 200) {
-        const data = await response.json();
-        setFormData(data);
-      } else {
-        console.log('Data not found in the database');
-        showFlashMessage('No data found between the selected date range.');
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      showFlashMessage('Error fetching data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const showFlashMessage = message => {
     Alert.alert('Flash Message', message);
   };
-  const showFlashMessage = message => {
-    Alert.alert('Flash Message', message);
-  };
 
-  const {data} = formData || {};
-  const heights = data ? data.map(entry => parseFloat(entry.height)) : [];
   const {data} = formData || {};
   const heights = data ? data.map(entry => parseFloat(entry.height)) : [];
 
   const visitLabels = data ? data.map((_, index) => `Visit ${index + 1}`) : [];
 
   const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
-  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
 
   const tableData = data
     ? data.map((entry, index) => ({
-        visit: visitDates[index],
         visit: visitDates[index],
         height: `${parseFloat(entry.height).toFixed(2)} cm`,
       }))
@@ -533,58 +469,6 @@ const HeightPerChild = ({route, toggleMenu}) => {
           </View>
         )}
       </ScrollView>
-            <View style={styles.table}>
-              <Text style={styles.tableTitle}>Summary Table</Text>
-              <View style={styles.tableContainer}>
-                <View style={styles.tableHeader}>
-                  <Text style={styles.tableHeaderText}>Visit Date</Text>
-                  <Text style={styles.tableHeaderText}>Height</Text>
-                </View>
-                {tableData.map((item, index) => (
-                  <View style={styles.tableRow} key={index}>
-                    <Text style={styles.tableCell}>{item.visit}</Text>
-                    <Text style={styles.tableCell}>{item.height}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={{
-                ...styles.printButton,
-                position: 'absolute',
-                top: -10,
-                right: -20,
-                flexDirection: 'column',
-                alignItems: 'center',
-                marginBottom: 90,
-              }}
-              onPress={generatePDF}>
-              <Image
-                source={require('../assets/printer1.png')}
-                style={{
-                  width: 35,
-                  height: 35,
-                  borderRadius: 10,
-                  backgroundColor: '#f4f4f4',
-                  marginEnd: 40,
-                  marginBottom: 40,
-                }}
-              />
-              <Text
-                style={{
-                  color: 'black',
-                  fontSize: 14,
-                  marginTop: -40,
-                  marginEnd: 45,
-                }}>
-                {' '}
-                PDF
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
     </ScrollView>
   );
 };
@@ -601,7 +485,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     elevation: 4,
     padding: 16,
-    marginLeft: 20,
     marginLeft: 20,
   },
   chartTitle: {
@@ -744,4 +627,3 @@ const styles = StyleSheet.create({
 });
 
 export default HeightPerChild;
-
