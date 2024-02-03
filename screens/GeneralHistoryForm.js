@@ -63,6 +63,10 @@ const CollapsibleSectionWithIcon = ({title, children}) => {
         ) : (
           <Image source={require('../assets/down.png')} style={styles.icon} />
         )}
+          <Image source={require('../assets/up.png')} style={styles.icon} />
+        ) : (
+          <Image source={require('../assets/down.png')} style={styles.icon} />
+        )}
       </TouchableOpacity>
       {collapsed && <View style={[styles.sectionContent]}>{children}</View>}
     </View>
@@ -243,6 +247,7 @@ const VisitRow = ({visit, index, handleVisitFieldChange}) => {
         style={styles.textInput}
       />
 
+      {/* <Text style={styles.label}>Weight (Kg):</Text>
       {/* <Text style={styles.label}>Weight (Kg):</Text>
       <TextInput
         value={visit.weight}
@@ -432,6 +437,19 @@ const GeneralHistoryForm = () => {
       DPT: false,
       TD: false,
     },
+    totalWeight: '',
+    vaccination: {
+      BCG: false,
+      POLIO: false,
+      IPV: false,
+      PCV: false,
+      PENTAVALENT: false,
+      ROTAVIRUS: false,
+      MR: false,
+      VITAMIN_A: false,
+      DPT: false,
+      TD: false,
+    },
   });
 
   const handleAddVisit = () => {
@@ -445,6 +463,12 @@ const GeneralHistoryForm = () => {
       difference: '',
       grade: 0,
       observations: '',
+      iron: 0,
+      multivitamin: 0,
+      calcium: 0,
+      protein: 0,
+      tempWeightKg: 0,
+      tempWeightGrams: 0,
       iron: 0,
       multivitamin: 0,
       calcium: 0,
@@ -495,6 +519,7 @@ const GeneralHistoryForm = () => {
         oedema: generalHistory.oedema,
         vaccinationDone: generalHistory.vaccinationDone,
         appetiteTest: appetiteValue,
+        appetiteTest: appetiteValue,
         thirst: generalHistory.thirst,
         //haemoglobin: generalHistory.haemoglobin,
         anyOther: generalHistory.anyOther,
@@ -516,7 +541,20 @@ const GeneralHistoryForm = () => {
         vitamin_a: generalHistory.vaccination.VITAMIN_A,
         dpt: generalHistory.vaccination.DPT,
         td: generalHistory.vaccination.TD,
+        bcg: generalHistory.vaccination.BCG,
+        polio: generalHistory.vaccination.POLIO,
+        ipv: generalHistory.vaccination.IPV,
+        pcv: generalHistory.vaccination.PCV,
+        pentavalent: generalHistory.vaccination.PENTAVALENT,
+        rotavirus: generalHistory.vaccination.ROTAVIRUS,
+        mr: generalHistory.vaccination.MR,
+        vitamin_a: generalHistory.vaccination.VITAMIN_A,
+        dpt: generalHistory.vaccination.DPT,
+        td: generalHistory.vaccination.TD,
       };
+      //console.log(generalHistoryData);
+      //console.log('API URL', API_URL);
+      const response = await fetch(`${API_URL}/generalHistory`, {
       //console.log(generalHistoryData);
       //console.log('API URL', API_URL);
       const response = await fetch(`${API_URL}/generalHistory`, {
@@ -532,6 +570,8 @@ const GeneralHistoryForm = () => {
         console.log('Form submitted successfully');
         // Add any additional logic or navigation here after successful submission
       } else {
+        //console.log(response);
+        console.error('Error submitting form - response error');
         //console.log(response);
         console.error('Error submitting form - response error');
       }
@@ -554,6 +594,7 @@ const GeneralHistoryForm = () => {
           visitDate: visit.date,
           haemoglobin: visit.haemoglobin,
           totalNoOfJars: visit.totalNoOfJars,
+          totalNoOfJars: visit.totalNoOfJars,
           muac: visit.muac,
           weight: visit.weight,
           height: visit.height,
@@ -564,7 +605,14 @@ const GeneralHistoryForm = () => {
           multivitamin: visit.multivitamin,
           calcium: visit.calcium,
           protein: visit.protein,
+          observations: visit.observations,
+          iron: visit.iron,
+          multivitamin: visit.multivitamin,
+          calcium: visit.calcium,
+          protein: visit.protein,
         };
+        //console.log(visitData);
+        const response = await fetch(`${API_URL}/visits`, {
         //console.log(visitData);
         const response = await fetch(`${API_URL}/visits`, {
           method: 'POST',
@@ -587,6 +635,7 @@ const GeneralHistoryForm = () => {
 
           // Add any additional logic or navigation here after each successful submission
         } else {
+          console.error('Error submitting visit data - response error');
           console.error('Error submitting visit data - response error');
         }
       }
@@ -957,6 +1006,7 @@ const styles = StyleSheet.create({
     borderColor: '#d0d0d0',
     borderRadius: 8,
     color: COLORS.black,
+    color: COLORS.black,
   },
   multilineTextInput: {
     backgroundColor: 'white',
@@ -968,12 +1018,14 @@ const styles = StyleSheet.create({
     height: hp('8%'),
     textAlignVertical: 'top',
     color: COLORS.black,
+    color: COLORS.black,
   },
   subSectionTitle: {
     fontSize: wp('6%'),
     fontWeight: 'bold',
     marginTop: hp('2%'),
     marginBottom: hp('1%'),
+    color: COLORS.black,
     color: COLORS.black,
   },
   buttonContainer: {

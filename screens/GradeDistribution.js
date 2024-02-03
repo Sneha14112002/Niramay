@@ -10,6 +10,18 @@ import {
   Image, // Add this import
   Alert
 } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  TouchableOpacity, // Add this import
+  Image, // Add this import
+  Alert
+} from 'react-native';
 import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import { PieChart } from 'react-native-chart-kit';
@@ -260,6 +272,11 @@ const colors = {
   MAM: '#FFC300',
   SAM: '#FF5733',
 };
+const colors = {
+  NORMAL: '#33FF57',
+  MAM: '#FFC300',
+  SAM: '#FF5733',
+};
 
 const GradeDistribution = () => {
   const [bitName, setBitName] = useState([]);
@@ -280,8 +297,12 @@ const GradeDistribution = () => {
 
   const chartRef = useRef(null);
 
+  const chartRef = useRef(null);
+
   useEffect(() => {
     setLoading(true);
+    axios
+      .get(`${API_URL}/bit_name`)
     axios
       .get(`${API_URL}/bit_name`)
       .then((response) => {
@@ -298,7 +319,18 @@ const GradeDistribution = () => {
     if (selectedBitName) {
       axios
         .get(`${API_URL}/visitDate/${selectedBitName}`)
+      axios
+        .get(`${API_URL}/visitDate/${selectedBitName}`)
         .then((response) => {
+          const formattedVisitDates = response.data.map((dateString) => {
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = `0${date.getMonth() + 1}`.slice(-2);
+            const day = `0${date.getDate()}`.slice(-2);
+            const formattedDate = `${year}-${month}-${day}`;
+            return formattedDate;
+          });
+          setVisitDate(formattedVisitDates);
           const formattedVisitDates = response.data.map((dateString) => {
             const date = new Date(dateString);
             const year = date.getFullYear();
@@ -317,6 +349,8 @@ const GradeDistribution = () => {
 
   useEffect(() => {
     if (selectedDate) {
+      axios
+        .get(`${API_URL}/child_distribution/${selectedBitName}/${selectedDate}`)
       axios
         .get(`${API_URL}/child_distribution/${selectedBitName}/${selectedDate}`)
         .then((response) => {

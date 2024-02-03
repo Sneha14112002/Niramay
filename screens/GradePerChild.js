@@ -14,6 +14,22 @@ const GradePerChild = ({ route, toggleMenu }) => {
   const { anganwadiNo, childsName, gender, dob } = route.params;
   const navigation = useNavigation();
 
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, ScrollView,Image,Alert} from 'react-native';
+import { VictoryLine, VictoryChart, VictoryAxis, VictoryScatter, VictoryLabel } from 'victory-native';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import ViewShot from 'react-native-view-shot';
+import { API_URL } from './config';
+import { useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+
+import {Calendar, LocaleConfig} from 'react-native-calendars';
+
+
+const GradePerChild = ({ route, toggleMenu }) => {
+  const { anganwadiNo, childsName, gender, dob } = route.params;
+  const navigation = useNavigation();
+
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const chartRef = useRef();
@@ -60,7 +76,26 @@ const GradePerChild = ({ route, toggleMenu }) => {
         fromDate,
         toDate,
       };
+    // Fetch data based on selected date range
+    fetchData(selectedFromDate, selectedToDate);
+  }, [selectedFromDate, selectedToDate]);
 
+  const fetchData = async (fromDate, toDate) => {
+    try {
+      const requestData = {
+        anganwadiNo,
+        childsName,
+        fromDate,
+        toDate,
+      };
+
+      const response = await fetch(`${API_URL}/getVisitsData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
       const response = await fetch(`${API_URL}/getVisitsData`, {
         method: 'POST',
         headers: {
@@ -83,11 +118,30 @@ const GradePerChild = ({ route, toggleMenu }) => {
       setLoading(false);
     }
   };
+      if (response.status === 200) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        console.log('Data not found in the database');
+        showFlashMessage('No data found between the selected date range.');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showFlashMessage('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showFlashMessage = message => {
     Alert.alert('Flash Message', message);
   };
+  const showFlashMessage = message => {
+    Alert.alert('Flash Message', message);
+  };
 
+
+  const data = formData?.data;
 
   const data = formData?.data;
   const grades = data ? data.map((entry) => entry.grade) : [];
@@ -473,8 +527,53 @@ const GradePerChild = ({ route, toggleMenu }) => {
   );
 })}
 
+              {data.map((item, index) => {
+  const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  return (
+    <View style={styles.tableRow} key={index}>
+      <View style={[styles.tableCell, { flex: 2 }]}>
+        <Text style={styles.tableCellText}>{formattedDate}</Text>
+      </View>
+      <View style={[styles.tableCell, { flex: 1 }]}>
+        <Text style={styles.tableCellText}>{item.grade}</Text>
+      </View>
+    </View>
+  );
+})}
+
             </View>
           </View>
+
+          <TouchableOpacity
+        style={{
+          ...styles.printButton,
+          position: 'absolute',
+          top: -10,
+          right: -20,
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom:90,
+        }}
+        onPress={generatePDF}
+      >
+        <Image
+          source={require('../assets/printer1.png')}
+          style={{
+            width: 35,
+            height: 35,
+            borderRadius: 10,
+            backgroundColor: '#f4f4f4',
+            marginEnd:40,
+            marginBottom:40
+          }}
+        />
+        <Text style={{ color: 'black', fontSize: 14, marginTop: -40 ,marginEnd:45}}> PDF</Text>
+      </TouchableOpacity>
 
           <TouchableOpacity
         style={{
@@ -504,11 +603,26 @@ const GradePerChild = ({ route, toggleMenu }) => {
         </View>
       )}
  </ScrollView>
+ </ScrollView>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
+
   menuButton: {
     position: 'absolute',
     bottom: -20,
