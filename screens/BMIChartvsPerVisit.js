@@ -33,7 +33,7 @@ const BMIChartvsPerVisit = ({route}) => {
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(true);
-
+  const [pdfCounter, setPdfCounter] = useState(1);
   const formatDate = utcDate => {
     const options = {
       timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
@@ -133,6 +133,12 @@ const BMIChartvsPerVisit = ({route}) => {
   };
 
   const generateHTML = chartImageUri => {
+    const selectedDatesHtml = selectedFromDate && selectedToDate ? `
+    <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+      <div style="font-size: 16px; color: #333; text-align: center;">Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}</div>
+    </div>
+  ` : '';
+  
     const chartHtml = `
       <div style="margin: 16px; background-color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 16px;">
         <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
@@ -140,20 +146,27 @@ const BMIChartvsPerVisit = ({route}) => {
     `;
 
     const tableRows = data
-      .map(
-        (item, index) => `
-      <tr>
-        <td style="padding: 8px; text-align: center;">${item.visitDate}</td>
-        <td style="padding: 8px; text-align: center;">${parseFloat(
-          item.height,
-        ).toFixed(2)} cm</td>
-        <td style="padding: 8px; text-align: center;">${parseFloat(
-          item.weight,
-        ).toFixed(2)} kg</td>
-        <td style="padding: 8px; text-align: center;">${bmis[index]}</td>
-      </tr>`,
-      )
-      .join('');
+    .map((item, index) => {
+      const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+  
+      return `
+        <tr>
+          <td style="padding: 8px; text-align: center;">${formattedDate}</td>
+          <td style="padding: 8px; text-align: center;">${parseFloat(
+            item.height,
+          ).toFixed(2)} cm</td>
+          <td style="padding: 8px; text-align: center;">${parseFloat(
+            item.weight,
+          ).toFixed(2)} kg</td>
+          <td style="padding: 8px; text-align: center;">${bmis[index]}</td>
+        </tr>`;
+    })
+    .join('');
+  
 
     const tableHtml = `
       <div class="table">
@@ -177,178 +190,141 @@ const BMIChartvsPerVisit = ({route}) => {
     `;
 
     const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background-color: #f4f4f4;
-            }
-            .container {
-              margin: 16px;
-            }
-            .profile {
-              background-color: white;
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              margin: 16px;
-              padding: 16px;
-            }
-            .profile-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #555;
-            }
-            .info-text {
-              font-size: 16px;
-              margin-bottom: 8px;
-              color: black;
-            }
-            .chart {
-              background-color: white;
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              margin: 16px;
-              padding: 16px;
-            }
-            .chart-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #555;
-            }
-            .table {
-              background-color: white;
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              margin: 16px;
-              padding: 16px;
-            }
-            .table-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin: 16px;
-              color: #555;
-            }
-            .table-container {
-              background-color: white;
-              border-radius: 15px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              elevation: 8;
-            }
-            .table-header {
-              background-color: teal;
-              padding: 8px;
-              justify-content: space-evenly;
-            }
-            .table-header-text {
-              font-size: 16px;
-              color: white;
-              font-weight: bold;
-              text-align: center;
-            }
-            .table-row {
-              flex-direction: row;
-              align-items: center;
-              padding-vertical: 8px;
-              border-bottom-width: 1px;
-              border-bottom-color: #ccc;
-            }
-            .table-cell {
-              flex: 1;
-              padding: 8px;
-              text-align: center;
-            }
-            .table-cell-text {
-              font-size: 14px;
-              color: #333;
-              text-align: center;
-            }
-           img{
-              width: 100px; 
-              height: 100px;
-            }
-            .headingLine {
-                font-size: 30;
-                color: orange;
-                margin-left: 20px;
-                margin-top: 20px;
-                padding-bottom: 3px;
-              }
-              .subheading {
-                font-size: 18px;
-                color: orange;
-                margin-left: 20px;
-              }
-              .textContainer {
-                margin-left: 10px;
-              }
-          </style>
-        </head>
-        <body>
-        <div class="headerContainer">
+    <html>
+    <head>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f0f0f0;
+        }
+        .container {
+          margin: 16px;
+        }
+        .profile {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          margin: 16px;
+          padding: 16px;
+        }
+        .profile-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #555;
+        }
+        .info-text {
+          font-size: 16px;
+          margin-bottom: 8px;
+          color: black;
+        }
+        .headerContainer {
+          display: flex;
+          align-items: left;
+          border-bottom: 1px solid orange; /* Thin line below the heading */
+          padding-bottom: 15px; /* Adjust as needed */
+        }
+        img {
+          width: 100px;
+          height: 100px;
+        }
+        .headingLine {
+          font-size: 30;
+          color: orange;
+          margin-left: 20px;
+          margin-top: 20px;
+          padding-bottom: 3px;
+        }
+        .subheading {
+          font-size: 18px;
+          color: orange;
+          margin-left: 20px;
+        }
+        .textContainer {
+          margin-left: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="headerContainer">
         <img src="file:///android_asset/images/logo2.jpg" />
         <div class="textContainer">
           <div class="headingLine">Niramay Bharat</div>
           <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
         </div>
       </div>
-          <div class="container">
-            <div class="profile">
-              <div class="profile-title">Profile</div>
-              <div class="info-text">Name: ${childsName}</div>
-              <div class="info-text">Gender: ${gender}</div>
-              <div class="info-text">Date of Birth: ${dob}</div>
-            </div>
+      <div class="container">
+        <div class="profile">
+          <div class="profile-title">Profile</div>
+          <div class="info-text">Name: ${childsName}</div>
+          <div class="info-text">Gender: ${gender}</div>
+          <div class="info-text">Date of Birth: ${dob}</div>
+        </div>
+        ${selectedDatesHtml}
+        ${chartHtml}
+        ${tableHtml}
+      </div>
+    </body>
+    </html>
+  `;
 
-            <div class="chart">
-              <div class="chart-title">BMI Chart</div>
-              ${chartHtml}
-            </div>
+  return htmlContent;
+};
 
-            ${tableHtml}
 
-          </div>
-        </body>
-      </html>
-    `;
+const generatePDF = async () => {
+  try {
+    const chartImageUri = await captureChart();
 
-    return htmlContent;
-  };
+    if (chartImageUri) {
+      // Option 1: Use a function to generate a unique filename based on the current date and time
+      const generateUniqueFilename = () => {
+        const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+        return `${childsName}_BMIChart_${timestamp}.pdf`;
+      };
 
-  const generatePDF = async () => {
-    try {
-      const chartImageUri = await captureChart();
+      // Option 2: Increment the counter correctly using the setPdfCounter callback
+      setPdfCounter((prevCounter) => prevCounter + 1);
+      const options = {
+        html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+        // Use either the function or counter approach for the filename
+        // fileName: generateUniqueFilename(),
+        fileName: `BMIChartPerChildReport_${pdfCounter}.pdf`,
+        directory: `Documents/${childsName}`,
+      };
 
-      if (chartImageUri) {
-        const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'BMIChartvsPerVisitReport',
-          directory: 'Documents',
-        };
+      const pdf = await RNHTMLtoPDF.convert(options);
+      const pdfPath = pdf.filePath;
 
-        const pdf = await RNHTMLtoPDF.convert(options);
-        const pdfPath = pdf.filePath;
+      const downloadsPath = RNFS.DownloadDirectoryPath;
+      const newPdfPath = `${downloadsPath}/${childsName}_BMIChart_${pdfCounter}.pdf`;
 
-        // Move the generated PDF to the Downloads directory
-        const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_BMIChart.pdf`;
+      const fileExists = await RNFS.exists(newPdfPath);
 
-        await RNFS.moveFile(pdfPath, newPdfPath);
+      if (fileExists) {
+        setPdfCounter((prevCounter) => prevCounter + 1);
+        const newPdfPathWithCounter = `${downloadsPath}/${childsName}_BMIChart_${pdfCounter}.pdf`;
+        await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
 
-        // Display an alert dialog after the PDF is generated
         Alert.alert(
           'PDF Downloaded',
-          'The PDF has been downloaded in your downloads folder.',
+          `The PDF has been downloaded with a new filename: ${childsName}_BMIChart_${pdfCounter}.pdf`,
         );
       } else {
-        console.error('Chart capture failed.');
+        await RNFS.moveFile(pdfPath, newPdfPath);
+
+        Alert.alert(
+          'PDF Downloaded',
+          `The PDF has been downloaded in your downloads folder filename: ${childsName}_BMIChart_${pdfCounter}.pdf`,
+        );
       }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
+    } else {
+      console.error('Chart capture failed.');
     }
-  };
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+  }
+};
 
   const resetDateSelection = () => {
     setSelectedFromDate(null);
@@ -374,6 +350,11 @@ const BMIChartvsPerVisit = ({route}) => {
               Select Date Range (From-To)
             </Text>
             {showCalendar ? (
+              <View style={styles.calendarContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.calendarScrollView}>
               <Calendar
                 onDayPress={day => {
                   if (!selectedFromDate) {
@@ -404,6 +385,8 @@ const BMIChartvsPerVisit = ({route}) => {
                   marginTop: 20,
                 }}
               />
+              </ScrollView>
+              </View>
             ) : (
               <View style={styles.dateSelectionContainer}>
                 <Text style={styles.dateSelectionText}>
@@ -680,6 +663,18 @@ const styles = StyleSheet.create({
   dateSelectionText: {
     fontSize: 16,
     color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
 });
 

@@ -29,7 +29,7 @@ const HeightPerChild = ({route, toggleMenu}) => {
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(true);
-
+  const [pdfCounter, setPdfCounter] = useState(1); // Initialize the counter to 1
   const formatDate = utcDate => {
     const options = {
       timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
@@ -111,37 +111,43 @@ const HeightPerChild = ({route, toggleMenu}) => {
       }))
     : [];
 
-  const generateHTML = chartImageUri => {
-    const chartHtml = `
-      <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
-        <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
-      </div>
-    `;
-
-    const tableHtml = `
-      <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
-        <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Height Chart Per Child</Text>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Visit Date</th>
-            <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Height</th>
-          </tr>
-          ${tableData
-            .map(
-              item => `
+    const generateHTML = (chartImageUri, selectedFromDate, selectedToDate) => {
+      const selectedDatesHtml = selectedFromDate && selectedToDate ? `
+        <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+          <div style="font-size: 16px; color: #333; text-align: center;">Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}</div>
+        </div>
+      ` : '';
+      
+      const chartHtml = `
+        <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+          <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
+        </div>
+      `;
+    
+      const tableHtml = `
+        <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
+          <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Height Chart Per Child</Text>
+          <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.visit}</td>
-              <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.height}</td>
+              <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Visit Date</th>
+              <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Height</th>
             </tr>
-          `,
-            )
-            .join('')}
-        </table>
-      </div>
-    `;
-
-    const htmlContent = `
-      <html>
+            ${tableData
+              .map(
+                item => `
+                <tr>
+                  <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.visit}</td>
+                  <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.height}</td>
+                </tr>
+              `,
+              )
+              .join('')}
+          </table>
+        </div>
+      `;
+    
+      const htmlContent = `
+        <html>
         <head>
           <style>
             body {
@@ -170,30 +176,30 @@ const HeightPerChild = ({route, toggleMenu}) => {
               color: black;
             }
             .headerContainer {
-                display: flex;
-                align-items: left;
-                border-bottom: 1px solid orange; /* Thin line below the heading */
-                padding-bottom: 15px; /* Adjust as needed */
-              }
-              img {
-                width:100px; 
-                height:100px;
-              }
-              .headingLine {
-                font-size:30;
-                color:orange;
-                margin-left:20px;
-                margin-top:20px;
-                padding-bottom:3px;
-              }
-              .subheading {
-                font-size: 18px;
-                color: orange;
-                margin-left:20px;
-              }
-              .textContainer {
-                margin-left: 10px;
-              }
+              display: flex;
+              align-items: left;
+              border-bottom: 1px solid orange; /* Thin line below the heading */
+              padding-bottom: 15px; /* Adjust as needed */
+            }
+            img {
+              width: 100px;
+              height: 100px;
+            }
+            .headingLine {
+              font-size: 30;
+              color: orange;
+              margin-left: 20px;
+              margin-top: 20px;
+              padding-bottom: 3px;
+            }
+            .subheading {
+              font-size: 18px;
+              color: orange;
+              margin-left: 20px;
+            }
+            .textContainer {
+              margin-left: 10px;
+            }
           </style>
         </head>
         <body>
@@ -205,24 +211,23 @@ const HeightPerChild = ({route, toggleMenu}) => {
             </div>
           </div>
           <div class="container">
-          <div class="profile">
-            <div class="profile-title">Profile</div>
-            <div class="info-text">Name: ${childsName}</div>
-            <div class="info-text">Gender: ${gender}</div>
-            <div class="info-text">Date of Birth: ${dob}</div>
-         
-        </div>
-       
-          <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Height Chart Per Child</Text>
-          ${chartHtml}
-          <Text style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</Text>
-          ${tableHtml}
+            <div class="profile">
+              <div class="profile-title">Profile</div>
+              <div class="info-text">Name: ${childsName}</div>
+              <div class="info-text">Gender: ${gender}</div>
+              <div class="info-text">Date of Birth: ${dob}</div>
+            </div>
+            ${selectedDatesHtml}
+            ${chartHtml}
+            ${tableHtml}
+          </div>
         </body>
-      </html>
-    `;
-
-    return htmlContent;
-  };
+        </html>
+      `;
+    
+      return htmlContent;
+    };
+    
 
   const captureChart = async () => {
     try {
@@ -236,28 +241,49 @@ const HeightPerChild = ({route, toggleMenu}) => {
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-
+  
       if (chartImageUri) {
+        // Option 1: Use a function to generate a unique filename based on the current date and time
+        const generateUniqueFilename = () => {
+          const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+          return `${childsName}_HeightChart_${timestamp}.pdf`;
+        };
+  
+        // Option 2: Increment the counter correctly using the setPdfCounter callback
+        setPdfCounter((prevCounter) => prevCounter + 1);
         const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'HeightChartPerChildReport',
+          html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+          // Use either the function or counter approach for the filename
+          // fileName: generateUniqueFilename(),
+          fileName: `HeightChartPerChildReport_${pdfCounter}.pdf`,
           directory: `Documents/${childsName}`,
         };
-
+  
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
-
-        // Move the generated PDF to the Downloads directory
+  
         const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_HeightChart.pdf`;
-
-        await RNFS.moveFile(pdfPath, newPdfPath);
-
-        // Display an alert dialog after the PDF is generated
-        Alert.alert(
-          'PDF Downloaded',
-          'The PDF has been downloaded in your downloads folder.',
-        );
+        const newPdfPath = `${downloadsPath}/${childsName}_HeightChart_${pdfCounter}.pdf`;
+  
+        const fileExists = await RNFS.exists(newPdfPath);
+  
+        if (fileExists) {
+          setPdfCounter((prevCounter) => prevCounter + 1);
+          const newPdfPathWithCounter = `${downloadsPath}/${childsName}_HeightChart_${pdfCounter}.pdf`;
+          await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded with a new filename: ${childsName}_HeightChart_${pdfCounter}.pdf`,
+          );
+        } else {
+          await RNFS.moveFile(pdfPath, newPdfPath);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded in your downloads folder with filename: ${childsName}_HeightChart_${pdfCounter}.pdf.`,
+          );
+        }
       } else {
         console.error('Chart capture failed.');
       }
@@ -265,7 +291,8 @@ const HeightPerChild = ({route, toggleMenu}) => {
       console.error('Error generating PDF:', error);
     }
   };
-
+  
+  
   const resetDateSelection = () => {
     setSelectedFromDate(null);
     setSelectedToDate(null);
@@ -289,6 +316,11 @@ const HeightPerChild = ({route, toggleMenu}) => {
               Select Date Range (From-To)
             </Text>
             {showCalendar ? (
+              <View style={styles.calendarContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.calendarScrollView}>
               <Calendar
                 onDayPress={day => {
                   if (!selectedFromDate) {
@@ -319,6 +351,8 @@ const HeightPerChild = ({route, toggleMenu}) => {
                   marginTop: 20,
                 }}
               />
+              </ScrollView>
+              </View>
             ) : (
               <View style={styles.dateSelectionContainer}>
                 <Text style={styles.dateSelectionText}>
@@ -577,6 +611,18 @@ const styles = StyleSheet.create({
   dateSelectionText: {
     fontSize: 16,
     color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
 });
 

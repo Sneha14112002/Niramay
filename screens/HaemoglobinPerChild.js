@@ -19,7 +19,7 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(true);
-
+  const [pdfCounter, setPdfCounter] = useState(1);
   const formatDate = utcDate => {
     const options = {
       year: 'numeric',
@@ -59,7 +59,7 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
         fromDate,
         toDate,
       };
-
+  
       const response = await fetch(`${API_URL}/getVisitsData`, {
         method: 'POST',
         headers: {
@@ -67,10 +67,17 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
         },
         body: JSON.stringify(requestData),
       });
-
+  
       if (response.status === 200) {
         const data = await response.json();
         setFormData(data);
+  
+        // Check if there is any visit data within the selected date range
+        const hasHaemoglobinData = data.data.some(entry => entry.haemoglobin !== null && entry.haemoglobin !== "0" && entry.haemoglobin !== "0.0" && entry.haemoglobin !== "");
+  
+        if (!hasHaemoglobinData) {
+          showFlashMessage('No haemoglobin data found between the selected date range.');
+        }
       } else {
         console.log('Data not found in the database');
         showFlashMessage('No data found between the selected date range.');
@@ -82,6 +89,7 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
       setLoading(false);
     }
   };
+  
 
   const showFlashMessage = message => {
     Alert.alert('Flash Message', message);
@@ -114,18 +122,34 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
   };
 
   const generateHTML = (chartImageUri) => {
+
+    const selectedDatesHtml = selectedFromDate && selectedToDate ? `
+        <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+          <div style="font-size: 16px; color: #333; text-align: center;">Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}</div>
+        </div>
+      ` : '';
+
     const chartHtml = `
       <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
         <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
       </div>
     `;
 
-    const tableRows = tableData.map((item, index) => `
-    <tr>
-      <td style="padding: 8px; text-align: center;">${item.visitDate}</td>
-      <td style="padding: 8px; text-align: center;">${item.haemoglobin}</td>
-    </tr>`).join('');
-
+    const tableRows = tableData.map((item, index) => {
+      // Extracting the date without the time and timezone
+      const formattedDate = new Date(item.visitDate).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+  
+      return `
+        <tr>
+          <td style="padding: 8px; text-align: center;">${formattedDate}</td>
+          <td style="padding: 8px; text-align: center;">${item.haemoglobin}</td>
+        </tr>
+      `;
+    }).join('');
     const tableHtml = `
       <div class="table">
         <div class="table-title">Summary Table</div>
@@ -146,17 +170,16 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
     `;
 
     const htmlContent = `
-      <html>
+<html>
         <head>
           <style>
             body {
               font-family: Arial, sans-serif;
-              background-color: #f4f4f4;
+              background-color: #f0f0f0;
             }
             .container {
               margin: 16px;
             }
-            
             .profile {
               background-color: white;
               border-radius: 10px;
@@ -175,68 +198,14 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
               margin-bottom: 8px;
               color: black;
             }
-            .chart {
-              background-color: white;
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              margin: 16px;
-              padding: 16px;
+            .headerContainer {
+              display: flex;
+              align-items: left;
+              border-bottom: 1px solid orange; /* Thin line below the heading */
+              padding-bottom: 15px; /* Adjust as needed */
             }
-            .chart-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #555;
-            }
-            .table {
-              background-color: white;
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              margin: 16px;
-              padding: 16px;
-            }
-            .table-title {
-              font-size: 18px;
-              font-weight: bold;
-              margin: 16px;
-              color: #555;
-            }
-            .table-container {
-              background-color: white;
-              border-radius: 15px;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-              elevation: 8;
-            }
-            .table-header {
-              background-color: teal;
-              padding: 8px;
-              justify-content: space-evenly;
-            }
-            .table-header-text {
-              font-size: 16px;
-              color: white;
-              font-weight: bold;
-              text-align: center;
-            }
-            .table-row {
-              flex-direction: row;
-              align-items: center;
-              padding-vertical: 8px;
-              border-bottom-width: 1px;
-              border-bottom-color: #ccc;
-            }
-            .table-cell {
-              flex: 1;
-              padding: 8px;
-              text-align: center;
-            }
-            .table-cell-text {
-              font-size: 14px;
-              color: #333;
-              text-align: center;
-            }
-          img {
-              width: 100px; 
+            img {
+              width: 100px;
               height: 100px;
             }
             .headingLine {
@@ -257,77 +226,95 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
           </style>
         </head>
         <body>
-        <div class="headerContainer">
-        <img src="file:///android_asset/images/logo2.jpg" />
+          <div class="headerContainer">
+            <img src="file:///android_asset/images/logo2.jpg" />
             <div class="textContainer">
               <div class="headingLine">Niramay Bharat</div>
               <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
             </div>
           </div>
-          
           <div class="container">
-
-
             <div class="profile">
               <div class="profile-title">Profile</div>
               <div class="info-text">Name: ${childsName}</div>
               <div class="info-text">Gender: ${gender}</div>
               <div class="info-text">Date of Birth: ${dob}</div>
             </div>
-
-            <div class="chart">
-              <div class="chart-title">Haemoglobin Chart</div>
-              ${chartHtml}
-            </div>
-
+            ${selectedDatesHtml}
+            ${chartHtml}
             ${tableHtml}
-
           </div>
         </body>
-      </html>
-    `;
-
-    return htmlContent;
-  };
-
-  const generatePDF = async () => {
-    try {
-      const chartImageUri = await captureChart();
-
-      if (chartImageUri) {
-        const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'HaemoglobinChartPerChildReport',
-          directory: 'Documents',
-        };
-
-        const pdf = await RNHTMLtoPDF.convert(options);
-        const pdfPath = pdf.filePath;
-
-        // Move the generated PDF to the Downloads directory
-        const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_HaemoglobinChart.pdf`;
-
-        await RNFS.moveFile(pdfPath, newPdfPath);
-
-        // Display an alert dialog after the PDF is generated
-        Alert.alert(
-          'PDF Downloaded',
-          'The PDF has been downloaded in your downloads folder.'
-        );
-      } else {
-        console.error('Chart capture failed.');
+        </html>
+      `;
+    
+      return htmlContent;
+    };
+    const generatePDF = async () => {
+      try {
+        const chartImageUri = await captureChart();
+    
+        if (chartImageUri) {
+          // Option 1: Use a function to generate a unique filename based on the current date and time
+          const generateUniqueFilename = () => {
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+            return `${childsName}_HaemoglobinChart_${timestamp}.pdf`;
+          };
+    
+          // Option 2: Increment the counter correctly using the setPdfCounter callback
+          setPdfCounter((prevCounter) => prevCounter + 1);
+          const options = {
+            html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+            // Use either the function or counter approach for the filename
+            // fileName: generateUniqueFilename(),
+            fileName: `HaemoglobinChartPerChildReport_${pdfCounter}.pdf`,
+            directory: `Documents/${childsName}`,
+          };
+    
+          const pdf = await RNHTMLtoPDF.convert(options);
+          const pdfPath = pdf.filePath;
+    
+          const downloadsPath = RNFS.DownloadDirectoryPath;
+          const newPdfPath = `${downloadsPath}/${childsName}_HaemoglobinChart_${pdfCounter}.pdf`;
+    
+          const fileExists = await RNFS.exists(newPdfPath);
+    
+          if (fileExists) {
+            setPdfCounter((prevCounter) => prevCounter + 1);
+            const newPdfPathWithCounter = `${downloadsPath}/${childsName}_HaemoglobinChart_${pdfCounter}.pdf`;
+            await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
+    
+            Alert.alert(
+              'PDF Downloaded',
+              `The PDF has been downloaded with a new filename: ${childsName}_HaemoglobinChart_${pdfCounter}.pdf`,
+            );
+          } else {
+            await RNFS.moveFile(pdfPath, newPdfPath);
+    
+            Alert.alert(
+              'PDF Downloaded',
+              `The PDF has been downloaded in your downloads folder with filename: ${childsName}_HaemoglobinChart_${pdfCounter}.pdf.`,
+            );
+          }
+        } else {
+          console.error('Chart capture failed.');
+        }
+      } catch (error) {
+        console.error('Error generating PDF:', error);
       }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
-  };
+    };
 
   const resetDateSelection = () => {
     setSelectedFromDate(null);
     setSelectedToDate(null);
     setShowCalendar(true);
   };
+
+  const calculateTickValues1 = (haemoglobinData) => {
+    return haemoglobinData.map((entry, index) => `Visit ${index + 1}`);
+  };
+  
+  
 
 
   return (
@@ -347,6 +334,11 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
               Select Date Range (From-To)
             </Text>
             {showCalendar ? (
+              <View style={styles.calendarContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.calendarScrollView}>
               <Calendar
                 onDayPress={day => {
                   if (!selectedFromDate) {
@@ -377,6 +369,8 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
                   marginTop: 20,
                 }}
               />
+              </ScrollView>
+              </View>
             ) : (
               <View style={styles.dateSelectionContainer}>
                 <Text style={styles.dateSelectionText}>
@@ -418,15 +412,14 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
                       style={{ data: { fill: '#3eb489' } }}
                     />
                    <VictoryAxis
-                      label="Visits"
-                      style={{
-                        axisLabel: {padding: 30},
-                      }}
-                      tickValues={Array.from(new Set(visitDates)).map(
-                        date => visitDates.indexOf(date) + 1,
-                      )}
-                      tickFormat={value => `Visit${Math.floor(value)}`} // Use Math.floor to ensure whole numbers
-                    />
+  label="Visits"
+  style={{
+    axisLabel: { padding: 30 },
+  }}
+  tickValues={calculateTickValues1(haemoglobinData)}
+  tickFormat={value => value} // Use the tickFormat to display the tick values
+/>
+
                     <VictoryAxis
                       label="Haemoglobin (in g/dL)"
                       style={{
@@ -644,6 +637,18 @@ const styles = StyleSheet.create({
   dateSelectionText: {
     fontSize: 16,
     color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
  
 });

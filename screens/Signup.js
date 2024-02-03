@@ -12,7 +12,7 @@ import ModalSelector from 'react-native-modal-selector';
 const Signup = ({ navigation }) => {
   const [isPasswordShown, setIsPasswordShown] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-  const [selectedOption, setSelectedOption] = useState('Assistant');
+  const [selectedOption, setSelectedOption] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,10 +24,10 @@ const Signup = ({ navigation }) => {
   const [SelectedRole, setSelectedRole] = useState('Select Role');
   const options = ['Assistant', 'Doctor', 'Supervisor'];
   const DROPDOWN_BACKGROUND_COLOR = COLORS.white; // Customize the background color
-const DROPDOWN_TEXT_COLOR = COLORS.black; // Customize the text color
-const DROPDOWN_BORDER_COLOR = COLORS.black;
+  const DROPDOWN_TEXT_COLOR = COLORS.black; // Customize the text color
+  const DROPDOWN_BORDER_COLOR = COLORS.black;
 
-const [selectedOptionAssistant, setSelectedOptionAssistant] = useState('Assistant');
+  const [selectedOptionAssistant, setSelectedOptionAssistant] = useState('Assistant');
   const [selectedOptionDoctor, setSelectedOptionDoctor] = useState('Doctor');
   const [selectedOptionSupervisor, setSelectedOptionSupervisor] = useState('Supervisor');
 
@@ -45,8 +45,16 @@ const [selectedOptionAssistant, setSelectedOptionAssistant] = useState('Assistan
 
     return passwordPattern.test(password);
   };
-  
 
+  const handlePhoneNumberChange = (text) => {
+    // Remove non-digit characters from the input
+    const cleanedText = text.replace(/[^0-9]/g, '');
+
+    // Limit the input to 10 digits
+    const truncatedText = cleanedText.slice(0, 10);
+
+    setPhoneNumber(truncatedText);
+  };
   const handleSignUp = () => {
     if (!name || !email || !phoneNumber) {
       Alert.alert('Warning', 'Name, email, and phone number are required');
@@ -57,7 +65,7 @@ const [selectedOptionAssistant, setSelectedOptionAssistant] = useState('Assistan
       email: email,
       password: password,
       phoneNumber: phoneNumber,
-      post: selectedOption,
+      post: SelectedRole,
     };
 
     // Check if passwords match
@@ -283,108 +291,107 @@ const [selectedOptionAssistant, setSelectedOptionAssistant] = useState('Assistan
             </View>
 
             <View style={{ marginBottom: 12 }}>
-              <Text style={{
-                color: COLORS.black,
-                fontSize: 17,
-                fontWeight: 400,
-                marginVertical: 5,
-                color: 'black'
-              }}>Mobile Number / फोन नंबर</Text>
-              <View style={{
-                width: "100%",
-                height: 45,
-                borderColor: COLORS.black,
-                borderWidth: 1,
-                borderRadius: 8,
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingLeft: 22
-              }}>
-                <TextInput
-                  placeholder='+91'
-                  placeholderTextColor={COLORS.black}
-                  keyboardType='numeric'
-                  style={{
-                    color: COLORS.black,
-                    width: "12%",
-                    borderRightWidth: 1,
-                    borderLeftColor: COLORS.grey,
-                    height: "100%"
-                  }}
-                />
-                <TextInput
-                  placeholder='Enter your phone number'
-                  placeholderTextColor={COLORS.black}
-                  keyboardType='numeric'
-                  style={{
-                    color: COLORS.black,
-                    width: "80%"
-                  }}
-                  value={phoneNumber}
-                  onChangeText={(text) => setPhoneNumber(text)}
-                />
-              </View>
-              {phoneNumber.length !== 10 && phoneNumber.length > 0 ? (
-                <Text style={{ color: 'red' }}>Phone number must be 10 digits</Text>
-              ) : null}
+      <Text style={{
+        color: 'black',
+        fontSize: 17,
+        fontWeight: '400',
+        marginVertical: 5,
+        color: 'black'
+      }}>Mobile Number / फोन नंबर</Text>
+      <View style={{
+        width: '100%',
+        height: 45,
+        borderColor: 'black',
+        borderWidth: 1,
+        borderRadius: 8,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingLeft: 22
+      }}>
+        <TextInput
+          placeholder='+91'
+          placeholderTextColor='black'
+          keyboardType='numeric'
+          style={{
+            color: 'black',
+            width: '12%',
+            borderRightWidth: 1,
+            borderLeftColor: 'grey',
+            height: '100%'
+          }}
+        />
+        <TextInput
+          placeholder='Enter your phone number'
+          placeholderTextColor='black'
+          keyboardType='numeric'
+          style={{
+            color: 'black',
+            width: '80%'
+          }}
+          value={phoneNumber}
+          onChangeText={handlePhoneNumberChange}
+        />
+      </View>
+      {phoneNumber.length !== 10 && phoneNumber.length > 0 ? (
+        <Text style={{ color: 'red' }}>Phone number must be 10 digits</Text>
+      ) : null}
+    </View>
+
+
+            <View style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 17, fontWeight: 400, marginVertical: 5, color: 'black' }}>
+                Role / भूमिका
+              </Text>
+              <ModalSelector
+                data={[
+                  { key: 0, label: 'Select Role', value: 'Select Role' },
+                  { key: 1, label: 'Assistant', value: 'Assistant' },
+                  { key: 2, label: 'Doctor', value: 'Doctor' },
+                  { key: 3, label: 'Supervisor', value: 'Supervisor' },
+                ]}
+                initValue={SelectedRole}
+                onChange={(option) => {
+                  console.log('Selected Role:', option.value);
+                  setSelectedRole(option.value);
+                }}
+                style={{
+                  height: 45,
+                  borderColor: COLORS.black,
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  paddingHorizontal: 22,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'black',
+                }}
+                selectStyle={{
+                  borderColor: COLORS.theme,
+                  backgroundColor: `${COLORS.white}80`, // Adjust opacity here (e.g., 80%)
+                  borderWidth: 0,
+                  borderRadius: 8,
+                }}
+                selectTextStyle={{
+                  color: 'black', // Set the selected text color to full black
+                  fontSize: 16,
+                }}
+                optionStyle={{
+                  backgroundColor: COLORS.white,
+                  borderBottomColor: COLORS.white,
+                  borderBottomWidth: 1,
+                  paddingVertical: 10,
+                }}
+                optionTextStyle={{
+                  color: COLORS.black,
+                  fontSize: 16,
+                }}
+                sectionStyle={{ borderColor: 'transparent' }}
+              />
             </View>
 
-          
-
-<View style={{ marginBottom: 12 }}>
-  <Text style={{ fontSize: 17, fontWeight: 400, marginVertical: 5, color: 'black' }}>
-    Role / भूमिका
-  </Text>
-  <ModalSelector
-    data={[
-      { key: 0, label: 'Select Role', value: 'Select Role' },
-      { key: 1, label: 'Assistant', value: 'Assistant' },
-      { key: 2, label: 'Doctor', value: 'Doctor' },
-      { key: 3, label: 'Supervisor', value: 'Supervisor' },
-    ]}
-    initValue={SelectedRole}
-    onChange={(option) => {
-      console.log('Selected Role:', option.value);
-      setSelectedRole(option.value);
-    }}
-    style={{
-      height: 45,
-      borderColor: COLORS.black,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'black',
-    }}
-    selectStyle={{
-      borderColor: COLORS.theme,
-      backgroundColor: `${COLORS.white}80`, // Adjust opacity here (e.g., 80%)
-      borderWidth: 0,
-      borderRadius: 8,
-    }}
-    selectTextStyle={{
-      color: 'black', // Set the selected text color to full black
-      fontSize: 16,
-    }}
-    optionStyle={{
-      backgroundColor: COLORS.white,
-      borderBottomColor: COLORS.white,
-      borderBottomWidth: 1,
-      paddingVertical: 10,
-    }}
-    optionTextStyle={{
-      color: COLORS.black,
-      fontSize: 16,
-    }}
-    sectionStyle={{ borderColor: 'transparent' }}
-  />
-</View>
 
 
-
-      <View style={{
+            <View style={{
               flexDirection: 'row',
               marginVertical: 3
             }}>

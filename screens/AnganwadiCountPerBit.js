@@ -45,7 +45,7 @@ const CustomMenuButton = ({toggleMenu}) => {
     const [uniqueYears, setUniqueYears] = useState([]);
     const navigation = useNavigation();
     const chartRef = useRef();
-  
+    const [pdfCounter, setPdfCounter] = useState(1); 
     React.useLayoutEffect(() => {
       navigation.setOptions({
         headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />,
@@ -108,25 +108,22 @@ const CustomMenuButton = ({toggleMenu}) => {
       ? data.map((item, index) => ({ x: index + 1, label: item.bit_name }))
       : chartData.map((item, index) => ({ x: index + 1, label: item.bit_name }));
 
-
-  
-
-    const generateHTML = (chartImageUri) => {
+      const generateHTML = (chartImageUri, selectedYear) => {
         const chartHtml = `
-        <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
-        <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
-      </div>
-    `;
-
+          <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+            <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
+          </div>
+        `;
+      
         const tableHtml = `
           <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
-            <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Anganwadi Count Per Bit</Text>
+            <h2 style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Anganwadi Count Per Bit</h2>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Bit Name</th>
                 <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Count</th>
               </tr>
-              ${data.map(item => `
+              ${chartData.map((item) => `
                 <tr>
                   <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
                   <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.anganwadi_count}</td>
@@ -135,7 +132,9 @@ const CustomMenuButton = ({toggleMenu}) => {
             </table>
           </div>
         `;
-
+      
+        const yearHtml = selectedYear ? `<div style="text-align: center; margin-top: 10px; font-size: 16px; color: #333;">Year: ${selectedYear}</div>` : '';
+      
         const htmlContent = `
           <html>
             <head>
@@ -145,58 +144,52 @@ const CustomMenuButton = ({toggleMenu}) => {
                   background-color: #f0f0f0;
                 }
                 .headerContainer {
-                    display: flex;
-                    align-items: left;
-                    
-                    border-bottom: 1px solid orange; /* Thin line below the heading */
-                    padding-bottom: 15px; /* Adjust as needed */
-                  }
-                  img {
-                    width:100px; 
-                    height:100px;
-                    
-                    }
-                    .headingLine {
-                     font-size:30;
-                     color:orange;
-                     margin-left:20px;
-                    margin-top:20px;
-                    padding-bottom:3px;
-                  
-                   }
-                   .subheading {
-                     font-size: 18px;
-                     color: orange;
-                  
-                     margin-left:20px;
-                   }
-                   .textContainer {
-                     margin-left: 10px;
-                   }
-                
+                  display: flex;
+                  align-items: left;
+                  border-bottom: 1px solid orange;
+                  padding-bottom: 15px;
+                }
+                img {
+                  width: 100px;
+                  height: 100px;
+                }
+                .headingLine {
+                  font-size: 30;
+                  color: orange;
+                  margin-left: 20px;
+                  margin-top: 20px;
+                  padding-bottom: 3px;
+                }
+                .subheading {
+                  font-size: 18px;
+                  color: orange;
+                  margin-left: 20px;
+                }
+                .textContainer {
+                  margin-left: 10px;
+                }
               </style>
             </head>
             <body>
-            <div class="headerContainer">
-       
-            <img src="file:///android_asset/images/logo2.jpg" />
-        <div class="textContainer">
-        <div class="headingLine">Niramay Bharat</div>
-        <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
-        </div>
-        </div>
-              <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Anganwadi Count Per Bit</Text>
-              
+              <div class="headerContainer">
+                <img src="file:///android_asset/images/logo2.jpg" />
+                <div class="textContainer">
+                  <div class="headingLine">Niramay Bharat</div>
+                  <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
+                </div>
+              </div>
+              <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Anganwadi Count Per Bit</h2>
+              ${yearHtml}
               ${chartHtml}
-              <Text style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</Text>
+              <h2 style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</h2>
               ${tableHtml}
             </body>
           </html>
         `;
-
+      
         return htmlContent;
-    };
-
+      };
+        
     const captureChart = async () => {
       try {
           // Capture the chart as an image
@@ -208,54 +201,61 @@ const CustomMenuButton = ({toggleMenu}) => {
   };
 
   const generatePDF = async () => {
-      try {
-        // Capture the chart before generating the PDF
-        const chartImageUri = await captureChart();
-    
-        if (chartImageUri) {
-          const options = {
-            html: generateHTML(chartImageUri),
-            fileName: 'AnganwadiCountPerBitReport',
-            directory: 'Documents/ConsolidatedReports',
-          };
-    
-          const pdf = await RNHTMLtoPDF.convert(options);
-          const pdfPath = pdf.filePath;
-    
-          // Move the generated PDF to the Downloads directory
-          const downloadsPath = RNFS.DownloadDirectoryPath;
-          const newPdfPath = `${downloadsPath}/AnganwadiCountPerBitReport.pdf`;
-    
-          await RNFS.moveFile(pdfPath, newPdfPath);
-    
-          // Display an alert dialog after the PDF is generated
-          Alert.alert(
-            'PDF Generated!',
-            `PDF has been downloaded in Downloads Folder`,
-            [
-              // {
-              //   text: 'Click here to open the PDF',
-              //   onPress: () => {
-              //     // Open the generated PDF when the button in the alert dialog is pressed
-              //     Linking.openURL(`file://${newPdfPath}`);
-              //   },
-              // },
-              {
-                text: 'OK',
-                onPress: () => {
-                  // Do something when the OK button is pressed
-                  // This can be left empty if you don't need any action
-                },
-              },
-            ]
-          );
-        } else {
-          console.error('Chart capture failed.');
-        }
-      } catch (error) {
-        console.error('Error generating PDF:', error);
+    try {
+      // Capture the chart before generating the PDF
+      const chartImageUri = await captureChart();
+
+      if (chartImageUri) {
+        // Increment the PDF counter
+        setPdfCounter((prevCounter) => prevCounter + 1);
+
+        const allYearsChartData = data.reduce((result, item) => {
+          const existingItem = result.find((x) => x.bit_name === item.bit_name);
+          if (existingItem) {
+            existingItem.total_children_count += parseInt(item.total_children_count);
+          } else {
+            result.push({
+              bit_name: item.bit_name,
+              total_children_count: parseInt(item.total_children_count),
+            });
+          }
+          return result;
+        }, []);
+
+        const options = {
+          html: generateHTML(chartImageUri, selectedYear),
+          fileName: `AnganwadiCountPerBitReport_${pdfCounter}`, // Use the counter in the filename
+          directory: 'Documents/ConsolidatedReports',
+        };
+
+        const pdf = await RNHTMLtoPDF.convert(options);
+        const pdfPath = pdf.filePath;
+
+        // Move the generated PDF to the Downloads directory
+        const downloadsPath = RNFS.DownloadDirectoryPath;
+        const newPdfPath = `${downloadsPath}/AnganwadiCountPerBitReport${pdfCounter}.pdf`;
+
+        await RNFS.moveFile(pdfPath, newPdfPath);
+
+        // Display an alert dialog after the PDF is generated
+        Alert.alert(
+          'PDF Generated!',
+          `PDF has been generated successfully in downloads folder with filename: AnganwadiCountPerBitReport${pdfCounter}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {},
+            },
+          ]
+        );
+      } else {
+        console.error('Chart capture failed.');
       }
-    };
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+  };
+
 
     return (
       <ScrollView style={styles.container}>

@@ -27,7 +27,7 @@ const WeightPerChild = ({route, toggleMenu}) => {
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(true);
-
+  const [pdfCounter, setPdfCounter] = useState(1);
   const formatDate = utcDate => {
     const options = {
       timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
@@ -105,6 +105,13 @@ const WeightPerChild = ({route, toggleMenu}) => {
   }));
 
   const generateHTML = chartImageUri => {
+    const selectedDatesHtml = selectedFromDate && selectedToDate ? `
+    <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+      <div style="font-size: 16px; color: #333; text-align: center;">Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}</div>
+    </div>
+  ` : '';
+  
+
     const chartHtml = `
       <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
         <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
@@ -134,65 +141,88 @@ const WeightPerChild = ({route, toggleMenu}) => {
     `;
 
     const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              background-color: #f0f0f0;
-            }
-            .headerContainer {
-              display: flex;
-              align-items: left;
-              border-bottom: 1px solid orange; /* Thin line below the heading */
-              padding-bottom: 15px; /* Adjust as needed */
-            }
-            img {
-              width: 100px; 
-              height: 100px;
-            }
-            .headingLine {
-              font-size: 30;
-              color: orange;
-              margin-left: 20px;
-              margin-top: 20px;
-              padding-bottom: 3px;
-            }
-            .subheading {
-              font-size: 18px;
-              color: orange;
-              margin-left: 20px;
-            }
-            .textContainer {
-              margin-left: 10px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="headerContainer">
-          <img src="file:///android_asset/images/logo2.jpg" />
-            <div class="textContainer">
-              <div class="headingLine">Niramay Bharat</div>
-              <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
-            </div>
-          </div>
-          <div class="profile">
-            <div class="profile-title">Profile</div>
-            <div class="info-text">Name: ${childsName}</div>
-            <div class="info-text">Gender: ${gender}</div>
-            <div class="info-text">Date of Birth: ${dob}</div>
-         
+    <html>
+    <head>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f0f0f0;
+        }
+        .container {
+          margin: 16px;
+        }
+        .profile {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          margin: 16px;
+          padding: 16px;
+        }
+        .profile-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: #555;
+        }
+        .info-text {
+          font-size: 16px;
+          margin-bottom: 8px;
+          color: black;
+        }
+        .headerContainer {
+          display: flex;
+          align-items: left;
+          border-bottom: 1px solid orange; /* Thin line below the heading */
+          padding-bottom: 15px; /* Adjust as needed */
+        }
+        img {
+          width: 100px;
+          height: 100px;
+        }
+        .headingLine {
+          font-size: 30;
+          color: orange;
+          margin-left: 20px;
+          margin-top: 20px;
+          padding-bottom: 3px;
+        }
+        .subheading {
+          font-size: 18px;
+          color: orange;
+          margin-left: 20px;
+        }
+        .textContainer {
+          margin-left: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="headerContainer">
+        <img src="file:///android_asset/images/logo2.jpg" />
+        <div class="textContainer">
+          <div class="headingLine">Niramay Bharat</div>
+          <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
         </div>
-          <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Weight Chart Per Child</Text>
-          ${chartHtml}
-          <Text style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</Text>
-          ${tableHtml}
-        </body>
-      </html>
-    `;
+      </div>
+      <div class="container">
+        <div class="profile">
+          <div class="profile-title">Profile</div>
+          <div class="info-text">Name: ${childsName}</div>
+          <div class="info-text">Gender: ${gender}</div>
+          <div class="info-text">Date of Birth: ${dob}</div>
+        </div>
+        ${selectedDatesHtml}
+        ${chartHtml}
+        ${tableHtml}
+      </div>
+    </body>
+    </html>
+  `;
 
-    return htmlContent;
-  };
+  return htmlContent;
+};
+
+
 
   const captureChart = async () => {
     try {
@@ -202,32 +232,52 @@ const WeightPerChild = ({route, toggleMenu}) => {
       return null;
     }
   };
-
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-
+  
       if (chartImageUri) {
-        const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'WeightChartPerChildReport',
-          directory: 'Documents',
+        // Option 1: Use a function to generate a unique filename based on the current date and time
+        const generateUniqueFilename = () => {
+          const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+          return `${childsName}_WeightChart_${timestamp}.pdf`;
         };
-
+  
+        // Option 2: Increment the counter correctly using the setPdfCounter callback
+        setPdfCounter((prevCounter) => prevCounter + 1);
+        const options = {
+          html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+          // Use either the function or counter approach for the filename
+          // fileName: generateUniqueFilename(),
+          fileName: `WeightChartPerChildReport_${pdfCounter}.pdf`,
+          directory: `Documents/${childsName}`,
+        };
+  
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
-
-        // Move the generated PDF to the Downloads directory
+  
         const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_WeightChart.pdf`;
-
-        await RNFS.moveFile(pdfPath, newPdfPath);
-
-        // Display an alert dialog after the PDF is generated
-        Alert.alert(
-          'PDF Downloaded',
-          'The PDF has been downloaded in your downloads folder.',
-        );
+        const newPdfPath = `${downloadsPath}/${childsName}_WeightChart_${pdfCounter}.pdf`;
+  
+        const fileExists = await RNFS.exists(newPdfPath);
+  
+        if (fileExists) {
+          setPdfCounter((prevCounter) => prevCounter + 1);
+          const newPdfPathWithCounter = `${downloadsPath}/${childsName}_WeightChart_${pdfCounter}.pdf`;
+          await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded with a new filename:${childsName}_WeightChart_${pdfCounter}.pdf`,
+          );
+        } else {
+          await RNFS.moveFile(pdfPath, newPdfPath);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded in your downloads folder with filename:${childsName}_WeightChart_${pdfCounter}.pdf .`,
+          );
+        }
       } else {
         console.error('Chart capture failed.');
       }
@@ -260,6 +310,11 @@ const WeightPerChild = ({route, toggleMenu}) => {
               Select Date Range (From-To)
             </Text>
             {showCalendar ? (
+              <View style={styles.calendarContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.calendarScrollView}>
               <Calendar
                 onDayPress={day => {
                   if (!selectedFromDate) {
@@ -290,6 +345,8 @@ const WeightPerChild = ({route, toggleMenu}) => {
                   marginTop: 20,
                 }}
               />
+              </ScrollView>
+              </View>
             ) : (
               <View style={styles.dateSelectionContainer}>
                 <Text style={styles.dateSelectionText}>
@@ -550,6 +607,18 @@ const styles = StyleSheet.create({
   dateSelectionText: {
     fontSize: 16,
     color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
 });
 

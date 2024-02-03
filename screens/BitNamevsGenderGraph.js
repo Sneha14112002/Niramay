@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView,Image, Button,TouchableOpacity,Alert} from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, FlatList, ScrollView, Image, Button, TouchableOpacity, Alert } from 'react-native';
 import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -7,9 +7,10 @@ import { PieChart } from 'react-native-chart-kit';
 import { API_URL } from './config';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import { captureRef } from 'react-native-view-shot';
-import logo2 from '../assets/logo2.jpg'; 
+import logo2 from '../assets/logo2.jpg';
 import RNFS from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
+import Modal from 'react-native-modal';
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -53,6 +54,7 @@ const styles = StyleSheet.create({
   },
   dropdownOptionText: {
     fontSize: 16,
+    color:'black',
   },
   genderChartSection: {
     alignItems: 'center',
@@ -155,6 +157,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'black',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 200,
+    paddingBottom: 200,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#333',
+    textAlign: 'center',
+  },
+  modalHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+    color: 'black',
+  },
+  closeModalButton: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingBottom: 10,
+    backgroundColor: 'teal',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    padding: 10,
+    width: '80%',
+  },
+  noChildListText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  modalItemText: {
+    flex: 1,
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });
 const colors = ['#3498db', '#ff69b4']; // Blue for male, Pink for female
 
@@ -183,6 +253,9 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   const [loading, setLoading] = useState(false);
   const [chartImage, setChartImage] = useState(null);
   const [prevSelectedBitName, setPrevSelectedBitName] = useState('');
+  const [chartImageURI, setChartImageURI] = useState(null);
+
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />, // Place the menu button in the header
@@ -217,6 +290,20 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   }, [bitName]);
 
 
+  const captureChartImage = async () => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const result = await captureRef(chartRef, {
+          format: 'png',
+          quality: 1,
+        });
+
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
 
   useEffect(() => {
     if (selectedBitName && (selectedYear || selectedYear === '')) {
@@ -231,6 +318,28 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
     }
   }, [selectedBitName, selectedYear]);
 
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [childData, setChildData] = useState([]);
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
+
+  const fetchChildData = (gender) => {
+    const yearParam = selectedYear ? `/${selectedYear}` : ''; // Add the year parameter if selected
+  
+    axios
+      .get(`${API_URL}/children/${selectedBitName}/${gender}${yearParam}`)
+      .then((response) => {
+        setChildData(response.data);
+        toggleModal(); // Show the modal
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
+  
+
 
   const pieChartData = data.map((item, index) => ({
     name: item.gender,
@@ -244,16 +353,34 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
     console.log('selectedBitName:', selectedBitName);
     console.log('data:', data);
     console.log('pieChartData:', pieChartData);
+
   }, [bitName, selectedBitName, data, pieChartData]);
 
-  const captureChartImage = async () => {
+  // const captureChartImage = async () => {
+  //   try {
+  //     const image = await captureRef(chartRef, { format: 'png', quality: 1 });
+  //     setChartImage(image);
+  //   } catch (error) {
+  //     console.error('Error capturing chart image:', error);
+  //   }
+  // };
+  useEffect(() => {
+    if (chartImageURI) {
+      generatePDF();
+    }
+  }, [chartImageURI]);
+
+
+  const handleCaptureImage = async () => {
     try {
-      const image = await captureRef(chartRef, { format: 'png', quality: 1 });
-      setChartImage(image);
+      const result = await captureChartImage();
+      setChartImageURI(result);
     } catch (error) {
       console.error('Error capturing chart image:', error);
     }
   };
+
+
 
   const generateHTMLContent = () => {
 
@@ -378,7 +505,7 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
           <h1>Gender Distribution</h1>
           <p>Anganwadi Name: ${selectedBitName}</p>
           <div class="gender-chart-section">
-          ${chartImage ? <img class="chart-image" src="${chartImage}" alt="Gender Distribution Chart" /> : ''}
+          ${chartImageURI ? `<img class="chart-image" src="${chartImageURI}" alt="Gender Distribution Chart" />` : ''}
         </div>
           
           <div class="table-container">
@@ -406,45 +533,64 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   const generatePDF = async () => {
     try {
       if (!selectedBitName) {
-        // Show an alert if bit_name is not selected
         Alert.alert('Error', 'Please select an Anganwadi Name before generating PDF.');
         return;
       }
-  
-      // Check if chartRef is defined before capturing the chart image
-      if (chartRef) {
-        await captureChartImage();
-      }
-  
+
+      // Remove the captureChartImage call here
+
       const options = {
         html: generateHTMLContent(),
-        fileName: `${selectedBitName}.pdf`, // Ensure the file has a .pdf extension
-        directory: RNFS.DownloadDirectoryPath, // Save in the downloads directory
+        fileName: `${selectedBitName}.pdf`,
+        directory: RNFS.DownloadDirectoryPath,
       };
-  
-      const file = await RNHTMLtoPDF.convert(options);
+
+      if (!chartImageURI) {
+        // Capture the chart image if not already captured
+        await captureChartImage();
+      }
+
+      options.images = [{ name: 'chartImage', data: chartImageURI, width: 300, height: 200 }];
+
       const pdf = await RNHTMLtoPDF.convert(options);
       const pdfPath = pdf.filePath;
 
-      // Move the generated PDF to the Downloads directory
       const downloadsPath = RNFS.DownloadDirectoryPath;
       const newPdfPath = `${downloadsPath}/GenderGraphOf_${selectedBitName}.pdf`;
 
       await RNFS.moveFile(pdfPath, newPdfPath);
 
-      // Display an alert after successful PDF generation and downloading
       Alert.alert(
         'PDF Downloaded',
-        'The PDF has been downloaded in your downloads folder.'
+        `The PDF "GenderGraphof_${selectedBitName}.pdf" has been downloaded in your downloads folder.`
       );
-      
-      console.log('PDF generated:', file.filePath);
+
+      console.log('PDF generated:', pdf.filePath);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
   };
 
   let chartRef;
+
+  const renderChildList = () => {
+    if (!childData.length) {
+      return <Text style={styles.noChildListText}>No children in this Bit Name</Text>;
+    }
+
+    return (
+      <FlatList
+        data={childData}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.modalItem}>
+            <Text style={styles.modalItemText}>{item.child_name}</Text>
+            <Text style={styles.modalItemText}>{item.anganwadi_no}</Text>
+          </View>
+        )}
+      />
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -466,17 +612,17 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
               />
             </View>
           )}
-
+            
           <Text style={styles.label}>Select Year:</Text>
-        
-          <ModalSelector
-        data={years.map((year) => ({ key: year.toString(), label: year.toString() }))}
-        initValue={selectedYear ? selectedYear : 'Select a Year'} // Update initValue dynamically
-        onChange={(option) => setSelectedYear(option.label)}
-        style={styles.modalSelectorContainer} // Apply the container style
-        selectTextStyle={styles.modalSelectorText} // Apply the text style
-        optionTextStyle={styles.modalSelectorText} // Apply the text style for options
-      />
+          {<ModalSelector
+            data={(years || []).map((year) => ({ key: year ? year.toString() : '', label: year ? year.toString() : '' }))}
+            initValue={selectedYear ? selectedYear : 'Select a Year'}
+            onChange={(option) => setSelectedYear(option.label)}
+            style={styles.modalSelectorContainer}
+            selectTextStyle={styles.modalSelectorText}
+            optionTextStyle={styles.modalSelectorText}
+          />}
+
 
 
         </View>
@@ -508,7 +654,7 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Gender Summary</Text>
             </View>
-            <FlatList
+            {/* <FlatList
               initialScrollIndex={0}
               data={data}
               keyExtractor={(item, index) => index.toString()}
@@ -518,9 +664,39 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
                   <Text style={styles.tableCell}>{item.count}</Text>
                 </View>
               )}
+            /> */}
+            <FlatList
+              initialScrollIndex={0}
+              data={data}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.tableRow}
+                  onPress={() => fetchChildData(item.gender)}
+                >
+                  <Text style={styles.tableCell}>{item.gender}</Text>
+                  <Text style={styles.tableCell}>{item.count}</Text>
+                </TouchableOpacity>
+              )}
             />
           </View>
         )}
+        {/* Modal Section */}
+        <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Child List</Text>
+              <View style={styles.tableHeader}>
+                <Text style={styles.tableHeaderText}>Name</Text>
+                <Text style={styles.tableHeaderText}>Anganwadi No</Text>
+              </View>
+              {renderChildList()}
+              <TouchableOpacity style={styles.closeModalButton} onPress={toggleModal}>
+                <Text style={styles.closeModalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
 
       <TouchableOpacity
@@ -534,12 +710,13 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
         }}
         onPress={() => {
           if (selectedBitName !== prevSelectedBitName) {
-            generatePDF();
+            handleCaptureImage();
           } else {
-            captureChartImage();
+            generatePDF();
           }
           setPrevSelectedBitName(selectedBitName);
         }}
+
         activeOpacity={0.2}
       >
         <Image

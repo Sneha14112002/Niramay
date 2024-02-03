@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { Table, Row } from 'react-native-table-component';
+import { FlatList } from 'react-native';
 import axios from 'axios';
 import {
   VictoryBar,
@@ -11,21 +12,29 @@ import {
   VictoryLabel,
 } from 'victory-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import ModalDropdown from 'react-native-modal-dropdown';
 import { API_URL } from './config';
 import { captureRef } from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
+import Modal from 'react-native-modal';
+
 const GradeTransition = () => {
   const [data, setData] = useState([]);
   const [distinctYears, setDistinctYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState('');
   const chartContainerRef = useRef();
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [modalData, setModalData] = useState({});
 
+  const [pdfCounter, setPdfCounter] = useState(1); 
   useEffect(() => {
     fetchData();
     fetchDistinctYears();
   }, []);
+
+
+  const [pdfCount, setPDFCount] = useState(1);
+
 
   const fetchData = async () => {
     try {
@@ -64,7 +73,7 @@ const GradeTransition = () => {
       </View>
     );
   }
-
+  console.log('Data before mapping:', data);
   const chartData = data.map((item) => ({
     bit_name: item.bit_name,
     mam_to_normal_count: item.mam_to_normal_count,
@@ -91,13 +100,14 @@ const GradeTransition = () => {
 
 
   const generatePDFHtml = (chartImageUri) => {
-
     const chartImageHtml = chartImageUri ? `<img src="${chartImageUri}" style="width:100%;height: 300px; object-fit: contain;" />` : '';
-
+  
+    const selectedYearHtml = selectedYear ? `<p style="font-size: 16px; color: #333; margin-bottom: 10px;">Selected Year: ${selectedYear}</p>` : '';
+  
     const tableHtml = `
-    
       <div>
         <h2 style="text-align: center;">Transition Summary</h2>
+        ${selectedYearHtml}
         <table style="width: 100%; border-collapse: collapse;">
           <tr style="background-color: teal; color: white; text-align: center;">
             <th style="padding: 10px;">Name</th>
@@ -105,16 +115,16 @@ const GradeTransition = () => {
             <th style="padding: 10px;">SAM to Normal</th>
           </tr>
           ${data
-        .map(
-          (item) => `
+            .map(
+              (item) => `
                 <tr style="text-align: center;">
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.mam_to_normal_count}</td>
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.sam_to_normal_count}</td>
                 </tr>
               `
-        )
-        .join('')}
+            )
+            .join('')}
         </table>
       </div>
     `;
@@ -240,7 +250,7 @@ const GradeTransition = () => {
          
 
           <div class="chart">
-            <div class="chart-title">BMI Chart</div>
+            <div class="chart-title">Grade Transition Chart</div>
             ${chartImageHtml}
           </div>
 
@@ -253,46 +263,36 @@ const GradeTransition = () => {
 
     return htmlContent;
 
-  };
-
+  }; 
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-      const htmlContent = generatePDFHtml(chartImageUri);
-
+  
       if (chartImageUri) {
+        const newPdfCounter = pdfCounter + 1;
+        setPdfCounter(newPdfCounter);
+  
         const options = {
-          html: htmlContent,
-          fileName: 'GradeTransitionReport',
+          html: generatePDFHtml(chartImageUri),
+          fileName: `GradeTransitionReport_${newPdfCounter}.pdf`,
           directory: 'Documents/ConsolidatedReports',
         };
+  
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
   
-        // Move the generated PDF to the Downloads directory
         const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/GradeTransitionReport.pdf`;
+        const newPdfPath = `${downloadsPath}/GradeTransitionReport_${newPdfCounter}.pdf`;
   
         await RNFS.moveFile(pdfPath, newPdfPath);
   
-        // Display an alert dialog after the PDF is generated
         Alert.alert(
           'PDF Generated!',
-          `PDF has been downloaded in Downloads Folder`,
+          `PDF has been generated successfully.\nFile Path: ${newPdfPath}`,
           [
-            // {
-            //   text: 'Click here to open the PDF',
-            //   onPress: () => {
-            //     // Open the generated PDF when the button in the alert dialog is pressed
-            //     Linking.openURL(`file://${newPdfPath}`);
-            //   },
-            // },
             {
               text: 'OK',
-              onPress: () => {
-                // Do something when the OK button is pressed
-                // This can be left empty if you don't need any action
-              },
+              onPress: () => {},
             },
           ]
         );
@@ -303,6 +303,54 @@ const GradeTransition = () => {
       console.error('Error generating PDF:', error);
     }
   };
+  
+  const handleTableRowPress = (bitName) => {
+    // Make an API request to fetch child name and anganwadi no based on bit name and selected year
+    axios
+      .get(`${API_URL}/getChildDetails`, {
+        params: { bitName, year: selectedYear },
+      })
+      .then((response) => {
+        const { MAM, SAM } = response.data;
+        console.log("**************RESPONSE DATA****************", response.data);
+
+        // Check if data exists for both categories
+        if (MAM.length > 0 || SAM.length > 0) {
+          // Update modal data with the fetched details
+          setModalData({
+            MAM,
+            SAM,
+          });
+          // Show the modal
+          setModalVisible(true);
+        } else {
+          // Handle case where no data is found
+          console.log('No data found for the given parameters');
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching child details:', error);
+      });
+  };
+
+  const renderChildDetails = (childList) => {
+    if (!childList || childList.length === 0) {
+      return <Text style={styles.noChildListText}>No children in this category</Text>;
+    }
+
+    return (
+      <FlatList
+        data={childList}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.modalItem}>
+            <Text style={styles.modalItemText}>{item.child_name}</Text>
+            <Text style={styles.modalItemText}>{item.anganwadi_no}</Text>
+          </View>
+        )}
+      />
+    );
+  };
 
 
   return (
@@ -310,7 +358,7 @@ const GradeTransition = () => {
       <View style={styles.container}>
         <Text style={styles.heading}>Grade Transitions</Text>
         <Text style={styles.label}>Select Year:</Text>
-        
+
         {/* Dropdown for selecting year */}
         <ModalSelector
           data={['All Years', ...distinctYears.map((year) => ({ key: year.toString(), label: year.toString() }))]}
@@ -381,7 +429,7 @@ const GradeTransition = () => {
         <ScrollView horizontal={true}>
           <View style={styles.table}>
             <Text style={styles.tableTitle}>Transition Summary</Text>
-            <ScrollView horizontal={true}>
+            {/* <ScrollView horizontal={true}>
               <Table style={styles.tableContainer}>
                 <Row
                   data={['Name', 'MAM to Normal', 'SAM to Normal']} // Updated labels
@@ -395,6 +443,27 @@ const GradeTransition = () => {
                     style={styles.tableRow}
                     textStyle={styles.tableCell}
                   />
+                ))}
+              </Table>
+            </ScrollView> */}
+            <ScrollView horizontal={true}>
+              <Table style={styles.tableContainer}>
+                <Row
+                  data={['Name', 'MAM to Normal', 'SAM to Normal']} // Updated labels
+                  style={styles.tableHeader}
+                  textStyle={styles.tableHeaderText}
+                />
+                {data.map((item) => (
+                  <TouchableOpacity
+                    key={item.bit_name}
+                    onPress={() => handleTableRowPress(item.bit_name)} // Call the function on row press
+                  >
+                    <Row
+                      data={[item.bit_name, item.mam_to_normal_count, item.sam_to_normal_count]}
+                      style={styles.tableRow}
+                      textStyle={styles.tableCell}
+                    />
+                  </TouchableOpacity>
                 ))}
               </Table>
             </ScrollView>
@@ -426,6 +495,44 @@ const GradeTransition = () => {
           />
           <Text style={{ color: 'black', fontSize: 14, marginTop: -40, marginEnd: 45 }}> PDF</Text>
         </TouchableOpacity>
+        {/* Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          isVisible={isModalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Child Details</Text>
+
+              <ScrollView>
+                {/* MAM Details */}
+                <Text style={styles.modalTitle}>MAM Details</Text>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableHeaderText}>Name</Text>
+                  <Text style={styles.tableHeaderText}>Anganwadi No</Text>
+                </View>
+                {renderChildDetails(modalData.MAM)}
+
+                {/* SAM Details */}
+                <Text style={styles.modalTitle}>SAM Details</Text>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableHeaderText}>Name</Text>
+                  <Text style={styles.tableHeaderText}>Anganwadi No</Text>
+                </View>
+                {renderChildDetails(modalData.SAM)}
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.closeModalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -533,7 +640,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: 'black',
   },
-  
+
   dropdownText: {
     fontSize: 16,
     color: 'black',
@@ -552,8 +659,83 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft:20,
+    marginLeft: 20,
     color: 'black',
+  },
+  noChildListText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 200,
+    paddingBottom: 200,
+    width: '95%',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    padding: 10,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#333',
+    textAlign: 'center',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  modalItemText: {
+    flex: 1,
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  closeModalButton: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingBottom: 10,
+    backgroundColor: 'teal',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tableHeaderText: {
+    fontSize: 16,
+    color: 'black',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    paddingVertical: 8,
+    paddingHorizontal: 0,
   },
 });
 

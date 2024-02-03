@@ -1,22 +1,35 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, StatusBar, ImageBackground, Switch, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  StatusBar,
+  ImageBackground,
+  Switch,
+  Image,
+  Alert,
+} from 'react-native';
 import Collapsible from 'react-native-collapsible';
-import { API_URL } from './config.js';
-import { RadioButton } from 'react-native-paper';
+import {API_URL} from './config.js';
+import {RadioButton} from 'react-native-paper';
 import CheckBox from 'react-native-check-box';
 //import ModalDropdown from 'react-native-modal-dropdown';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
+import {Calendar, LocaleConfig} from 'react-native-calendars';
 import moment from 'moment';
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 
-const CustomerForm = ({ route }) => {
+const CustomerForm = ({route}) => {
   //const [sourceOfDrinkingWater, setSourceOfDrinkingWater] = useState('');
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [showOtherTextBox, setShowOtherTextBox] = React.useState(false);
 
   const navigation = useNavigation();
-  const { anganwadiNo_name, childsName } = route.params;
+  const {anganwadiNo_name, childsName} = route.params;
 
   const [bitName, setBitName] = useState('');
   const [anganwadiNo, setAnganwadiNo] = useState(anganwadiNo_name || '');
@@ -30,8 +43,9 @@ const CustomerForm = ({ route }) => {
   const [motherName, setMotherName] = useState('');
   const [motherEducation, setMotherEducation] = useState('');
   const [motherOccupation, setMotherOccupation] = useState('');
-  const [motherAgeAtMarriage, setMotherAgeAtMarriage] = useState();
-  const [motherAgeAtFirstPregnancy, setMotherAgeAtFirstPregnancy] = useState('');
+  const [motherAgeAtMarriage, setMotherAgeAtMarriage] = useState('');
+  const [motherAgeAtFirstPregnancy, setMotherAgeAtFirstPregnancy] =
+    useState('');
   const [childWeightAfterBirth, setChildWeightAfterBirth] = useState('');
   const [fatherName, setFatherName] = useState('');
   const [fatherEducation, setFatherEducation] = useState('');
@@ -49,26 +63,41 @@ const CustomerForm = ({ route }) => {
   const [sourceOfDrinkingWater, setSourceOfDrinkingWater] = useState('');
   const [other, setOther] = useState('');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const motherOccupationOptions = ['Housewife', 'Daily Wage Worker', 'Domestic Help', 'Nurse', 'Ragpicker', 'Other'];
-  const fatherOccupationOptions = ['Daily Wage Worker', 'Ragpicker', 'Security', 'Painter', 'Driver Mama', 'Engineer', 'Other'];
+  const motherOccupationOptions = [
+    'Housewife',
+    'Daily Wage Worker',
+    'Domestic Help',
+    'Nurse',
+    'Ragpicker',
+    'Other',
+  ];
+  const fatherOccupationOptions = [
+    'Daily Wage Worker',
+    'Ragpicker',
+    'Security',
+    'Painter',
+    'Driver Mama',
+    'Engineer',
+    'Other',
+  ];
   const [selectedDisease, setSelectedDisease] = useState(null);
   const [diseaseHistory, setDiseaseHistory] = useState({
-    diabetes: { checked: false, selectedOptions: [] },
-    tuberculosis: { checked: false, selectedOptions: [] },
-    anaemia: { checked: false, selectedOptions: [] },
+    diabetes: {checked: false, selectedOptions: []},
+    tuberculosis: {checked: false, selectedOptions: []},
+    anaemia: {checked: false, selectedOptions: []},
   });
 
   const options = [
-    { label: 'Mother/आई', value: 'Mother/आई' },
-    { label: 'Father/वडिल', value: 'Father/वडिल' },
-    { label: 'Maternal Grandmother/आजी', value: 'Maternal Grandmother/आजी' },
-    { label: 'Maternal Grandfather/आजोबा', value: 'Maternal Grandfather/आजोबा' },
-    { label: 'Paternal Grandmother/आजी', value: 'Paternal Grandmother/आजी' },
-    { label: 'Paternal Grandfather/आजोबा', value: 'Paternal Grandfather/आजोबा' },
+    {label: 'Mother/आई', value: 'Mother/आई'},
+    {label: 'Father/वडिल', value: 'Father/वडिल'},
+    {label: 'Maternal Grandmother/आजी', value: 'Maternal Grandmother/आजी'},
+    {label: 'Maternal Grandfather/आजोबा', value: 'Maternal Grandfather/आजोबा'},
+    {label: 'Paternal Grandmother/आजी', value: 'Paternal Grandmother/आजी'},
+    {label: 'Paternal Grandfather/आजोबा', value: 'Paternal Grandfather/आजोबा'},
   ];
 
-  const handleDiseaseCheckboxChange = (diseaseKey) => {
-    setDiseaseHistory((prevHistory) => {
+  const handleDiseaseCheckboxChange = diseaseKey => {
+    setDiseaseHistory(prevHistory => {
       const updatedDisease = {
         ...prevHistory[diseaseKey],
         checked: !prevHistory[diseaseKey].checked,
@@ -85,11 +114,15 @@ const CustomerForm = ({ route }) => {
   };
 
   const handleOptionCheckboxChange = (diseaseKey, optionValue) => {
-    setDiseaseHistory((prevHistory) => {
+    setDiseaseHistory(prevHistory => {
       const updatedDisease = {
         ...prevHistory[diseaseKey],
-        selectedOptions: prevHistory[diseaseKey].selectedOptions.includes(optionValue)
-          ? prevHistory[diseaseKey].selectedOptions.filter((value) => value !== optionValue)
+        selectedOptions: prevHistory[diseaseKey].selectedOptions.includes(
+          optionValue,
+        )
+          ? prevHistory[diseaseKey].selectedOptions.filter(
+              value => value !== optionValue,
+            )
           : [...prevHistory[diseaseKey].selectedOptions, optionValue],
       };
 
@@ -102,7 +135,7 @@ const CustomerForm = ({ route }) => {
     });
   };
 
-  const handleRadioChange = (value) => {
+  const handleRadioChange = value => {
     setSourceOfDrinkingWater(value);
     if (value === 'Other') {
       setShowOtherTextBox(true);
@@ -110,17 +143,19 @@ const CustomerForm = ({ route }) => {
       setShowOtherTextBox(false);
     }
   };
-  const renderOptions = (diseaseName) => {
+  const renderOptions = diseaseName => {
     const disease = diseaseHistory[diseaseName];
     if (disease.checked) {
       return (
         <View style={styles.optionsContainer}>
-          {options.map((option) => (
+          {options.map(option => (
             <CheckBox
               key={option.value}
               checkBoxColor="teal"
               style={styles.checkboxContainer}
-              onClick={() => handleOptionCheckboxChange(diseaseName, option.value)}
+              onClick={() =>
+                handleOptionCheckboxChange(diseaseName, option.value)
+              }
               isChecked={disease.selectedOptions.includes(option.value)}
               rightText={option.label}
               rightTextStyle={styles.checkboxLabel}
@@ -133,15 +168,16 @@ const CustomerForm = ({ route }) => {
     return null;
   };
 
-  const [showRegistrationCalendar, setShowRegistrationCalendar] = useState(false);
+  const [showRegistrationCalendar, setShowRegistrationCalendar] =
+    useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const handleRegistrationDateChange = (day) => {
+  const handleRegistrationDateChange = day => {
     const selectedDateString = day.dateString;
     const currentDate = moment(); // Get the current date
     const selectedDate = moment(selectedDateString);
-  
+
     // Check if the selected date is not in the future
     if (selectedDate.isSameOrBefore(currentDate, 'day')) {
       setRegistrationDate(selectedDateString);
@@ -150,21 +186,21 @@ const CustomerForm = ({ route }) => {
       Alert.alert(
         'Invalid Date',
         'Please select a date on or before the current date for registration.',
-        [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
       );
       // Do not set the registration date if it's a future date
       return; // Exit the function to prevent setting the registration date
     }
-  
+
     setShowRegistrationCalendar(false);
   };
 
-  const handleDateChange = (day) => {
+  const handleDateChange = day => {
     const selectedDateString = day.dateString;
-    
+
     const currentDate = moment(); // Get the current date
     const selectedDate = moment(selectedDateString);
-  console.log(currentDate,selectedDate);
+    console.log(currentDate, selectedDate);
     // Check if the selected date is not in the future
     if (selectedDate.isSameOrBefore(currentDate, 'day')) {
       setSelectedDate(selectedDateString);
@@ -173,43 +209,50 @@ const CustomerForm = ({ route }) => {
       Alert.alert(
         'Invalid Date',
         'Please select a date on or before the current date.',
-        [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+        [{text: 'OK', onPress: () => console.log('OK Pressed')}],
       );
       // Do not set the selected date if it's a future date
       return; // Exit the function to prevent setting the selected date
     }
-  
+
     setShowCalendar(false);
   };
 
   const renderRegistrationCalendar = () => (
     <View>
       <TouchableOpacity onPress={() => setShowRegistrationCalendar(true)}>
-        <Text style={[styles.selectDateText, { color: 'grey', fontSize: 18 , marginBottom:20 , marginLeft:10}]}>
-          {registrationDate ? moment(registrationDate).format('YYYY/MM/DD') : 'Select date'}
+        <Text
+          style={[
+            styles.selectDateText,
+            {color: 'grey', fontSize: 18, marginBottom: 20, marginLeft: 10},
+          ]}>
+          {registrationDate
+            ? moment(registrationDate).format('YYYY/MM/DD')
+            : 'Select date'}
         </Text>
       </TouchableOpacity>
 
       {showRegistrationCalendar && (
         <Calendar
           onDayPress={handleRegistrationDateChange}
-          markedDates={registrationDate ? { [registrationDate]: { selected: true } } : {}}
+          markedDates={
+            registrationDate ? {[registrationDate]: {selected: true}} : {}
+          }
         />
       )}
     </View>
   );
 
   const handleAddSibling = () => {
-
     if (siblings.length >= total_siblings) {
       // Display an error message when the limit is reached
       Alert.alert('Siblings limit reached');
     } else {
-      setSiblings([...siblings, { name: '', age: '', malnourished: false }]);
+      setSiblings([...siblings, {name: '', age: '', malnourished: false}]);
     }
   };
 
-  const handleRemoveSibling = (index) => {
+  const handleRemoveSibling = index => {
     const updatedSiblings = [...siblings];
     updatedSiblings.splice(index, 1);
     setSiblings(updatedSiblings);
@@ -221,7 +264,7 @@ const CustomerForm = ({ route }) => {
     setSiblings(updatedSiblings);
   };
 
-  const parseDateToServerFormat = (dateString) => {
+  const parseDateToServerFormat = dateString => {
     const [day, month, year] = dateString.split('-');
     const formattedDate = `${year}-${month}-${day}`;
     return formattedDate;
@@ -231,16 +274,54 @@ const CustomerForm = ({ route }) => {
     anganwadiNo: '',
     assistantName: '',
     assistantPhone: '',
-    registrationDate:'',
+    registrationDate: '',
     childName: '',
     childDob: '',
     childGender: '',
+    motherEducation: '',
+    motherOccupation: '',
+    motherAgeAtMarriage: '',
+    fatherEducation: '',
+    fatherOccupation: '',
+    totalFamilyMembers: '',
     childHb: '',
     childPhone: '',
     chief_assistantName: '',
   });
   const handleForSubmit = async () => {
-
+    if (
+      !bitName ||
+      !chief_assistantName ||
+      !anganwadiNo ||
+      !assistantName ||
+      !chief_assistantName ||
+      !anganwadiNo ||
+      !assistantName ||
+      !assistantPhone ||
+      !childName ||
+      !selectedDate ||
+      !childGender ||
+      !childPhone ||
+      !motherName ||
+      !motherEducation ||
+      !motherOccupation ||
+      !motherAgeAtMarriage ||
+      !motherAgeAtFirstPregnancy ||
+      !childWeightAfterBirth ||
+      !fatherName ||
+      !fatherEducation ||
+      !fatherOccupation ||
+      !totalFamilyMembers ||
+      total_siblings === undefined
+    ) {
+      Alert.alert(
+        "Incomplete Form",
+        "Please fill in all the required fields before submitting.",
+        [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+      );
+      return;
+    }
+    
     setShowSuccessMessage(true);
 
     // Reset the success message after a few seconds (optional)
@@ -252,7 +333,9 @@ const CustomerForm = ({ route }) => {
       ? moment(registrationDate).format('YYYY/MM/DD')
       : null;
 
-    const formattedChildDob = selectedDate ? moment(selectedDate).format('YYYY/MM/DD') : null;
+    const formattedChildDob = selectedDate
+      ? moment(selectedDate).format('YYYY/MM/DD')
+      : null;
     try {
       const formData = {
         bit_name: bitName,
@@ -279,12 +362,17 @@ const CustomerForm = ({ route }) => {
         source_of_drinking_water: sourceOfDrinkingWater,
         other,
         TotalSiblings: total_siblings,
-        diabetes: diseaseHistory.diabetes.checked ? diseaseHistory.diabetes.selectedOptions : null,
-        tuberculosis: diseaseHistory.tuberculosis.checked ? diseaseHistory.tuberculosis.selectedOptions : null,
-        anaemia: diseaseHistory.anaemia.checked ? diseaseHistory.anaemia.selectedOptions : null,
-
+        diabetes: diseaseHistory.diabetes.checked
+          ? diseaseHistory.diabetes.selectedOptions
+          : null,
+        tuberculosis: diseaseHistory.tuberculosis.checked
+          ? diseaseHistory.tuberculosis.selectedOptions
+          : null,
+        anaemia: diseaseHistory.anaemia.checked
+          ? diseaseHistory.anaemia.selectedOptions
+          : null,
       };
-      console.log("FORM DATA:", formData);
+      console.log('FORM DATA:', formData);
       const response = await fetch(`${API_URL}/submitForm`, {
         method: 'POST',
         headers: {
@@ -328,16 +416,16 @@ const CustomerForm = ({ route }) => {
     };
 
     fetch(`${API_URL}/submit-sibling-data`, requestOptions)
-      .then((response) => {
+      .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         return response.json();
       })
-      .then((data) => {
+      .then(data => {
         console.log('Sibling data submitted successfully:', data);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('Error submitting sibling data:', error);
       });
   };
@@ -346,9 +434,9 @@ const CustomerForm = ({ route }) => {
     handleForSubmit();
     console.log(anganwadiNo_name);
     console.log(childsName);
-    // Validate fields before submission
     const newErrors = {};
     let hasErrors = false;
+    
 
     if (bitName === '') {
       newErrors.bitName = 'Please enter Bit Name';
@@ -370,12 +458,15 @@ const CustomerForm = ({ route }) => {
     if (assistantPhone === '') {
       newErrors.assistantPhone = 'Please enter Phone Number';
       hasErrors = true;
+    } else if (!/^\d{10}$/.test(assistantPhone)) {
+      newErrors.assistantPhone = 'Please enter a valid 10-digit phone number';
+      hasErrors = true;
     }
     if (childName === '') {
       newErrors.childName = 'Please enter Name';
       hasErrors = true;
     }
-    if ( registrationDate === '') {
+    if (registrationDate === '') {
       newErrors.registrationDate = 'Please select Date of Registration';
       hasErrors = true;
     }
@@ -390,33 +481,75 @@ const CustomerForm = ({ route }) => {
     if (childPhone === '') {
       newErrors.childPhone = 'Please enter Phone Number';
       hasErrors = true;
+    } else if (!/^\d{10}$/.test(childPhone)) {
+      newErrors.childPhone = 'Please enter a valid 10-digit phone number';
+      hasErrors = true;
     }
     if (motherName === '') {
       newErrors.motherName = "Please enter Mother's Name";
       hasErrors = true;
     }
-    if (motherAgeAtFirstPregnancy === '') {
-      newErrors.motherAgeAtFirstPregnancy = "Please enter Mother's Age at First Pregnancy";
+    if (motherEducation === '') {
+      newErrors.motherEducation = "Please enter Mother's Education";
       hasErrors = true;
-
+    }
+    if (motherOccupation === '') {
+      newErrors.motherOccupation = "Please enter Mother's Occupation";
+      hasErrors = true;
+    }
+    if (motherAgeAtMarriage === '') {
+      newErrors.motherAgeAtMarriage = "Please enter Mother's Age at marriage";
+      hasErrors = true;
+    }
+    if (motherAgeAtFirstPregnancy === '') {
+      newErrors.motherAgeAtFirstPregnancy =
+        "Please enter Mother's Age at First Pregnancy";
+      hasErrors = true;
     }
     if (childWeightAfterBirth === '') {
-      newErrors.childWeightAfterBirth = "Please enter Child's Weight After Birth";
+      newErrors.childWeightAfterBirth =
+        "Please enter Child's Weight After Birth";
       hasErrors = true;
     }
     if (fatherName === '') {
       newErrors.fatherName = "Please enter Father's Name";
       hasErrors = true;
     }
+    if (fatherEducation === '') {
+      newErrors.fatherEducation = "Please enter Father's Education";
+      hasErrors = true;
+    }
+    if (fatherOccupation === '') {
+      newErrors.fatherOccupation = "Please enter Father's Occupation";
+      hasErrors = true;
+    }
+    if (totalFamilyMembers === '') {
+      newErrors.totalFamilyMembers = 'Please enter total Family members';
+      hasErrors = true;
+    }
+
     if (childWeightAfterBirth === '') {
-      newErrors.childWeightAfterBirth = "Please enter Child's Weight After Birth";
+      newErrors.childWeightAfterBirth =
+        "Please enter Child's Weight After Birth";
       hasErrors = true;
     } else if (!/^\d+(\.\d+)?$/.test(childWeightAfterBirth)) {
-      newErrors.childWeightAfterBirth = "Please enter a valid numeric weight";
+      newErrors.childWeightAfterBirth = 'Please enter a valid numeric weight';
       hasErrors = true;
     }
 
     setErrors(newErrors);
+
+    if (hasErrors) {
+      Alert.alert(
+        'Form Validation Error',
+        'Please fix the highlighted errors before submitting the form.',
+        [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+      );
+      return;
+    }
+  
+    // If there are no errors, proceed with form submission
+    handleForSubmit();
   };
   return (
     <View style={styles.outerContainer}>
@@ -425,31 +558,45 @@ const CustomerForm = ({ route }) => {
       <View style={styles.formContainer}>
         <ScrollView
           contentContainerStyle={styles.formContent}
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <View style={styles.dropdownContainer}>
             <View style={styles.formContainer}>
               {/* Bit Information Section */}
               <TouchableOpacity
-                style={[styles.sectionHeader, { height: 85 }, styles.shadow]}
-                onPress={() => setShowBitSection(!showBitSection)}
-              >
-                <View style={[styles.sectionHeaderBar, { height: 85 }, styles.border]}>
-                  <Text style={styles.sectionTitle}>Bit Information / बिट माहिती </Text>
+                style={[styles.sectionHeader, {height: 85}, styles.shadow]}
+                onPress={() => setShowBitSection(!showBitSection)}>
+                <View
+                  style={[
+                    styles.sectionHeaderBar,
+                    {height: 85},
+                    styles.border,
+                  ]}>
+                  <Text style={styles.sectionTitle}>
+                    Bit Information / बिट माहिती{' '}
+                  </Text>
 
                   {showBitSection ? (
-                    <Image source={require('../assets/up.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/up.png')}
+                      style={styles.icon}
+                    />
                   ) : (
-                    <Image source={require('../assets/down.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/down.png')}
+                      style={styles.icon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
               <Collapsible collapsed={!showBitSection}>
                 <View style={styles.collapsibleContent}>
                   <Text> </Text>
-                  <Text style={styles.label}>Bit Name / बिटचे नाव : <Text style={{ color: 'red', fontSize: 16 }}>*</Text> </Text>
+                  <Text style={styles.label}>
+                    Bit Name / बिटचे नाव :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>{' '}
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={bitName}
                     onChangeText={setBitName}
                     placeholder="Enter the bit name"
@@ -457,54 +604,74 @@ const CustomerForm = ({ route }) => {
                   />
                   <Text style={styles.errorText}>{errors.bitName}</Text>
 
-                  <Text style={styles.label}> Supervisor Name / पर्यावेक्षिकाचे नाव : <Text style={{ color: 'red', fontSize: 16 }}>*</Text> </Text>
+                  <Text style={styles.label}>
+                    {' '}
+                    Supervisor Name / पर्यावेक्षिकाचे नाव :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>{' '}
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={chief_assistantName}
                     onChangeText={setChiefAssistantname}
                     placeholder="Enter the Supervisor Name "
                     placeholderTextColor="grey"
                   />
-                  <Text style={styles.errorText}>{errors.chief_assistantName}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.chief_assistantName}
+                  </Text>
 
                   <Text style={styles.label}>
-                    Anganwadi No. / अंगणवाडी क्र. : <Text style={{ color: 'red', fontSize: 16 }}>*</Text>
+                    Anganwadi No. / अंगणवाडी क्र. :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
                   </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={anganwadiNo}
                     onChangeText={setAnganwadiNo}
                     placeholder="Enter Anganwadi No."
                     placeholderTextColor="grey"
-                  //keyboardType="phone-pad"
+                    //keyboardType="phone-pad"
                   />
                   <Text style={styles.errorText}>{errors.anganwadiNo}</Text>
-
                 </View>
               </Collapsible>
 
               {/* Anganwadi Assistant Information Section */}
               <TouchableOpacity
-                style={[styles.sectionHeader, { height: 85 }, styles.shadow]}
-                onPress={() => setShowAssistantSection(!showAssistantSection)}
-              >
-                <View style={[styles.sectionHeaderBar, { height: 85 }, styles.border]}>
-
-                  <Text style={styles.sectionTitle}>Anganwadi Assistant Information/अंगणवाडी सहाय्यकांची माहिती </Text>
+                style={[styles.sectionHeader, {height: 85}, styles.shadow]}
+                onPress={() => setShowAssistantSection(!showAssistantSection)}>
+                <View
+                  style={[
+                    styles.sectionHeaderBar,
+                    {height: 85},
+                    styles.border,
+                  ]}>
+                  <Text style={styles.sectionTitle}>
+                    Anganwadi Assistant Information/अंगणवाडी सहाय्यकांची माहिती{' '}
+                  </Text>
                   {showAssistantSection ? (
-                    <Image source={require('../assets/up.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/up.png')}
+                      style={styles.icon}
+                    />
                   ) : (
-                    <Image source={require('../assets/down.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/down.png')}
+                      style={styles.icon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
               <Collapsible collapsed={!showAssistantSection}>
-                <View >
+                <View>
                   <View style={styles.collapsibleContent}>
                     <Text> </Text>
-                    <Text style={styles.label}>Name / नाव :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                    <Text style={styles.label}>
+                      Name / नाव :{' '}
+                      <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                    </Text>
                     <TextInput
-                      style={[styles.input, { height: 45, color: 'black' }]}
+                      style={[styles.input, {height: 45, color: 'black'}]}
                       value={assistantName}
                       onChangeText={setAssistantName}
                       placeholder="Enter assistant's name"
@@ -512,9 +679,12 @@ const CustomerForm = ({ route }) => {
                     />
                     <Text style={styles.errorText}>{errors.assistantName}</Text>
 
-                    <Text style={styles.label}>Phone Number / फोन नंबर :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                    <Text style={styles.label}>
+                      Phone Number / फोन नंबर :{' '}
+                      <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                    </Text>
                     <TextInput
-                      style={[styles.input, { height: 45, color: 'black' }]}
+                      style={[styles.input, {height: 45, color: 'black'}]}
                       value={assistantPhone}
                       onChangeText={setAssistantPhone}
                       placeholder="Enter assistant's phone number"
@@ -522,80 +692,134 @@ const CustomerForm = ({ route }) => {
                       keyboardType="phone-pad"
                       maxLength={10}
                     />
-                    <Text style={styles.errorText}>{errors.assistantPhone}</Text>
+                    {errors.assistantPhone && (
+                      <Text style={styles.errorText}>
+                        {errors.assistantPhone}
+                      </Text>
+                    )}
                   </View>
                 </View>
               </Collapsible>
 
               {/* Child Information Section */}
               <TouchableOpacity
-                style={[styles.sectionHeader, { height: 85 }, styles.shadow]}
-                onPress={() => setShowChildSection(!showChildSection)}
-              >
-                <View style={[styles.sectionHeaderBar, { height: 85 }, styles.border]}>
-                  <Text style={styles.sectionTitle}>Child Information / मुलांची माहिती </Text>
+                style={[styles.sectionHeader, {height: 85}, styles.shadow]}
+                onPress={() => setShowChildSection(!showChildSection)}>
+                <View
+                  style={[
+                    styles.sectionHeaderBar,
+                    {height: 85},
+                    styles.border,
+                  ]}>
+                  <Text style={styles.sectionTitle}>
+                    Child Information / मुलांची माहिती{' '}
+                  </Text>
                   {showChildSection ? (
-                    <Image source={require('../assets/up.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/up.png')}
+                      style={styles.icon}
+                    />
                   ) : (
-                    <Image source={require('../assets/down.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/down.png')}
+                      style={styles.icon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
               <Collapsible collapsed={!showChildSection}>
-
                 <View style={styles.collapsibleContent}>
                   <Text> </Text>
-                  <Text style={styles.label}>Name / नाव :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Name / नाव :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={childName}
                     onChangeText={setChildName}
                     placeholder="Enter child's name"
                     placeholderTextColor="grey"
                   />
                   <Text style={styles.errorText}>{errors.childName}</Text>
-                  <Text style={styles.label}>Date of Registration/ नोंदणीची तारीख: <Text style={{ color: 'red', fontSize: 16  }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Date of Registration/ नोंदणीची तारीख:{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   {renderRegistrationCalendar()}
-                  <Text style={styles.errorText}>{errors.registrationDate}</Text>
-                  
-                  <Text style={styles.label}>Date of Birth / जन्मतारीख :  <Text style={{ color: 'red', fontSize: 16  }}>*</Text></Text>
+                  <Text style={styles.errorText}>
+                    {errors.registrationDate}
+                  </Text>
+
+                  <Text style={styles.label}>
+                    Date of Birth / जन्मतारीख :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TouchableOpacity onPress={() => setShowCalendar(true)}>
-                    <Text style={[styles.selectDateText, { color: 'grey', fontSize: 18 }]}>
-                      {selectedDate ? moment(selectedDate).format('YYYY/MM/DD') : 'Select date'}
+                    <Text
+                      style={[
+                        styles.selectDateText,
+                        {color: 'grey', fontSize: 18},
+                      ]}>
+                      {selectedDate
+                        ? moment(selectedDate).format('YYYY/MM/DD')
+                        : 'Select date'}
                     </Text>
                   </TouchableOpacity>
 
                   {showCalendar && (
                     <Calendar
                       onDayPress={handleDateChange}
-                      markedDates={selectedDate ? { [selectedDate]: { selected: true } } : {}}
+                      markedDates={
+                        selectedDate ? {[selectedDate]: {selected: true}} : {}
+                      }
                     />
                   )}
 
                   <Text style={styles.errorText}>{errors.childDob}</Text>
-                  <Text style={styles.label}>Gender / लिंग :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Gender / लिंग :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <View style={styles.radioContainer}>
                     <TouchableOpacity
                       style={styles.radioButton}
-                      onPress={() => setChildGender('male')}
-                    >
-                      <View style={[styles.radioButtonIcon, { backgroundColor: childGender === 'male' ? 'teal' : 'transparent' }]} />
+                      onPress={() => setChildGender('male')}>
+                      <View
+                        style={[
+                          styles.radioButtonIcon,
+                          {
+                            backgroundColor:
+                              childGender === 'male' ? 'teal' : 'transparent',
+                          },
+                        ]}
+                      />
                       <Text style={styles.radioButtonLabel}>Male</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.radioButton}
-                      onPress={() => setChildGender('female')}
-                    >
-                      <View style={[styles.radioButtonIcon, { backgroundColor: childGender === 'female' ? 'teal' : 'transparent' }]} />
+                      onPress={() => setChildGender('female')}>
+                      <View
+                        style={[
+                          styles.radioButtonIcon,
+                          {
+                            backgroundColor:
+                              childGender === 'female' ? 'teal' : 'transparent',
+                          },
+                        ]}
+                      />
                       <Text style={styles.radioButtonLabel}>Female</Text>
                     </TouchableOpacity>
-
                   </View>
+                  <Text style={styles.errorText}>{errors.childGender}</Text>
 
                   <Text style={styles.errorText}>{errors.childHb}</Text>
-                  <Text style={styles.label}>Phone Number / फोन नंबर :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Phone Number / फोन नंबर :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={childPhone}
                     onChangeText={setChildPhone}
                     placeholder="Enter phone number (parent's)"
@@ -603,21 +827,37 @@ const CustomerForm = ({ route }) => {
                     keyboardType="phone-pad"
                     maxLength={10}
                   />
-                  <Text style={styles.errorText}>{errors.childPhone}</Text>
+                  {errors.childPhone && (
+                      <Text style={styles.errorText}>
+                        {errors.childPhone}
+                      </Text>
+                    )}
                 </View>
               </Collapsible>
 
               {/* Parents Information Section */}
               <TouchableOpacity
-                style={[styles.sectionHeader, { height: 85 }, styles.shadow]}
-                onPress={() => setShowParentSection(!showParentSection)}
-              >
-                <View style={[styles.sectionHeaderBar, { height: 85 }, styles.border]}>
-                  <Text style={styles.sectionTitle}>Parent Information / अभिभावकांची माहिती</Text>
+                style={[styles.sectionHeader, {height: 85}, styles.shadow]}
+                onPress={() => setShowParentSection(!showParentSection)}>
+                <View
+                  style={[
+                    styles.sectionHeaderBar,
+                    {height: 85},
+                    styles.border,
+                  ]}>
+                  <Text style={styles.sectionTitle}>
+                    Parent Information / अभिभावकांची माहिती
+                  </Text>
                   {showParentSection ? (
-                    <Image source={require('../assets/up.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/up.png')}
+                      style={styles.icon}
+                    />
                   ) : (
-                    <Image source={require('../assets/down.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/down.png')}
+                      style={styles.icon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
@@ -625,10 +865,15 @@ const CustomerForm = ({ route }) => {
                 <View style={styles.collapsibleContent}>
                   <Text> </Text>
                   {/* Mother's Information */}
-                  <Text style={styles.subSectionTitle}>Mother's Information / आईची माहिती</Text>
-                  <Text style={styles.label}>Mother's Name / आईचे नाव :  <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.subSectionTitle}>
+                    Mother's Information / आईची माहिती
+                  </Text>
+                  <Text style={styles.label}>
+                    Mother's Name / आईचे नाव :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={motherName}
                     onChangeText={setMotherName}
                     placeholder="Enter mother's name"
@@ -636,9 +881,11 @@ const CustomerForm = ({ route }) => {
                   />
                   <Text style={styles.errorText}>{errors.motherName}</Text>
 
-                  <Text style={styles.label}>Mother's Education / आईचे शिक्षण :</Text>
+                  <Text style={styles.label}>
+                    Mother's Education / आईचे शिक्षण :
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={motherEducation}
                     onChangeText={setMotherEducation}
                     placeholder="Enter mother's education"
@@ -646,13 +893,19 @@ const CustomerForm = ({ route }) => {
                   />
                   <Text style={styles.errorText}>{errors.motherEducation}</Text>
 
-                  <Text style={styles.label}>Mother's Occupation / आईचे व्यवसाय:</Text>
+                  <Text style={styles.label}>
+                    Mother's Occupation / आईचे व्यवसाय:
+                  </Text>
                   <View style={styles.radioContainer}>
                     {motherOccupationOptions.map((option, index) => (
                       <View key={index} style={styles.radioButton}>
                         <RadioButton.Android
                           value={option}
-                          status={motherOccupation === option ? 'checked' : 'unchecked'}
+                          status={
+                            motherOccupation === option
+                              ? 'checked'
+                              : 'unchecked'
+                          }
                           onPress={() => setMotherOccupation(option)}
                           color="teal"
                         />
@@ -660,49 +913,70 @@ const CustomerForm = ({ route }) => {
                       </View>
                     ))}
                   </View>
-                  <Text style={styles.errorText}>{errors.motherOccupation}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.motherOccupation}
+                  </Text>
 
-
-                  <Text style={styles.label}>Mother's Age at Marriage / लग्नाच्या वेळी आईचे वय : </Text>
+                  <Text style={styles.label}>
+                    Mother's Age at Marriage / लग्नाच्या वेळी आईचे वय :{' '}
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={motherAgeAtMarriage}
                     onChangeText={setMotherAgeAtMarriage}
                     placeholder="Enter mother's age at marriage"
                     placeholderTextColor="grey"
                     keyboardType="numeric" // Set keyboardType to 'numeric'
                   />
-                  <Text style={styles.errorText}>{errors.motherAgeAtMarriage}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.motherAgeAtMarriage}
+                  </Text>
 
-                  <Text style={styles.label}>Mother's Age at First Pregnancy / आईची पहिल्या गर्भाच्या वेळीची वय : <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Mother's Age at First Pregnancy / आईची पहिल्या गर्भाच्या
+                    वेळीची वय :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={motherAgeAtFirstPregnancy}
                     onChangeText={setMotherAgeAtFirstPregnancy}
                     placeholder="Enter mother's age at first pregnancy"
                     placeholderTextColor="grey"
                     keyboardType="numeric"
                   />
-                  <Text style={styles.errorText}>{errors.motherAgeAtFirstPregnancy}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.motherAgeAtFirstPregnancy}
+                  </Text>
 
-                  <Text style={styles.label}>Child's Weight After Birth / बाळाची जन्मानंतरची वजन: <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Child's Weight After Birth / बाळाची जन्मानंतरची वजन:{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={childWeightAfterBirth}
                     onChangeText={setChildWeightAfterBirth}
                     placeholder="Enter child's weight after birth"
                     placeholderTextColor="grey"
                     keyboardType="numeric"
                   />
-                  <Text style={styles.errorText}>{errors.childWeightAfterBirth}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.childWeightAfterBirth}
+                  </Text>
 
                   <View style={[styles.separator]} />
                   {/* Father's Information */}
-                  <Text style={styles.subSectionTitle}>Father's Information / वडिलांची माहिती</Text>
+                  <Text style={styles.subSectionTitle}>
+                    Father's Information / वडिलांची माहिती
+                  </Text>
 
-                  <Text style={styles.label}>Father's Name / वडिलांचे नाव: <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Father's Name / वडिलांचे नाव:{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={fatherName}
                     onChangeText={setFatherName}
                     placeholder="Enter father's name"
@@ -710,9 +984,11 @@ const CustomerForm = ({ route }) => {
                   />
                   <Text style={styles.errorText}>{errors.fatherName}</Text>
 
-                  <Text style={styles.label}>Father's Education / वडिलांचे शिक्षण:</Text>
+                  <Text style={styles.label}>
+                    Father's Education / वडिलांचे शिक्षण:
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={fatherEducation}
                     onChangeText={setFatherEducation}
                     placeholder="Enter father's education"
@@ -720,13 +996,19 @@ const CustomerForm = ({ route }) => {
                   />
                   <Text style={styles.errorText}>{errors.fatherEducation}</Text>
 
-                  <Text style={styles.label}>Father's Occupation / वडिलांचे व्यवसाय:</Text>
+                  <Text style={styles.label}>
+                    Father's Occupation / वडिलांचे व्यवसाय:
+                  </Text>
                   <View style={styles.radioContainer}>
                     {fatherOccupationOptions.map((option, index) => (
                       <View key={index} style={styles.radioButton}>
                         <RadioButton.Android
                           value={option}
-                          status={fatherOccupation === option ? 'checked' : 'unchecked'}
+                          status={
+                            fatherOccupation === option
+                              ? 'checked'
+                              : 'unchecked'
+                          }
                           onPress={() => setFatherOccupation(option)}
                           color="teal"
                         />
@@ -734,29 +1016,46 @@ const CustomerForm = ({ route }) => {
                       </View>
                     ))}
                   </View>
-                  <Text style={styles.errorText}>{errors.fatherOccupation}</Text>
+                  <Text style={styles.errorText}>
+                    {errors.fatherOccupation}
+                  </Text>
                 </View>
               </Collapsible>
               {/* Information of Family Section */}
               <TouchableOpacity
-                style={[styles.sectionHeader, { height: 85 }, styles.shadow]}
-                onPress={() => setShowFamilySection(!showFamilySection)}
-              >
-                <View style={[styles.sectionHeaderBar, { height: 85 }, styles.border]}>
-                  <Text style={styles.sectionTitle}>Information of Family / कुटुंबाची माहिती</Text>
+                style={[styles.sectionHeader, {height: 85}, styles.shadow]}
+                onPress={() => setShowFamilySection(!showFamilySection)}>
+                <View
+                  style={[
+                    styles.sectionHeaderBar,
+                    {height: 85},
+                    styles.border,
+                  ]}>
+                  <Text style={styles.sectionTitle}>
+                    Information of Family / कुटुंबाची माहिती
+                  </Text>
                   {showFamilySection ? (
-                    <Image source={require('../assets/up.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/up.png')}
+                      style={styles.icon}
+                    />
                   ) : (
-                    <Image source={require('../assets/down.png')} style={styles.icon} />
+                    <Image
+                      source={require('../assets/down.png')}
+                      style={styles.icon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
               <Collapsible collapsed={!showFamilySection}>
                 <View style={styles.collapsibleContent}>
                   <Text></Text>
-                  <Text style={styles.label}>Total Family Members / एकूण कुटुंब  सदस्य : <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.label}>
+                    Total Family Members / एकूण कुटुंब सदस्य :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={totalFamilyMembers}
                     onChangeText={setTotalFamilyMembers}
                     placeholder="Enter total family members"
@@ -764,25 +1063,55 @@ const CustomerForm = ({ route }) => {
                     keyboardType="numeric"
                   />
 
-                  <Text></Text>
-                  <Text style={styles.label}>Total Number of Siblings / भावंडांची एकूण संख्या : <Text style={{ color: 'red', fontSize: 16 }}>*</Text></Text>
+                  <Text style={styles.errorText}>
+                    {errors.totalFamilyMembers}
+                  </Text>
+                  <Text style={styles.label}>
+                    Total Number of Siblings / भावंडांची एकूण संख्या :{' '}
+                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                  </Text>
                   <TextInput
-                    style={[styles.input, { height: 45, color: 'black' }]}
+                    style={[styles.input, {height: 45, color: 'black'}]}
                     value={total_siblings.toString()} // Ensure it's a string
-                    onChangeText={(value) => setTotalSiblings(parseInt(value) || 0)} // Parse as an integer
+                    onChangeText={value =>
+                      setTotalSiblings(parseInt(value) || 0)
+                    } // Parse as an integer
                     placeholder="Enter total number of Siblings "
                     placeholderTextColor="grey"
                     keyboardType="numeric"
                   />
 
                   {/* Sibling Information Table */}
-                  <Text style={styles.subSectionTitle}>Sibling Information / भावंडांची माहिती</Text>
-                  <Text style={styles.errorText}>(Slide right if child is Malnourished)</Text>
+                  <Text style={styles.subSectionTitle}>
+                    Sibling Information / भावंडांची माहिती
+                  </Text>
+                  <Text style={styles.errorText}>
+                    (Slide right if child is Malnourished)
+                  </Text>
                   <View style={styles.siblingTableHeader}>
-                    <Text style={[styles.siblingTableHeaderCell, { flex: 2, color: 'grey' }]}>Name</Text>
-                    <Text style={[styles.siblingTableHeaderCell, { flex: 1, color: 'grey' }]}>Age</Text>
+                    <Text
+                      style={[
+                        styles.siblingTableHeaderCell,
+                        {flex: 2, color: 'grey'},
+                      ]}>
+                      Name
+                    </Text>
+                    <Text
+                      style={[
+                        styles.siblingTableHeaderCell,
+                        {flex: 1, color: 'grey'},
+                      ]}>
+                      Age
+                    </Text>
                     <View style={styles.malnourishedHeaderCell}>
-                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: 'grey' }}>Malnourished</Text>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 'bold',
+                          color: 'grey',
+                        }}>
+                        Malnourished
+                      </Text>
                     </View>
                     {/* <Text style={[styles.siblingTableHeaderCell, { flex: 3 }]}>Other</Text> */}
                   </View>
@@ -790,41 +1119,72 @@ const CustomerForm = ({ route }) => {
                     <View key={index} style={styles.siblingTableRow}>
                       {/* Sibling Name */}
                       <TextInput
-                        style={[styles.siblingTableCell, { flex: 2, color: 'black' },]}
+                        style={[
+                          styles.siblingTableCell,
+                          {flex: 2, color: 'black'},
+                        ]}
                         value={sibling.name}
-                        onChangeText={(value) => handleSiblingFieldChange(index, 'name', value)}
+                        onChangeText={value =>
+                          handleSiblingFieldChange(index, 'name', value)
+                        }
                         placeholder={`Name`}
                         placeholderTextColor="grey"
                       />
                       {/* Sibling Age */}
                       <TextInput
-                        style={[styles.siblingTableCell, { flex: 1, color: 'black' }]}
+                        style={[
+                          styles.siblingTableCell,
+                          {flex: 1, color: 'black'},
+                        ]}
                         value={sibling.age}
-                        onChangeText={(value) => handleSiblingFieldChange(index, 'age', value)}
+                        onChangeText={value =>
+                          handleSiblingFieldChange(index, 'age', value)
+                        }
                         placeholder={`Age`}
                         keyboardType="numeric"
                         placeholderTextColor="grey"
                       />
                       {/* Malnourished */}
-                      <View style={[styles.siblingTableCell, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+                      <View
+                        style={[
+                          styles.siblingTableCell,
+                          {
+                            flex: 1,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          },
+                        ]}>
                         <Switch
                           value={sibling.malnourished}
-                          onValueChange={(value) => handleSiblingFieldChange(index, 'malnourished', value)}
+                          onValueChange={value =>
+                            handleSiblingFieldChange(
+                              index,
+                              'malnourished',
+                              value,
+                            )
+                          }
                         />
                       </View>
 
                       {/* Remove Sibling Button */}
-                      <TouchableOpacity onPress={() => handleRemoveSibling(index)} style={styles.removeButton}>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveSibling(index)}
+                        style={styles.removeButton}>
                         <Text style={styles.removeButtonText}>Remove</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
-                  <TouchableOpacity style={styles.addButton} onPress={handleAddSibling}>
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={handleAddSibling}>
                     <Text style={styles.addButtonLabel}>Add</Text>
                   </TouchableOpacity>
 
                   {/* Disease History Section */}
-                  <Text style={styles.subSectionTitle}>Disease History of Family Members / कुटुंबातील सदस्यांचा आरोग्य इतिहास</Text>
+                  <Text style={styles.subSectionTitle}>
+                    Disease History of Family Members / कुटुंबातील सदस्यांचा
+                    आरोग्य इतिहास
+                  </Text>
                   <CheckBox
                     checkBoxColor="teal"
                     style={styles.checkboxContainer}
@@ -855,11 +1215,10 @@ const CustomerForm = ({ route }) => {
                   />
                   {renderOptions('anaemia')}
 
-
                   {/* Addictions */}
                   <Text style={styles.label}>Addictions / व्यसने</Text>
                   <TextInput
-                    style={[styles.input, styles.textArea, { color: 'black' }]}
+                    style={[styles.input, styles.textArea, {color: 'black'}]}
                     value={addictions}
                     onChangeText={setAddictions}
                     placeholder="Enter addictions"
@@ -868,24 +1227,37 @@ const CustomerForm = ({ route }) => {
                   />
 
                   {/* Source of Drinking Water */}
-                  <Text style={styles.label}>Source of Drinking Water / पिण्याच्या पाण्याचा स्त्रोत</Text>
-                  <RadioButton.Group onValueChange={newValue => handleRadioChange(newValue)} value={sourceOfDrinkingWater}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.label}>
+                    Source of Drinking Water / पिण्याच्या पाण्याचा स्त्रोत
+                  </Text>
+                  <RadioButton.Group
+                    onValueChange={newValue => handleRadioChange(newValue)}
+                    value={sourceOfDrinkingWater}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <RadioButton value="Tap Water" />
-                      <Text style={{ color: '#000', marginLeft: 10, fontSize: 16 }}>Tap Water</Text>
+                      <Text
+                        style={{color: '#000', marginLeft: 10, fontSize: 16}}>
+                        Tap Water
+                      </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <RadioButton value="Tanker" />
-                      <Text style={{ color: '#000', marginLeft: 10, fontSize: 16 }}>Tanker</Text>
+                      <Text
+                        style={{color: '#000', marginLeft: 10, fontSize: 16}}>
+                        Tanker
+                      </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
                       <RadioButton value="Other" />
-                      <Text style={{ color: '#000', marginLeft: 10, fontSize: 16 }}>Other</Text>
+                      <Text
+                        style={{color: '#000', marginLeft: 10, fontSize: 16}}>
+                        Other
+                      </Text>
                     </View>
                   </RadioButton.Group>
                   {showOtherTextBox && (
                     <TextInput
-                      style={[styles.input, styles.textArea, { color: 'black' }]}
+                      style={[styles.input, styles.textArea, {color: 'black'}]}
                       onChangeText={setSourceOfDrinkingWater}
                       placeholder="Enter source of drinking water"
                       placeholderTextColor="grey"
@@ -896,24 +1268,20 @@ const CustomerForm = ({ route }) => {
                   {/* Other */}
                   <Text style={styles.label}>Other / इतर</Text>
                   <TextInput
-                    style={[styles.input, styles.textArea, { color: 'black' }]}
+                    style={[styles.input, styles.textArea, {color: 'black'}]}
                     value={other}
                     onChangeText={setOther}
                     placeholder="Enter other information"
                     placeholderTextColor="grey"
                     multiline={true}
                   />
-
                 </View>
               </Collapsible>
-
             </View>
           </View>
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Submit</Text>
           </TouchableOpacity>
-
-        
         </ScrollView>
       </View>
     </View>
@@ -934,7 +1302,7 @@ const styles = StyleSheet.create({
     borderRadius: 20, // Curved border radius
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 3,
@@ -960,7 +1328,6 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 16,
-
   },
   icon: {
     width: 26, // Adjust as needed
@@ -979,7 +1346,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
+    shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.0,
     shadowRadius: 0,
     elevation: 0,
@@ -989,7 +1356,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     marginTop: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 1.5,
@@ -1025,7 +1392,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignSelf: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 10,
@@ -1037,7 +1404,7 @@ const styles = StyleSheet.create({
   },
   shadow: {
     shadowColor: '#d3d3d3',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 1,
     shadowRadius: 3,
     elevation: 8,
@@ -1123,7 +1490,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     paddingVertical: 8,
     paddingHorizontal: 8,
-
   },
   siblingTableRow: {
     flexDirection: 'row',
@@ -1154,7 +1520,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   checkboxText: {
-
     fontSize: 16,
     color: 'black', // Adjust the color to make text visible
   },
@@ -1188,7 +1553,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 20,
     alignItems: 'center',
-
   },
   successMessageText: {
     color: 'white', // White text color
@@ -1220,15 +1584,13 @@ const styles = StyleSheet.create({
   optionsContainer: {
     marginTop: 10,
     marginLeft: 20, // Adjust margin as needed
-
   },
-  selectDateText:{
-    color: 'grey', 
-    fontSize: 18 ,
-     marginBottom:20 , 
-     marginLeft:10
-
-  }
+  selectDateText: {
+    color: 'grey',
+    fontSize: 18,
+    marginBottom: 20,
+    marginLeft: 10,
+  },
 });
 
 export default CustomerForm;

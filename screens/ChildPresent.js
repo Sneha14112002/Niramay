@@ -51,9 +51,9 @@ const ChildPresent = ({toggleMenu}) => {
       if (response.status === 200) {
         const data = await response.json();
         setIsChildPresent(true);
-
+        console.log(data);
         if (data.customerDataPresent && data.generalHistoryDataPresent) {
-          // Both tables have data
+          console.log('dadad');
           Alert.alert(
             'Data Present',
             'Data is present in both tables. Do you want to view the form?',
@@ -74,7 +74,7 @@ const ChildPresent = ({toggleMenu}) => {
             ]
           );
         } else if (data.customerDataPresent && !data.generalHistoryDataPresent) {
-          // Only customer table has data, but general history table doesn't
+          console.log('sdad');
           navigation.navigate('GeneralHistoryForm', {
             anganwadiNo: anganwadiNo,
             childsName: childsName,
@@ -89,6 +89,7 @@ const ChildPresent = ({toggleMenu}) => {
         }
       } else {
         setIsChildPresent(false);
+        console.log('adad');
         ToastAndroid.showWithGravityAndOffset(
           'Data not present in the database. Add personal information of the child first.',
           ToastAndroid.LONG,

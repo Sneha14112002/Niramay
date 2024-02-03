@@ -23,23 +23,23 @@ const GeneralHistoryDisplay = ({ route }) => {
     const [visitsData, setVisitsData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [addVisitMode, setAddVisitMode] = useState(false);
-    const navigate=useNavigation();
+    const navigate = useNavigation();
     const [newVisit, setNewVisit] = useState({
         date: '',
-      totalNoOfJars: '0',
-      haemoglobin: '0',
-      muac: '0',
-      weight: '0',
-      height: '0',
-      difference: '',
-      grade: '0',
-      observations: '',
-      iron: 0,
-      multivitamin: 0,
-      calcium: 0,
-      protein: 0,
-      tempWeightKg: 0,
-      tempWeightGrams: 0,
+        totalNoOfJars: '0',
+        haemoglobin: '0',
+        muac: '0',
+        weight: '0',
+        height: '0',
+        difference: '',
+        grade: '0',
+        observations: '',
+        iron: 0,
+        multivitamin: 0,
+        calcium: 0,
+        protein: 0,
+        tempWeightKg: 0,
+        tempWeightGrams: 0,
     });
     const [editVaccinationList, setEditVaccinationList] = useState(false);
     const [vaccinationStatus, setVaccinationStatus] = useState({});
@@ -57,10 +57,25 @@ const GeneralHistoryDisplay = ({ route }) => {
 
     // Function to handle selecting a date from the calendar
     const onDayPress = (day) => {
-        setSelectedDate(day.dateString);
-        setNewVisit({ ...newVisit, date: day.dateString });
-        setCalendarVisible(false);
+        const selectedDate = day.dateString;
+
+        // Get the current date
+        const currentDate = new Date();
+        const currentDateString = currentDate.toISOString().split('T')[0];
+
+        // Compare selected date with the current date
+        if (selectedDate > currentDateString) {
+            // Show an alert if the selected date is in the future
+            Alert.alert('Alert', 'Please select a date on or before the current date.');
+        } else {
+            // Set the selected date if it's on or before the current date
+            setSelectedDate(selectedDate);
+            setNewVisit({ ...newVisit, date: selectedDate });
+            setCalendarVisible(false);
+        }
     };
+
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -82,40 +97,41 @@ const GeneralHistoryDisplay = ({ route }) => {
                     setGeneralHistoryData(data);
                     const latestHealthData = data[data.length - 1];
                     setVaccinationStatus({
-                        BCG: latestHealthData?.BCG === 1,
-                        POLIO: latestHealthData?.POLIO === 1,
-                        IPV: latestHealthData?.IPV === 1,
-                        PCV: latestHealthData?.PCV === 1,
-                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
-                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
-                        MR: latestHealthData?.MR === 1,
-                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
-                        DPT: latestHealthData?.DPT === 1,
-                        TD: latestHealthData?.TD === 1,
+                        BCG: latestHealthData?.bcg === 1,
+                        POLIO: latestHealthData?.polio === 1,
+                        IPV: latestHealthData?.ipv === 1,
+                        PCV: latestHealthData?.pcv === 1,
+                        PENTAVALENT: latestHealthData?.pentavalent === 1,
+                        ROTAVIRUS: latestHealthData?.rotavirus === 1,
+                        MR: latestHealthData?.mr === 1,
+                        VITAMIN_A: latestHealthData?.vitamin_a === 1,
+                        DPT: latestHealthData?.dpt === 1,
+                        TD: latestHealthData?.td === 1,
                     });
+                    // Rest of your code...
                     setOriginalVaccinationStatus({
-                        BCG: latestHealthData?.BCG === 1,
-                        POLIO: latestHealthData?.POLIO === 1,
-                        IPV: latestHealthData?.IPV === 1,
-                        PCV: latestHealthData?.PCV === 1,
-                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
-                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
-                        MR: latestHealthData?.MR === 1,
-                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
-                        DPT: latestHealthData?.DPT === 1,
-                        TD: latestHealthData?.TD === 1,
+                        BCG: latestHealthData?.bcg === 1,
+                        POLIO: latestHealthData?.polio === 1,
+                        IPV: latestHealthData?.ipv === 1,
+                        PCV: latestHealthData?.pcv === 1,
+                        PENTAVALENT: latestHealthData?.pentavalent === 1,
+                        ROTAVIRUS: latestHealthData?.rotavirus === 1,
+                        MR: latestHealthData?.mr === 1,
+                        VITAMIN_A: latestHealthData?.vitamin_a === 1,
+                        DPT: latestHealthData?.dpt === 1,
+                        TD: latestHealthData?.td === 1,
                     });
                     setTempVaccinationStatus({
-                        BCG: latestHealthData?.BCG === 1,
-                        POLIO: latestHealthData?.POLIO === 1,
-                        IPV: latestHealthData?.IPV === 1,
-                        PCV: latestHealthData?.PCV === 1,
-                        PENTAVALENT: latestHealthData?.PENTAVALENT === 1,
-                        ROTAVIRUS: latestHealthData?.ROTAVIRUS === 1,
-                        MR: latestHealthData?.MR === 1,
-                        VITAMIN_A: latestHealthData?.VITAMIN_A === 1,
-                        DPT: latestHealthData?.DPT === 1,
-                        TD: latestHealthData?.TD === 1,
+                        BCG: latestHealthData?.bcg === 1,
+                        POLIO: latestHealthData?.polio === 1,
+                        IPV: latestHealthData?.ipv === 1,
+                        PCV: latestHealthData?.pcv === 1,
+                        PENTAVALENT: latestHealthData?.pentavalent === 1,
+                        ROTAVIRUS: latestHealthData?.rotavirus === 1,
+                        MR: latestHealthData?.mr === 1,
+                        VITAMIN_A: latestHealthData?.vitamin_a === 1,
+                        DPT: latestHealthData?.dpt === 1,
+                        TD: latestHealthData?.td === 1,
                     });
                 } else {
                     console.log('Data not found in the database');
@@ -129,6 +145,7 @@ const GeneralHistoryDisplay = ({ route }) => {
 
         fetchData();
     }, [anganwadiNo, childsName]);
+
 
     useEffect(() => {
         const fetchVisitsData = async () => {
@@ -165,7 +182,7 @@ const GeneralHistoryDisplay = ({ route }) => {
     };
 
     const handleCancelAddVisit = () => {
-        
+
         setAddVisitMode(false);
         setNewVisit({
             date: '',
@@ -192,11 +209,11 @@ const GeneralHistoryDisplay = ({ route }) => {
 
             // Formatting the date as 'YYYY-MM-DD'
             const formattedDate = `${day}-${month}-${year}`;
-    
+
             const weightKg = parseFloat(newVisit.weightKg) || 0;
             const weightGrams = parseFloat(newVisit.weightGrams) || 0;
             const totalWeight = weightKg + weightGrams / 1000;
-    
+
             const requestData = {
                 anganwadiNo,
                 childName: childsName,
@@ -215,7 +232,7 @@ const GeneralHistoryDisplay = ({ route }) => {
                 protein: newVisit.protein,
                 weight: totalWeight.toFixed(3), // Change this line to update the 'weight' property
             };
-    
+
             const response = await fetch(`${API_URL}/visits`, {
                 method: 'POST',
                 headers: {
@@ -223,7 +240,7 @@ const GeneralHistoryDisplay = ({ route }) => {
                 },
                 body: JSON.stringify(requestData),
             });
-    
+
             if (response.status === 200) {
                 Alert.alert
                 // Successfully inserted into the server, you can update the local state as well.
@@ -249,12 +266,12 @@ const GeneralHistoryDisplay = ({ route }) => {
                 setAddVisitMode(false);
                 Alert.alert('Success', 'Visit data submitted successfully', [
                     {
-                      text: 'Okay',
-                      onPress: () => {
-                navigate.navigate('ChildPresent'); // Replace 'HomePage' with your actual home screen name
-                      },
+                        text: 'Okay',
+                        onPress: () => {
+                            navigate.navigate('ChildPresent'); // Replace 'HomePage' with your actual home screen name
+                        },
                     },
-                  ]);
+                ]);
                 //navigate.navigate('ChildPresent');
             } else {
                 console.log('Failed to insert data into the server');
@@ -263,7 +280,7 @@ const GeneralHistoryDisplay = ({ route }) => {
             console.error('Error saving visit:', error);
         }
     };
-    
+
 
 
     const renderVisitItem = ({ item }) => {
@@ -278,7 +295,7 @@ const GeneralHistoryDisplay = ({ route }) => {
                 return 'Invalid Date';
             }
         };
-        
+
 
 
         return (
@@ -526,16 +543,16 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <TouchableOpacity onPress={openCalendar} style={styles.textInput}>
                                 <Text>{selectedDate !== '' ? selectedDate : 'Select Date'}</Text>
                                 {selectedDate !== '' && (
-                                <Text style={styles.selectedDateText}>{selectedDate}</Text>
-                            )}
-                            {calendarVisible && (
-                                <Calendar
-                                    onDayPress={onDayPress}
-                                    markedDates={{ [selectedDate]: { selected: true } }}
-                                />
-                            )}
+                                    <Text style={styles.selectedDateText}>{selectedDate}</Text>
+                                )}
+                                {calendarVisible && (
+                                    <Calendar
+                                        onDayPress={onDayPress}
+                                        markedDates={{ [selectedDate]: { selected: true } }}
+                                    />
+                                )}
                             </TouchableOpacity>
-                            
+
                             <Text style={styles.label}>Iron:</Text>
                             <SupplementCounter
                                 value={newVisit.iron}
@@ -567,7 +584,10 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <Text style={styles.label}>Total No. of Supplements:</Text>
                             <TextInput
                                 value={newVisit.totalNoOfJars}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, totalNoOfJars: text })}
+                                onChangeText={(text) => {
+                                    const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                    setNewVisit({ ...newVisit, totalNoOfJars: cleanedText });
+                                }}
                                 keyboardType="phone-pad"
                                 style={styles.textInput}
                             />
@@ -575,16 +595,23 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <Text style={styles.label}>Haemoglobin:</Text>
                             <TextInput
                                 value={newVisit.haemoglobin}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, haemoglobin: text })}
+                                onChangeText={(text) => {
+                                    const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                    const truncatedText = cleanedText.slice(0, 5); // Limit the length to 5 characters
+                                    const numericValue = parseFloat(truncatedText);
 
-                                keyboardType="phone-pad"
-                                style={styles.textInput}
-                            />
-
-                            <Text style={styles.label}>MUAC:</Text>
-                            <TextInput
-                                value={newVisit.muac}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, muac: text })}
+                                    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 17) {
+                                        setNewVisit({ ...newVisit, haemoglobin: truncatedText });
+                                    } else {
+                                        // Handle the case when the input is not a valid number or exceeds 17
+                                        setNewVisit({ ...newVisit, haemoglobin: '' }); // Clear the field
+                                        Alert.alert(
+                                            'Invalid Haemoglobin',
+                                            'Haemoglobin should be between 0 and 17.',
+                                            [{ text: 'OK', onPress: () => { } }],
+                                        );
+                                    }
+                                }}
                                 keyboardType="phone-pad"
                                 style={styles.textInput}
                             />
@@ -593,14 +620,21 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <View style={styles.weightContainer}>
                                 <TextInput
                                     value={newVisit.weightKg}
-                                    onChangeText={(text) => setNewVisit({ ...newVisit, weightKg: text })}
+                                    onChangeText={(text) => {
+                                        const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                        setNewVisit({ ...newVisit, weightKg: cleanedText });
+                                    }}
                                     keyboardType="numeric"
                                     style={styles.weightInput}
                                 />
                                 <Text style={styles.label}>kg</Text>
                                 <TextInput
                                     value={newVisit.weightGrams}
-                                    onChangeText={(text) => setNewVisit({ ...newVisit, weightGrams: text })}
+                                    onChangeText={(text) => {
+                                        const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                        const truncatedText = cleanedText.slice(0, 3); // Limit the length to 3 characters
+                                        setNewVisit({ ...newVisit, weightGrams: truncatedText });
+                                    }}
                                     keyboardType="numeric"
                                     style={styles.weightInput}
                                 />
@@ -608,10 +642,27 @@ const GeneralHistoryDisplay = ({ route }) => {
                             </View>
 
 
+
                             <Text style={styles.label}>Height (cm):</Text>
                             <TextInput
                                 value={newVisit.height}
-                                onChangeText={(text) => setNewVisit({ ...newVisit, height: text })}
+                                onChangeText={(text) => {
+                                    const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                    const truncatedText = cleanedText.slice(0, 3); // Limit the length to 3 digits
+                                    const numericValue = parseInt(truncatedText, 10); // Convert to an integer
+
+                                    if (!isNaN(numericValue) && numericValue >= 0) {
+                                        setNewVisit({ ...newVisit, height: truncatedText });
+                                    } else {
+                                        // Handle the case when the input is not a valid number or negative
+                                        setNewVisit({ ...newVisit, height: '' }); // Clear the field
+                                        Alert.alert(
+                                            'Invalid Height',
+                                            'Height should be a positive number.',
+                                            [{ text: 'OK', onPress: () => { } }],
+                                        );
+                                    }
+                                }}
                                 keyboardType="phone-pad"
                                 style={styles.textInput}
                             />
@@ -744,7 +795,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     selectedDateText: {
-        marginTop:-17,        
+        marginTop: -17,
         fontSize: 16,
         color: 'black'
     },

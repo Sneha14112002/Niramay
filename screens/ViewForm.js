@@ -86,6 +86,8 @@ const ViewForm = ({ route }) => {
       setCheckedDiabetes((formData.diabetes || '').split(', ').filter(Boolean));
       setCheckedAnaemia((formData.anaemia || '').split(', ').filter(Boolean));
       setCheckedTuberculosis((formData.tuberculosis || '').split(', ').filter(Boolean));
+      setSelectedSource(formData.source_of_drinking_water || '');
+      setOtherSourceValue(formData.otherSourceValue || '');
     }
   }, [formData]);
 

@@ -1,76 +1,142 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, ActivityIndicator, ScrollView ,Alert} from 'react-native';
-import { VictoryLine, VictoryChart, VictoryAxis, VictoryLegend, VictoryArea } from 'victory-native';
-import { API_URL } from './config';
-import { useNavigation } from '@react-navigation/native';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import {
+  VictoryLine,
+  VictoryChart,
+  VictoryAxis,
+  VictoryLegend,
+  VictoryArea,
+} from 'victory-native';
+import {API_URL} from './config';
+import {useNavigation} from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import {Calendar, LocaleConfig} from 'react-native-calendars';
 import RNFS from 'react-native-fs';
-const GrowthChartPerChild = ({ route, toggleMenu }) => {
-  const { anganwadiNo, childsName, gender, dob } = route.params;
+const GrowthChartPerChild = ({route, toggleMenu}) => {
+  const {anganwadiNo, childsName, gender, dob} = route.params;
   const navigation = useNavigation();
 
   // State variables to store data
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
+  const [pdfCounter, setPdfCounter] = useState(1); 
   const chartRef = useRef();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const requestData = {
-          anganwadiNo,
-          childsName,
-        };
-
-        const response = await fetch(`${API_URL}/getVisitsData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        });
-
-        if (response.status === 200) {
-          const data = await response.json();
-          setFormData(data);
-        } else {
-          console.log('Data not found in the database');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+  const formatDate = utcDate => {
+    const options = {
+      timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     };
 
-    fetchData();
-  }, [anganwadiNo, childsName]);
+    return new Date(utcDate).toLocaleDateString('en-IN', options);
+  };
+
+  const onDayPress = day => {
+    // Callback function when a day is pressed on the calendar
+    if (!selectedFromDate) {
+      // If "from" date is not selected, set it
+      setSelectedFromDate(day.dateString);
+    } else if (!selectedToDate) {
+      // If "from" date is selected but "to" date is not, set "to" date
+      setSelectedToDate(day.dateString);
+    } else {
+      // If both "from" and "to" dates are selected, reset selection
+      setSelectedFromDate(day.dateString);
+      setSelectedToDate(null);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch data based on selected date range
+    fetchData(selectedFromDate, selectedToDate);
+  }, [selectedFromDate, selectedToDate]);
+
+  const fetchData = async (fromDate, toDate) => {
+    try {
+      const requestData = {
+        anganwadiNo,
+        childsName,
+        fromDate,
+        toDate,
+      };
+
+      const response = await fetch(`${API_URL}/getVisitsData`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        console.log('Data not found in the database');
+        showFlashMessage('No data found between the selected date range.');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showFlashMessage('Error fetching data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showFlashMessage = message => {
+    Alert.alert('Flash Message', message);
+  };
 
   // Extract weight data and visit dates from formData
-  const { data } = formData || {};
-  const weights = data ? data.map((entry) => parseFloat(entry.weight)) : [];
-  const heights = data ? data.map((entry) => parseFloat(entry.height)) : [];
-  const haemoglobin = data ? data.map((entry) => parseFloat(entry.haemoglobin)) : [];
-  const visitDates = data ? data.map((entry) => entry.visitDate) : [];
+  const {data} = formData || {};
+  const weights = data ? data.map(entry => parseFloat(entry.weight)) : [];
+  const heights = data ? data.map(entry => parseFloat(entry.height)) : [];
+  const haemoglobin = data
+    ? data.map(entry => parseFloat(entry.haemoglobin))
+    : [];
+  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
 
   // Create an array of custom labels for the graph ("visit1," "visit2," etc.)
   const customLabels = heights.map((_, index) => `visit${index + 1}`);
-
-  // Before using haemoglobin array in the LineChart component
   const filledHaemoglobin = haemoglobin.map((value, index) => {
-    if (isNaN(value) && index > 0) {
-      // If the value is NaN and index is greater than 0, replace it with the previous numeric value
-      let previousNumericValue = null;
+    if (
+      isNaN(value) ||
+      value === null ||
+      value === '' ||
+      value === 0 ||
+      value === '0.0'
+    ) {
+      // If the value is NaN or null or empty string or 0 or "0.0",
+      // replace it with the first non-zero value in the data or previous numeric value
+      let firstNonZeroValue = null;
 
       for (let i = index - 1; i >= 0; i--) {
-        if (!isNaN(haemoglobin[i])) {
-          previousNumericValue = haemoglobin[i];
+        if (
+          !isNaN(haemoglobin[i]) &&
+          haemoglobin[i] !== null &&
+          haemoglobin[i] !== '' &&
+          haemoglobin[i] !== '0.0'
+        ) {
+          firstNonZeroValue = haemoglobin[i];
           break;
         }
       }
 
-      return previousNumericValue || 0;
+      return firstNonZeroValue || 0;
     }
     return value;
   });
@@ -82,16 +148,16 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
     visit: visitDate,
     height: `${parseFloat(heights[index]).toFixed(2)} cm`,
     weight: `${parseFloat(weights[index]).toFixed(2)} kg`,
-    haemoglobin: `${parseFloat(haemoglobin[index]).toFixed(2)} g/dL`,
+    haemoglobin: `${parseFloat(filledHaemoglobin[index]).toFixed(2)} g/dL`,
   }));
 
   // Normalize the height, weight, and haemoglobin data
-  const normalize = (data) => {
+  const normalize = data => {
     const minValue = Math.min(...data);
     const maxValue = Math.max(...data);
     const range = maxValue - minValue;
 
-    return data.map((value) => (value - minValue) / range);
+    return data.map(value => (value - minValue) / range);
   };
 
   // Normalize the height, weight, and haemoglobin datasets
@@ -108,7 +174,7 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
     }
   };
 
-  const generateHTML = (chartImageUri) => {
+  const generateHTML = chartImageUri => {
     const chartHtml = `
       <div class="chart">
         <div class="chart-title">Growth Chart</div>
@@ -122,7 +188,7 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
         <div class="info-text">Date of Birth: ${dob}</div>
       </div>
     `;
-  
+
     const tableRows = tableData.map(
       (item, index) => `
         <tr>
@@ -131,9 +197,9 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
           <td style="padding: 8px; text-align: center;">${item.weight}</td>
           <td style="padding: 8px; text-align: center;">${item.haemoglobin}</td>
         </tr>
-      `
+      `,
     );
-  
+
     const tableHtml = `
       <table style="width: 100%; border-collapse: collapse;">
         <thead>
@@ -149,7 +215,7 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
         </tbody>
       </table>
     `;
-  
+
     const htmlContent = `
     <html>
       <head>
@@ -288,39 +354,67 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
     </html>
   `;
 
-  return htmlContent;
-};
+    return htmlContent;
+  };
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-
+  
       if (chartImageUri) {
-        const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'GrowthChartPerChildReport',
-          directory: 'Documents',
+        // Option 1: Use a function to generate a unique filename based on the current date and time
+        const generateUniqueFilename = () => {
+          const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+          return `${childsName}_GrowthChart_${timestamp}.pdf`;
         };
-
+  
+        // Option 2: Increment the counter correctly using the setPdfCounter callback
+        setPdfCounter((prevCounter) => prevCounter + 1);
+        const options = {
+          html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+          // Use either the function or counter approach for the filename
+          // fileName: generateUniqueFilename(),
+          fileName: `GrowthChartPerChildReport_${pdfCounter}.pdf`,
+          directory: `Documents/${childsName}`,
+        };
+  
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
   
-        // Move the generated PDF to the Downloads directory
         const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_GrowthChart.pdf`;
+        const newPdfPath = `${downloadsPath}/${childsName}_GrowthChart_${pdfCounter}.pdf`;
   
-        await RNFS.moveFile(pdfPath, newPdfPath);
+        const fileExists = await RNFS.exists(newPdfPath);
   
-        // Display an alert dialog after the PDF is generated
-        Alert.alert(
-        'PDF Downloaded',
-        'The PDF has been downloaded in your downloads folder.'
-      );
+        if (fileExists) {
+          setPdfCounter((prevCounter) => prevCounter + 1);
+          const newPdfPathWithCounter = `${downloadsPath}/${childsName}_GrowthChart_${pdfCounter}.pdf`;
+          await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded with a new filename:${childsName}_GrowthChart_${pdfCounter}.pdf`,
+          );
+        } else {
+          await RNFS.moveFile(pdfPath, newPdfPath);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded in your downloads folder with filename:${childsName}_GrowthChart_${pdfCounter}.pdf`,
+          );
+        }
       } else {
         console.error('Chart capture failed.');
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
+  };
+  
+
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
   };
 
   return (
@@ -336,59 +430,158 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
               <Text style={styles.infoText}>Gender: {gender}</Text>
               <Text style={styles.infoText}>Date of Birth: {dob}</Text>
             </View>
+            <Text style={{...styles.infoText, marginLeft: 15}}>
+              Select Date Range (From-To)
+            </Text>
+            {showCalendar ? (
+              <Calendar
+                onDayPress={day => {
+                  if (!selectedFromDate) {
+                    setSelectedFromDate(day.dateString);
+                  } else if (!selectedToDate) {
+                    setSelectedToDate(day.dateString);
+                    setShowCalendar(false);
+                  } else {
+                    resetDateSelection();
+                  }
+                }}
+                markedDates={{
+                  [selectedFromDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                  [selectedToDate]: {
+                    selected: true,
+                    marked: true,
+                    selectedColor: 'blue',
+                  },
+                }}
+                style={{
+                  borderRadius: 50,
+                  width: 350,
+                  marginLeft: 5,
+                  marginTop: 20,
+                }}
+              />
+            ) : (
+              <View style={styles.dateSelectionContainer}>
+                <Text style={styles.dateSelectionText}>
+                  {`Selected Dates: ${formatDate(
+                    selectedFromDate,
+                  )} - ${formatDate(selectedToDate)}`}
+                </Text>
+                <TouchableOpacity onPress={resetDateSelection}>
+                  <Text style={styles.resetDateSelectionText}>
+                    Change Dates
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={styles.chart}>
               <Text style={styles.chartTitle}>Growth Chart</Text>
               <ScrollView horizontal={true}>
-                <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.8 }}>
-                  <VictoryChart padding={{ top: 30, bottom: 45, left: 50, right: 20 }} width={customLabels.length * 60} height={300} domainPadding={{ x: 20 }}>
+                <ViewShot
+                  ref={chartRef}
+                  options={{format: 'png', quality: 0.8}}>
+                  <VictoryChart
+                    padding={{top: 20, bottom: 50, left: 70, right: 40}}
+                    domainPadding={{x: 20}}
+                    scale={{x: 'band'}}
+                    domain={{x: [0, 1]}} // Set the domain for the x-axis
+                  >
                     <VictoryLegend
                       x={80}
                       y={0}
                       orientation="horizontal"
                       gutter={10}
                       data={[
-                        { name: 'Haemoglobin ', symbol: { fill: 'rgba(237, 102, 99, 0.7)' } },
-                        { name: 'Height ', symbol: { fill: 'rgba(255, 163, 114, 0.7)' } },
-                        { name: 'Weight ', symbol: { fill: 'rgba(67, 101, 139, 0.7)' } },
+                        {
+                          name: 'Haemoglobin ',
+                          symbol: {fill: 'rgba(237, 102, 99, 0.7)'},
+                        },
+                        {
+                          name: 'Height ',
+                          symbol: {fill: 'rgba(255, 163, 114, 0.7)'},
+                        },
+                        {
+                          name: 'Weight ',
+                          symbol: {fill: 'rgba(67, 101, 139, 0.7)'},
+                        },
                       ]}
                     />
                     <VictoryAxis
                       label="Visits"
                       style={{
-                        axisLabel: { padding: 30 },
+                        axisLabel: {padding: 30},
                       }}
-                      tickFormat={(value) => `Visit${value}`}
+                      tickValues={[0]} // Always include 0 as a tick value
+                      tickFormat={value => 'Visit1'} // Use a fixed label for a single visit
                     />
                     <VictoryAxis
                       label="Data"
                       style={{
-                        axisLabel: { padding: 35, y: -20 },
+                        axisLabel: {padding: 35, y: -20},
                       }}
                       dependentAxis
                     />
                     <VictoryArea
-                      data={normalizedHaemoglobin.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { fill: 'rgba(237, 102, 99, 0.15)' } }}
+                      data={normalizedHaemoglobin.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{data: {fill: 'rgba(237, 102, 99, 0.15)'}}}
                     />
                     <VictoryArea
-                      data={normalizedHeights.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { fill: 'rgba(255, 163, 114, 0.15)' } }}
+                      data={normalizedHeights.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{data: {fill: 'rgba(255, 163, 114, 0.15)'}}}
                     />
                     <VictoryArea
-                      data={normalizedWeights.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { fill: 'rgba(67, 101, 139, 0.15)' } }}
+                      data={normalizedWeights.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{data: {fill: 'rgba(67, 101, 139, 0.15)'}}}
                     />
                     <VictoryLine
-                      data={normalizedHaemoglobin.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { stroke: 'rgba(237, 102, 99, 0.7)', strokeWidth: 2 } }}
+                      data={normalizedHaemoglobin.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{
+                        data: {
+                          stroke: 'rgba(237, 102, 99, 0.7)',
+                          strokeWidth: 2,
+                        },
+                      }}
                     />
                     <VictoryLine
-                      data={normalizedHeights.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { stroke: 'rgba(255, 163, 114, 0.7)', strokeWidth: 2 } }}
+                      data={normalizedHeights.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{
+                        data: {
+                          stroke: 'rgba(255, 163, 114, 0.7)',
+                          strokeWidth: 2,
+                        },
+                      }}
                     />
                     <VictoryLine
-                      data={normalizedWeights.map((value, index) => ({ x: index, y: value }))}
-                      style={{ data: { stroke: 'rgba(67, 101, 139, 0.7)', strokeWidth: 2 } }}
+                      data={normalizedWeights.map((value, index) => ({
+                        x: index,
+                        y: value,
+                      }))}
+                      style={{
+                        data: {
+                          stroke: 'rgba(67, 101, 139, 0.7)',
+                          strokeWidth: 2,
+                        },
+                      }}
                     />
                   </VictoryChart>
                 </ViewShot>
@@ -416,30 +609,38 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
             </View>
 
             <TouchableOpacity
-        style={{
-          ...styles.printButton,
-          position: 'absolute',
-          top: -10,
-          right: -20,
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginBottom:90,
-        }}
-        onPress={generatePDF}
-      >
-        <Image
-          source={require('../assets/printer1.png')}
-          style={{
-            width: 35,
-            height: 35,
-            borderRadius: 10,
-            backgroundColor: '#f4f4f4',
-            marginEnd:40,
-            marginBottom:40
-          }}
-        />
-        <Text style={{ color: 'black', fontSize: 14, marginTop: -40 ,marginEnd:45}}> PDF</Text>
-      </TouchableOpacity>
+              style={{
+                ...styles.printButton,
+                position: 'absolute',
+                top: -10,
+                right: -20,
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginBottom: 90,
+              }}
+              onPress={generatePDF}>
+              <Image
+                source={require('../assets/printer1.png')}
+                style={{
+                  width: 35,
+                  height: 35,
+                  borderRadius: 10,
+                  backgroundColor: '#f4f4f4',
+                  marginEnd: 40,
+                  marginBottom: 40,
+                }}
+              />
+              <Text
+                style={{
+                  color: 'black',
+                  fontSize: 14,
+                  marginTop: -40,
+                  marginEnd: 45,
+                }}>
+                {' '}
+                PDF
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -447,125 +648,151 @@ const GrowthChartPerChild = ({ route, toggleMenu }) => {
   );
 };
 const styles = StyleSheet.create({
+  pdfButton: {
+    marginTop: 20,
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  pdfButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
 
-    pdfButton: {
-        marginTop: 20,
-        backgroundColor: '#007BFF',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-      },
-      pdfButtonText: {
-        color: 'white',
-        fontSize: 16,
-      },
-    menuButton: {
-        position: 'absolute',
-        bottom: -20,
-        right: 1,
-        zIndex: 1,
-   
-        // Add any additional styles you need for positioning and appearance
-      },
-      menuIcon: {
-        width: 28,
-        height: 30,
-        // Add styles for your icon if needed
-      },
-   
-    container: {
-        flex: 1,
-        backgroundColor: '#f4f4f4',
-        paddingVertical: 20,
-    },
-    chart: {
-        margin: 16,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 4,
-        padding: 16,
-    },
-    chartTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#555',
-    },
-    chartStyle: {
-        marginVertical: 8,
-    },
-    table: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 4,
-        margin: 16,
-        borderWidth: 1, // Add a border to the table
-        borderColor: '#ccc', // Border color
-    },
-    tableTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        margin: 16,
-        color: '#555',
-    },
-    tableContainer: {
-        backgroundColor: 'white',
-        borderRadius: 15,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 8,
-    },
-    tableHeader: {
-        backgroundColor: 'teal',
-        flexDirection: 'row',
-        justifyContent: 'space-evenly',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1, // Add a border to the bottom of the header
-        borderBottomColor: '#ccc', // Border color
-    },
-    tableHeaderText: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    tableRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-    },
-    tableCell: {
-        flex: 1,
-        textAlign: 'center',
-        color: '#333'
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
 
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f4f4',
+    paddingVertical: 20,
+  },
+  chart: {
+    margin: 16,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    padding: 16,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#555',
+  },
+  chartStyle: {
+    marginVertical: 8,
+  },
+  table: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    borderWidth: 1, // Add a border to the table
+    borderColor: '#ccc', // Border color
+  },
+  tableTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    margin: 16,
+    color: '#555',
+  },
+  tableContainer: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    childInfo: {
-        backgroundColor: 'white',
-        borderRadius: 10,
-        elevation: 4,
-        margin: 16,
-        padding: 16,
-      },
-      infoText: {
-        fontSize: 16,
-        marginBottom: 8,
-        color: 'black'
-      },
-      scrollView: {
-        flex: 1,
-        width: '100%',
-      },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  tableHeader: {
+    backgroundColor: 'teal',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1, // Add a border to the bottom of the header
+    borderBottomColor: '#ccc', // Border color
+  },
+  tableHeaderText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#333',
+  },
+  childInfo: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  infoText: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: 'black',
+  },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  selectedDatesContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  selectedDatesText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  resetDateSelectionText: {
+    fontSize: 16,
+    color: 'blue',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  dateSelectionContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  dateSelectionText: {
+    fontSize: 16,
+    color: 'black',
+  },
 });
 
 export default GrowthChartPerChild;

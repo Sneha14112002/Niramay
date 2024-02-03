@@ -20,7 +20,7 @@ const GradePerChild = ({ route, toggleMenu }) => {
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(true);
-
+  const [pdfCounter, setPdfCounter] = useState(1);
   const formatDate = utcDate => {
     const options = {
       timeZone: 'Asia/Kolkata', // Indian Standard Time (IST)
@@ -104,6 +104,15 @@ const GradePerChild = ({ route, toggleMenu }) => {
         return 0;
     }
   });
+  const formatDateForPDF = utcDate => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    };
+  
+    return new Date(utcDate).toLocaleDateString('en-IN', options);
+  };
  
   const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
   const chartData = data ? data.map((_, index) => ({ x: index + 1, y: gradeValues[index] })) : [];
@@ -131,33 +140,42 @@ const GradePerChild = ({ route, toggleMenu }) => {
       </div>
     `;
     const childInfoHtml = `
-    <div class="child-info" style="background-color: white; border-radius: 10px; elevation: 4; margin: 16px; padding: 16px;">
-      <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Child Profile</div>
-      <div style="font-size: 16px; margin-bottom: 8px; color: black">Name: ${childsName}</div>
-      <div style="font-size: 16px; margin-bottom: 8px; color: black">Gender: ${gender}</div>
-      <div style="font-size: 16px; margin-bottom: 8px; color: black">Date of Birth: ${dob}</div>
+      <div class="child-info" style="background-color: white; border-radius: 10px; elevation: 4; margin: 16px; padding: 16px;">
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Child Profile</div>
+        <div style="font-size: 16px; margin-bottom: 8px; color: black">Name: ${childsName}</div>
+        <div style="font-size: 16px; margin-bottom: 8px; color: black">Gender: ${gender}</div>
+        <div style="font-size: 16px; margin-bottom: 8px; color: black">Date of Birth: ${dob}</div>
+      </div>
+    `;
+  
+    const selectedDatesHtml = selectedFromDate && selectedToDate ? `
+    <div class="selected-dates" style="background-color: white; border-radius: 10px; elevation: 4; margin: 16px; padding: 8px; display: flex; justify-content: space-between;">
+      <div style="font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #333; text-align: center;">Selected Dates</div>
+      <div style="display: flex; flex-direction: row; align-items: center;">
+        <div style="font-size: 16px; margin-right: 5px; color: black;">From: ${selectedFromDate}</div>
+        <div style="font-size: 16px; color: black;">To: ${selectedToDate}</div>
+      </div>
     </div>
-  `;
+  ` : '';
 
-  
-    const tableHtml = `
-    <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
-      <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Weight Chart Per Child</Text>
-      <table style="width: 100%; border-collapse: collapse;">
+
+  const tableHtml = `
+  <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
+    <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Weight Chart Per Child</Text>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Visit Date</th>
+        <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Grade</th>
+      </tr>
+      ${data.map(item => `
         <tr>
-          <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Visit Date</th>
-          <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Grade</th>
+          <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${formatDateForPDF(item.visitDate)}</td>
+          <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.grade}</td>
         </tr>
-        ${data.map(item => `
-          <tr>
-            <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.visitDate}</td>
-            <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.grade}</td>
-          </tr>
-        `).join('')}
-      </table>
-    </div>
-  `;
-  
+      `).join('')}
+    </table>
+  </div>
+`;
     const htmlContent = `
       <html>
         <head>
@@ -167,6 +185,13 @@ const GradePerChild = ({ route, toggleMenu }) => {
               background-color: #f0f0f0;
             }
             .child-info {
+              background-color: white;
+              border-radius: 10px;
+              elevation: 4;
+              margin: 16px;
+              padding: 16px;
+            }
+            .selected-dates {
               background-color: white;
               border-radius: 10px;
               elevation: 4;
@@ -210,17 +235,18 @@ const GradePerChild = ({ route, toggleMenu }) => {
           </style>
         </head>
         <body>
-
-        <div class="headerContainer">
-        <img src="file:///android_asset/images/logo2.jpg" />
+  
+          <div class="headerContainer">
+            <img src="file:///android_asset/images/logo2.jpg" />
             <div class="textContainer">
               <div class="headingLine">Niramay Bharat</div>
               <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
             </div>
           </div>
-        <div class="child-info">
-          ${childInfoHtml}
-        </div>
+          <div class="child-info">
+            ${childInfoHtml}
+          </div>
+          ${selectedDatesHtml}
           <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Grade Chart Per Child</Text>
           
           <div class="chart-container">
@@ -237,6 +263,7 @@ const GradePerChild = ({ route, toggleMenu }) => {
     return htmlContent;
   };
   
+  
 
   const captureChart = async () => {
     try {
@@ -250,28 +277,50 @@ const GradePerChild = ({ route, toggleMenu }) => {
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-
+  
       if (chartImageUri) {
-        const options = {
-          html: generateHTML(chartImageUri),
-          fileName: 'GradeChartPerChildReport',
-          directory: 'Documents',
+        // Option 1: Use a function to generate a unique filename based on the current date and time
+        const generateUniqueFilename = () => {
+          const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+          return `${childsName}_GradeChart_${timestamp}.pdf`;
         };
-
+  
+        // Option 2: Increment the counter correctly using the setPdfCounter callback
+        setPdfCounter((prevCounter) => prevCounter + 1);
+  
+        const options = {
+          html: generateHTML(chartImageUri, selectedFromDate, selectedToDate),
+          // Use either the function or counter approach for the filename
+          // fileName: generateUniqueFilename(),
+          fileName: `GradeChartPerChildReport_${pdfCounter}.pdf`,
+          directory: `Documents/${childsName}`,
+        };
+  
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
   
-        // Move the generated PDF to the Downloads directory
         const downloadsPath = RNFS.DownloadDirectoryPath;
-        const newPdfPath = `${downloadsPath}/${childsName}_GradeChart.pdf`;
+        const newPdfPath = `${downloadsPath}/${childsName}_GradeChart_${pdfCounter}.pdf`;
   
-        await RNFS.moveFile(pdfPath, newPdfPath);
+        const fileExists = await RNFS.exists(newPdfPath);
   
-        // Display an alert dialog after the PDF is generated
-        Alert.alert(
-        'PDF Downloaded',
-        'The PDF has been downloaded in your downloads folder.'
-      );
+        if (fileExists) {
+          setPdfCounter((prevCounter) => prevCounter + 1);
+          const newPdfPathWithCounter = `${downloadsPath}/${childsName}_GradeChart_${pdfCounter}.pdf`;
+          await RNFS.moveFile(pdfPath, newPdfPathWithCounter);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded with a new filename:${childsName}_GradeChart_${pdfCounter}.pdf`,
+          );
+        } else {
+          await RNFS.moveFile(pdfPath, newPdfPath);
+  
+          Alert.alert(
+            'PDF Downloaded',
+            `The PDF has been downloaded in your downloads folder with filename:${childsName}_GradeChart_${pdfCounter}.pdf .`,
+          );
+        }
       } else {
         console.error('Chart capture failed.');
       }
@@ -279,6 +328,8 @@ const GradePerChild = ({ route, toggleMenu }) => {
       console.error('Error generating PDF:', error);
     }
   };
+  
+
 
   const resetDateSelection = () => {
     setSelectedFromDate(null);
@@ -303,6 +354,11 @@ const GradePerChild = ({ route, toggleMenu }) => {
               Select Date Range (From-To)
             </Text>
             {showCalendar ? (
+              <View style={styles.calendarContainer}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.calendarScrollView}>
               <Calendar
                 onDayPress={day => {
                   if (!selectedFromDate) {
@@ -333,6 +389,8 @@ const GradePerChild = ({ route, toggleMenu }) => {
                   marginTop: 20,
                 }}
               />
+              </ScrollView>
+              </View>
             ) : (
               <View style={styles.dateSelectionContainer}>
                 <Text style={styles.dateSelectionText}>
@@ -592,6 +650,18 @@ childInfo: {
       dateSelectionText: {
         fontSize: 16,
         color: 'black',
+      },
+      calendarContainer: {
+        alignItems: 'center',
+        marginTop: 20,
+      },
+      calendarScrollView: {
+        flexGrow: 1,
+        justifyContent: 'center',
+      },
+      calendar: {
+        borderRadius: 50,
+        width: 350,
       },
 });
 

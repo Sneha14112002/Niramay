@@ -19,9 +19,6 @@ const Menu = ({ toggleMenu }) => {
       case 'Consolidated Report':
         navigation.navigate('ConsolidatedReports');
         break;
-      case 'About Us':
-        navigation.navigate('AboutUsScreen');
-        break;
       default:
         break;
     }
@@ -33,7 +30,6 @@ const Menu = ({ toggleMenu }) => {
     { label: 'Physical Check Up Information', icon: require('../assets/heartbeat.png') },
     { label: 'Individual Report', icon: require('../assets/file.png') },
     { label: 'Consolidated Report', icon: require('../assets/grade.png') },
-    { label: 'About US', icon: require('../assets/user.png') }
   ];
 
   return (

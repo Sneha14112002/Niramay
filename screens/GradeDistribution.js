@@ -17,7 +17,7 @@ import { API_URL } from './config';
 import { captureRef } from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
-
+import { Modal, TouchableHighlight } from 'react-native';
 
 const styles = StyleSheet.create({
   container: {
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    color:'black'
+    color: 'black'
   },
   dropdownContainer: {
     width: 300,
@@ -40,11 +40,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCCCCC',
     marginBottom: 20,
-    color:'black'
+    color: 'black'
   },
   dropdownText: {
     fontSize: 16,
-    color:'black'
+    color: 'black'
   },
   dropdownOptions: {
     borderWidth: 1,
@@ -53,11 +53,11 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     width: 300,
-    color:'black'
+    color: 'black'
   },
   dropdownOptionText: {
     fontSize: 16,
-    color:'black'
+    color: 'black'
   },
   chartSection: {
     alignItems: 'center',
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
-    color:'black'
+    color: 'black'
   },
   legendContainer: {
     position: 'absolute',
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   tableContainer: {
-    borderRadius:8,
-    paddingBottom:20,
+    borderRadius: 8,
+    paddingBottom: 20,
     marginTop: 20,
     backgroundColor: 'white',
     borderRadius: 15,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 8,
   },
-  
+
   tableHeader: {
     backgroundColor: 'teal',
     paddingVertical: 8,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
-    
+
   },
   tableRow: {
     flexDirection: 'row',
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
     textAlign: 'center',
-    color:'black'
+    color: 'black'
   },
   printButton: {
     position: 'absolute',
@@ -154,6 +154,106 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 16,
   },
+  gradeDetailsContainer: {
+    marginVertical: 20,
+  },
+  gradeDetailsHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#333',
+    textAlign: 'center',
+  },
+  gradeDetailsList: {
+    marginTop: 10,
+  },
+  gradeDetailsItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  gradeDetailsText: {
+    flex: 1,
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  noChildListText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 200,
+    paddingBottom: 200,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    padding: 10,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#333',
+    textAlign: 'center',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  modalItemText: {
+    flex: 1,
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  closeModalButton: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingBottom: 10,
+    backgroundColor: 'teal',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tableHeaderText: {
+    fontSize: 16,
+    color: 'black',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+  },
 });
 const colors = {
   NORMAL: '#33FF57',
@@ -166,8 +266,13 @@ const GradeDistribution = () => {
   const [selectedBitName, setSelectedBitName] = useState('');
   const [visitDate, setVisitDate] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('');
+  const [gradeDetails, setGradeDetails] = useState([]);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedModalGrade, setSelectedModalGrade] = useState(null);
+  const [modalGradeDetails, setModalGradeDetails] = useState([]);
 
   const resetVisitDate = () => {
     setVisitDate([]);
@@ -227,6 +332,20 @@ const GradeDistribution = () => {
     }
   }, [selectedDate, selectedBitName]);
 
+  useEffect(() => {
+    if (selectedModalGrade && selectedBitName && selectedDate) {
+      axios
+        .get(`${API_URL}/grade_details/${selectedBitName}/${selectedDate}/${selectedModalGrade}`)
+        .then((response) => {
+          setModalGradeDetails(response.data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+  }, [selectedModalGrade, selectedBitName, selectedDate]);
+
+
   const pieChartData = data.map((item, index) => ({
     name: item.grade,
     count: item.count,
@@ -268,7 +387,7 @@ const GradeDistribution = () => {
 
       await RNFS.moveFile(pdf.filePath, newPdfPath);
 
-      Alert.alert('PDF Downloaded', 'The PDF has been downloaded in your downloads folder.');
+      Alert.alert('PDF Downloaded', `The PDF has been downloaded in your downloads folder with name GradeDistribution_${selectedBitName}_${selectedDate}.pdf.`);
 
       console.log('PDF generated:', pdf.filePath);
     } catch (error) {
@@ -410,13 +529,30 @@ const GradeDistribution = () => {
     </body>
   </html>
   `;
-  
-  
+
+  const renderChildList = () => {
+    if (!modalGradeDetails.length) {
+      return <Text style={styles.noChildListText}>No children in this Bit Name</Text>;
+    }
+
+    return (
+      <FlatList
+        data={modalGradeDetails}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.modalItem}>
+            <Text style={styles.modalItemText}>{item.childName}</Text>
+            <Text style={styles.modalItemText}>{item.anganwadiNo}</Text>
+          </View>
+        )}
+      />
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
       <ScrollView style={styles.scrollView}>
-      <Text style={styles.header}>Grade Distribution</Text>
+        <Text style={styles.header}>Grade Distribution</Text>
         <TouchableOpacity
           style={styles.printButton}
           onPress={() => generatePDF()}
@@ -440,6 +576,8 @@ const GradeDistribution = () => {
                 onSelect={(index, value) => {
                   setSelectedBitName(value);
                   resetVisitDate();
+                  setSelectedGrade(''); // Reset selected grade when Anganwadi Name changes
+                  setGradeDetails([]); // Reset grade details when Anganwadi Name changes
                 }}
                 textStyle={styles.dropdownText}
                 dropdownStyle={styles.dropdownOptions}
@@ -456,7 +594,11 @@ const GradeDistribution = () => {
               <ModalDropdown
                 options={visitDate}
                 defaultValue="Select the Visit Date"
-                onSelect={(index, value) => setSelectedDate(value)}
+                onSelect={(index, value) => {
+                  setSelectedDate(value);
+                  setSelectedGrade(''); // Reset selected grade when Visit Date changes
+                  setGradeDetails([]); // Reset grade details when Visit Date changes
+                }}
                 textStyle={styles.dropdownText}
                 dropdownStyle={styles.dropdownOptions}
                 dropdownTextStyle={styles.dropdownOptionText}
@@ -464,6 +606,8 @@ const GradeDistribution = () => {
             </View>
           </View>
         )}
+
+
 
         {data.length > 0 && (
           <View style={styles.chartSection}>
@@ -484,30 +628,63 @@ const GradeDistribution = () => {
                 absolute
               />
             </View>
-           
           </View>
         )}
 
         {data.length > 0 && (
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Grade Summary</Text>
+          <View>
+            <View style={styles.tableContainer}>
+              <View style={styles.tableHeader}>
+                <Text style={styles.tableHeaderText}>Grade Summary</Text>
+              </View>
+              <FlatList
+                data={data}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedModalGrade(item.grade);
+                      setModalVisible(true);
+                    }}
+                    style={styles.tableRow}
+                  >
+                    <Text style={styles.tableCell}>{item.grade}</Text>
+                    <Text style={styles.tableCell}>{item.count}</Text>
+                  </TouchableOpacity>
+                )}
+              />
             </View>
-            <FlatList
-              data={data}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{item.grade}</Text>
-                  <Text style={styles.tableCell}>{item.count}</Text>
-                </View>
-              )}
-            />
           </View>
         )}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Grade Details for {selectedModalGrade}</Text>
+              <View style={styles.tableHeader}>
+                <Text style={styles.tableHeaderText}>Name</Text>
+                <Text style={styles.tableHeaderText}>Anganwadi No</Text>
+              </View>
+              {renderChildList()}
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={() => setModalVisible(!modalVisible)}
+              >
+                <Text style={styles.closeModalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScrollView>
   );
+
 };
 
 export default GradeDistribution;
