@@ -12,6 +12,20 @@ import {Calendar, LocaleConfig} from 'react-native-calendars';
 const HaemoglobinPerChild = ({ route, toggleMenu }) => {
   const { anganwadiNo, childsName, gender, dob } = route.params;
   const navigation = useNavigation();
+import React, { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, Text, ActivityIndicator, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
+import ViewShot from 'react-native-view-shot';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import { API_URL } from './config';
+import { useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+import {Calendar, LocaleConfig} from 'react-native-calendars';
+
+
+const HaemoglobinPerChild = ({ route, toggleMenu }) => {
+  const { anganwadiNo, childsName, gender, dob } = route.params;
+  const navigation = useNavigation();
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
  
@@ -96,7 +110,10 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
   };
 
 
+
   const { data } = formData || {};
+  const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null && entry.haemoglobin !== "0" && entry.haemoglobin !== "0.0" && entry.haemoglobin !== "") : [];
+  const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
   const haemoglobinData = data ? data.filter(entry => entry.haemoglobin !== null && entry.haemoglobin !== "0" && entry.haemoglobin !== "0.0" && entry.haemoglobin !== "") : [];
   const visitDates = data ? data.map(entry => formatDate(entry.visitDate)) : [];
 
@@ -492,11 +509,53 @@ const HaemoglobinPerChild = ({ route, toggleMenu }) => {
           </View>
         )}
       </ScrollView>
+            <TouchableOpacity
+              style={{
+                ...styles.printButton,
+                position: 'absolute',
+                top: -10,
+                right: -20,
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginBottom: 90,
+              }}
+              onPress={generatePDF}
+            >
+              <Image
+                source={require('../assets/printer1.png')}
+                style={{
+                  width: 35,
+                  height: 35,
+                  borderRadius: 10,
+                  backgroundColor: '#f4f4f4',
+                  marginEnd: 40,
+                  marginBottom: 40
+                }}
+              />
+              <Text style={{ color: 'black', fontSize: 14, marginTop: -40, marginEnd: 45 }}> PDF</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
+
   menuButton: {
     position: 'absolute',
     bottom: -20,
@@ -559,6 +618,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'teal',
     padding: 8,
     justifyContent: 'space-evenly'
+    justifyContent: 'space-evenly'
   },
   tableHeaderText: {
     fontSize: 16,
@@ -581,6 +641,7 @@ const styles = StyleSheet.create({
   tableCellText: {
     fontSize: 14,
     color: '#333',
+    textAlign: 'center'
     textAlign: 'center'
   },
   childInfo: {

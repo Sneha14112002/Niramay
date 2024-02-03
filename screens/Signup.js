@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity, SafeAreaView, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, SafeAreaView, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import COLORS from '../constants/colors';
 import Checkbox from '@react-native-community/checkbox';
 import Button from '../components/Button';
 import { API_URL } from './config.js';
 import eyeImage from '../assets/view.png';
 import eyeOffImage from '../assets/hide.png';
+import ModalDropdown from 'react-native-modal-dropdown';
+import ModalSelector from 'react-native-modal-selector';
 import ModalDropdown from 'react-native-modal-dropdown';
 import ModalSelector from 'react-native-modal-selector';
 
@@ -85,6 +88,27 @@ const Signup = ({ navigation }) => {
 
       setPasswordValidationMessage('');
 
+      fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          navigation.navigate('Login');
+        })
+        .catch((error) => {
+          console.error('Error signing up: ', error);
+        });
+    }
+  };
       fetch(`${API_URL}/api/register`, {
         method: 'POST',
         headers: {

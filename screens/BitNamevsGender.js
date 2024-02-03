@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-native';
+import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-native';
 import { FlatList } from 'react-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import ViewShot from 'react-native-view-shot';
@@ -88,6 +89,18 @@ const BitNamevsGender = ({ toggleMenu }) => {
   }, []);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/childData`, {
+          params: { year: selectedYear },
+        });
+
+        setData(response.data);
+        console.log(response.data);
+        // Extract unique years from the dataset
+        const years = [...new Set(response.data.map((item) => item.extracted_year))];
+        //setUniqueYears(years);
+      } catch (error) {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${API_URL}/childData`, {
@@ -360,11 +373,52 @@ const BitNamevsGender = ({ toggleMenu }) => {
             </VictoryChart>
           </ViewShot>
         </View>
+        <View style={styles.chartContainer} collapsable={false}>
+          <ViewShot
+            ref={chartRef}
+            options={{ format: 'png', quality: 0.8 }}
+          >
+            <VictoryChart
+              domainPadding={{ x: 5 }}
+              padding={{ left: 50, right: 50, top: 20, bottom: 50 }}
+              height={450}
+              width={data.length * 100}
+            >
+              <VictoryAxis
+                label="Bit Name"
+                tickValues={xAxisTickValues.map((tick) => tick.x)}
+                tickLabelComponent={<VictoryLabel angle={0} />}
+                style={{
+                  axisLabel: { padding: 30 },
+                }}
+                tickFormat={(tick, index) => xAxisTickValues[index]?.label || ''}
+              />
+              <VictoryAxis
+                dependentAxis
+                label="Count of Children"
+                style={{
+                  axisLabel: { padding: 30 },
+                }}
+              />
+              <VictoryBar
+                data={chartData}
+                x="bit_name"
+                y="total_children_count"
+                style={{ data: { fill: 'rgba(180, 80, 130, 1)' } }}
+                barWidth={20}
+                alignment="start"
+                labels={({ datum }) => datum.total_children_count}
+                labelComponent={<VictoryLabel dx={10} dy={0} />}
+              />
+            </VictoryChart>
+          </ViewShot>
+        </View>
       </ScrollView>
       <Text style={styles.summaryTableTitle}>Summary Table</Text>
       <View style={styles.tableContainer}>
         <Text style={styles.tableTitle}>Bit Name vs Count of Children</Text>
         <FlatList
+          data={chartData}
           data={chartData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
@@ -443,16 +497,31 @@ const styles = StyleSheet.create({
     height: 30,
     // Add styles for your icon if needed
   },
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
   container: {
     flex: 1,
     backgroundColor: '#f0f0f0',
     paddingVertical: 20,
   },
   chartContainer: {
+  chartContainer: {
     margin: 16,
+    backgroundColor: 'white',
     backgroundColor: 'white',
     borderRadius: 10,
     elevation: 4,
+    padding: 16,
     padding: 16,
   },
   chartTitle: {

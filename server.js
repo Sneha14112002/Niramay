@@ -92,6 +92,36 @@ app.post('/checkData2', (req, res) => {
     });
   });
 });
+app.post('/checkData2', (req, res) => {
+  const { anganwadiNo, childsName } = req.body;
+
+  if (!anganwadiNo || !childsName) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Check 'child' table
+  const querychild = `SELECT COUNT(*) AS count FROM child WHERE anganwadi_no = ? AND child_name = ?`;
+  db.query(querychild, [anganwadiNo, childsName], (err, results) => {
+    if (err) {
+      console.error('Error checking child table:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    // Check 'generalhistory' table
+    const queryGeneralHistory = `SELECT COUNT(*) AS count FROM generalhistory WHERE anganwadiNo = ? AND childName = ?`;
+    db.query(queryGeneralHistory, [anganwadiNo, childsName], (err, genHistoryResults) => {
+      if (err) {
+        console.error('Error checking generalhistory table:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+
+      const customerDataPresent = results[0].count > 0;
+      const generalHistoryDataPresent = genHistoryResults[0].count > 0;
+
+      res.json({ customerDataPresent, generalHistoryDataPresent });
+    });
+  });
+});
 // User registration endpoint
 app.post('/api/register', (req, res) => {
   const { name, email, password, phoneNumber, post } = req.body;
@@ -652,6 +682,7 @@ app.get('/child_distribution/:bit_name/:visitDate(*)', (req, res) => {
   SELECT grade, COUNT(*) AS count
   FROM visits v
   JOIN child c ON v.anganwadiNo = c.anganwadi_no AND v.childName = c.child_name
+  JOIN child c ON v.anganwadiNo = c.anganwadi_no AND v.childName = c.child_name
   WHERE c.bit_name = ? AND v.visitDate = ?
   GROUP BY grade;
   
@@ -705,6 +736,7 @@ app.get('/anganwadi-count', async (req, res) => {
 app.get('/childGenderData', (req, res) => {
   // Replace 'your_table_name' with the name of your MySQL table
   const query = 'SELECT * FROM child';
+  const query = 'SELECT * FROM child';
   console.log("childGenderData API is getting hit");
   db.query(query, (err, results) => {
     if (err) {
@@ -713,6 +745,7 @@ app.get('/childGenderData', (req, res) => {
     } else {
       res.json(results);
     }
+    console.log("Result of SELECT * FROM child: ", results);
     console.log("Result of SELECT * FROM child: ", results);
   });
 });
@@ -749,6 +782,7 @@ app.get('/childData', async (req, res) => {
 });
 
 
+
 // Define an API route to fetch user data
 app.get('/users', (req, res) => {
   const query = 'SELECT * FROM users';
@@ -774,6 +808,7 @@ app.get('/childDataGender', (req, res) => {
     SELECT bit_name,
            SUM(CASE WHEN child_gender = 'male' THEN 1 ELSE 0 END) as male_count,
            SUM(CASE WHEN child_gender = 'female' THEN 1 ELSE 0 END) as female_count
+    FROM child
     FROM child
     GROUP BY bit_name
   `;
