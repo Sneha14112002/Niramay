@@ -9,6 +9,8 @@ import ModalDropdown from 'react-native-modal-dropdown';
 import axios from 'axios';
 import RNFS from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
+import { Calendar } from 'react-native-calendars';
+
 const CustomMenuButton = ({toggleMenu}) => {
     const handleMenuToggle = () => {
       toggleMenu(); // Call the toggleMenu function received as a prop
@@ -22,93 +24,209 @@ const CustomMenuButton = ({toggleMenu}) => {
     );
   };
 
-  const YearDropdown = ({ selectedYear, onYearChange, uniqueYears }) => {
-    const dropdownData = (uniqueYears || []).map((year) => ({ key: year !== null ? year.toString() : '', label: year !== null ? year.toString() : '' }));
+  const DateRangePicker = ({ onSelectDateRange }) => {
+    const [selectedDateRange, setSelectedDateRange] = useState({
+      startDate: null,
+      endDate: null,
+    });
+  
+    const handleDateSelect = (date) => {
+      const { startDate, endDate } = selectedDateRange;
+      if (!startDate || (startDate && endDate)) {
+        // Select the start date
+        setSelectedDateRange({
+          startDate: date.dateString,
+          endDate: null,
+        });
+      } else {
+        // Select the end date
+        setSelectedDateRange({
+          startDate,
+          endDate: date.dateString,
+        });
+  
+        // Notify the parent component about the selected date range
+        onSelectDateRange({
+          startDate,
+          endDate: date.dateString,
+        });
+      }
+    };
+  
+    const clearDateRange = () => {
+      setSelectedDateRange({
+        startDate: null,
+        endDate: null,
+      });
+      onSelectDateRange({
+        startDate: null,
+        endDate: null,
+      });
+    };
   
     return (
-      <View style={styles.dropdownContainer}>
-        <ModalSelector
-          data={dropdownData}
-          initValue={selectedYear ? selectedYear.toString() : 'Select Year'}
-          onChange={(option) => onYearChange(option.label)}
-          style={styles.modalSelectorContainer}
-          selectTextStyle={styles.modalSelectorText}
-          optionTextStyle={styles.modalSelectorText}
+      <View>
+        <View style={styles.dateRangeContainer}>
+          <Text style={styles.dateRangeText}>
+            {selectedDateRange.startDate ? `From: ${selectedDateRange.startDate}` : 'Select start date'}
+          </Text>
+          <Text style={styles.dateRangeText}>
+            {selectedDateRange.endDate ? `To: ${selectedDateRange.endDate}` : 'Select end date'}
+          </Text>
+        </View>
+        <Calendar
+         style={styles.calendarContainer}
+          onDayPress={handleDateSelect}
+          markedDates={{
+            [selectedDateRange.startDate || '']: {
+              selected: true,
+              startingDay: true,
+              color: '#007BFF',
+              textColor: 'white',
+            },
+            [selectedDateRange.endDate || '']: {
+              selected: true,
+              endingDay: true,
+              color: '#007BFF',
+              textColor: 'white',
+            },
+          }}
         />
+        {(selectedDateRange.startDate || selectedDateRange.endDate) && (
+          <TouchableOpacity style={styles.changeDateButton} onPress={clearDateRange}>
+            <Text style={styles.changeDateButtonText}>Change Date</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
   
+  
   const AnganwadiCountPerBit = ({ toggleMenu }) => {
     const [data, setData] = useState([]);
-    const [selectedYear, setSelectedYear] = useState(null);
-    const [uniqueYears, setUniqueYears] = useState([]);
+    
+const [selectedYear, setSelectedYear] = useState(null);
+    const [selectedDateRange, setSelectedDateRange] = useState({
+      startDate: null,
+      endDate: null,
+    });
     const navigation = useNavigation();
     const chartRef = useRef();
-    const [pdfCounter, setPdfCounter] = useState(1); 
+    const [pdfCounter, setPdfCounter] = useState(1);
+  
     React.useLayoutEffect(() => {
       navigation.setOptions({
         headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />,
       });
     }, [navigation]);
   
-  
     useEffect(() => {
       const fetchData = async () => {
         try {
           const response = await axios.get(`${API_URL}/anganwadi-count`, {
-            params: { year: selectedYear },
+            params: { startDate: selectedDateRange.startDate, endDate: selectedDateRange.endDate },
           });
     
           setData(response.data);
-    
-          // Extract unique years from the dataset
-          const years = [...new Set(response.data.map((item) => item.extracted_year))];
-          //setUniqueYears(years);
+          console.log(response)
         } catch (error) {
           console.error('Error fetching data:', error);
         }
       };
     
       fetchData();
-    }, [selectedYear]);
+    }, [selectedDateRange]); // Remove selectedYear as a dependency
+    
+
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/anganwadi-count`, {
+        params: { startDate: selectedDateRange.startDate, endDate: selectedDateRange.endDate },
+      });
+
+      if (response.data.length === 0) {
+        // Show an alert if no data is available
+        Alert.alert(
+          'No Data',
+          'No data available for the selected date range.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {},
+            },
+          ]
+        );
+      }
+
+      setData(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  fetchData();
+}, [selectedDateRange]);
+
+    const handleDateRangeSelect = ({ startDate, endDate }) => {
+      setSelectedDateRange({ startDate, endDate });
+    };
     useEffect(() => {
-      const fetchUniqueYears = async () => {
-        try {
-          const response = await axios.get(`${API_URL}/availableYears`);
-          setUniqueYears(response.data);
-          console.log('hello',response.data)
-        } catch (error) {
-          console.error('Error fetching unique years:', error);
-        }
+      const updateChart = async () => {
+        const chartImageUri = await captureChart();
+        // Update the chart with the new image URI or take any other necessary action
       };
-  
-      fetchUniqueYears();
+    
+      updateChart();
+    }, [data, selectedYear, selectedDateRange]);
+    
+    const chartData = selectedYear
+    ? data.map((item) => ({
+      bit_name: item.bit_name,
+      anganwadi_count: parseInt(item.anganwadi_count),
+    }))
+    : data.reduce((result, item) => {
+      const existingItem = result.find((x) => x.bit_name === item.bit_name);
+      if (existingItem) {
+        existingItem.anganwadi_count += parseInt(item.anganwadi_count);
+      } else {
+        result.push({
+          bit_name: item.bit_name,
+          anganwadi_count: parseInt(item.anganwadi_count),
+        });
+      }
+      return result;
     }, []);
   
-    const chartData = selectedYear
-      ? data.map((item) => ({
-        bit_name: item.bit_name,
-        anganwadi_count: parseInt(item.anganwadi_count),
-      }))
-      : data.reduce((result, item) => {
-        const existingItem = result.find((x) => x.bit_name === item.bit_name);
-        if (existingItem) {
-          existingItem.anganwadi_count += parseInt(item.anganwadi_count);
-        } else {
-          result.push({
-            bit_name: item.bit_name,
-            anganwadi_count: parseInt(item.anganwadi_count),
-          });
-        }
-        return result;
-      }, []);
+    const summaryTableData = chartData.reduce((result, item) => {
+      const existingItemIndex = result.findIndex((x) => x.bit_name === item.bit_name);
+      if (existingItemIndex !== -1) {
+        // If the item already exists in the summary table data, update its count
+        result[existingItemIndex].anganwadi_count += item.anganwadi_count;
+      } else {
+        // Otherwise, add a new item to the summary table data
+        result.push({ bit_name: item.bit_name, anganwadi_count: item.anganwadi_count });
+      }
+      return result;
+    }, []);
+    
+    
   
-    const xAxisTickValues = selectedYear
-      ? data.map((item, index) => ({ x: index + 1, label: item.bit_name }))
-      : chartData.map((item, index) => ({ x: index + 1, label: item.bit_name }));
+      const xAxisTickValues = chartData.map((item, index) => ({ x: index + 1, label: item.bit_name }));
 
-      const generateHTML = (chartImageUri, selectedYear) => {
+      const generateHTML = (chartImageUri) => {
+        let selectedDateRangeText = '';
+        if (selectedDateRange.startDate && selectedDateRange.endDate) {
+          selectedDateRangeText = `
+            <div style="font-size: 16px; margin-bottom: 10px; color: #333; text-align: center;">
+              <span style="font-weight: bold;">Date Range:</span> 
+              <span style="color: #007BFF;">${selectedDateRange.startDate}</span> 
+              <span style="font-weight: bold;">-</span> 
+              <span style="color: #007BFF;">${selectedDateRange.endDate}</span>
+            </div>
+          `;
+        }
+      
         const chartHtml = `
           <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
             <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
@@ -117,13 +235,13 @@ const CustomMenuButton = ({toggleMenu}) => {
       
         const tableHtml = `
           <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
-            <h2 style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Anganwadi Count Per Bit</h2>
+            <div style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Summary Table</div>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Bit Name</th>
                 <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Count</th>
               </tr>
-              ${chartData.map((item) => `
+              ${summaryTableData.map((item) => `
                 <tr>
                   <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
                   <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.anganwadi_count}</td>
@@ -132,8 +250,6 @@ const CustomMenuButton = ({toggleMenu}) => {
             </table>
           </div>
         `;
-      
-        const yearHtml = selectedYear ? `<div style="text-align: center; margin-top: 10px; font-size: 16px; color: #333;">Year: ${selectedYear}</div>` : '';
       
         const htmlContent = `
           <html>
@@ -168,6 +284,10 @@ const CustomMenuButton = ({toggleMenu}) => {
                 .textContainer {
                   margin-left: 10px;
                 }
+                .selectedDate {
+                  color: #007BFF;
+                  font-weight: bold;
+                }
               </style>
             </head>
             <body>
@@ -178,10 +298,9 @@ const CustomMenuButton = ({toggleMenu}) => {
                   <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
                 </div>
               </div>
-              <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Anganwadi Count Per Bit</h2>
-              ${yearHtml}
+              <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; text-align: center;">Anganwadi Count Per Bit</div>
+              ${selectedDateRangeText}
               ${chartHtml}
-              <h2 style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</h2>
               ${tableHtml}
             </body>
           </html>
@@ -189,7 +308,7 @@ const CustomMenuButton = ({toggleMenu}) => {
       
         return htmlContent;
       };
-        
+      
     const captureChart = async () => {
       try {
           // Capture the chart as an image
@@ -223,7 +342,7 @@ const CustomMenuButton = ({toggleMenu}) => {
         }, []);
 
         const options = {
-          html: generateHTML(chartImageUri, selectedYear),
+          html: generateHTML(chartImageUri),
           fileName: `AnganwadiCountPerBitReport_${pdfCounter}`, // Use the counter in the filename
           directory: 'Documents/ConsolidatedReports',
         };
@@ -240,7 +359,7 @@ const CustomMenuButton = ({toggleMenu}) => {
         // Display an alert dialog after the PDF is generated
         Alert.alert(
           'PDF Generated!',
-          `PDF has been generated successfully in downloads folder with filename: AnganwadiCountPerBitReport${pdfCounter}`,
+          `PDF has been generated successfully.\nFile Path: ${newPdfPath}`,
           [
             {
               text: 'OK',
@@ -260,58 +379,55 @@ const CustomMenuButton = ({toggleMenu}) => {
     return (
       <ScrollView style={styles.container}>
         <Text style={styles.chartTitle}>Anganwadi Count Per Bit</Text>
+        <DateRangePicker onSelectDateRange={handleDateRangeSelect} />
   
-        <Text style={styles.label}>Select Year:</Text>
-        <YearDropdown
-          selectedYear={selectedYear}
-          onYearChange={(year) => setSelectedYear(year)}
-          uniqueYears={uniqueYears}
-        />
+    
         <ScrollView horizontal={true}>
           <View style={styles.chartContainer} collapsable={false}>
             <ViewShot
               ref={chartRef}
               options={{ format: 'png', quality: 0.8 }}
             >
-              <VictoryChart
-                domainPadding={{ x: 5 }}
-                padding={{ left: 50, right: 50, top: 20, bottom: 50 }}
-                height={450}
-                width={data.length * 100}
-              >
-                <VictoryAxis
-                  label="Bit Name"
-                  tickValues={xAxisTickValues.map((tick) => tick.x)}
-                  tickLabelComponent={<VictoryLabel angle={0} />}
-                  style={{
-                    axisLabel: { padding: 30 },
-                  }}
-                  tickFormat={(tick, index) => xAxisTickValues[index]?.label || ''}
-                />
-                <VictoryAxis
-                  dependentAxis
-                  label="Count of Anganwadi"
-                  style={{
-                    axisLabel: { padding: 30 },
-                  }}
-                />
-                <VictoryBar
-                  data={chartData}
-                  x="bit_name"
-                  y="anganwadi_count"
-                  style={{ data: { fill: 'rgba(180, 80, 130, 1)' } }}
-                  barWidth={20}
-                  alignment="start"
-                  labels={({ datum }) => datum.anganwadi_count}
-                  labelComponent={<VictoryLabel dx={10} dy={0} />}
-                />
-              </VictoryChart>
+           <VictoryChart
+  padding={{ left: 50, right: 50, top: 20, bottom: 50 }}
+  height={450}
+  width={Math.max(300, data.length * 100)} // Ensure a minimum width
+>
+<VictoryAxis
+  label="Bit Name"
+  tickValues={xAxisTickValues.map((tick) => tick.x)}
+  tickLabelComponent={<VictoryLabel angle={0} />} // Rotate labels horizontally
+  style={{
+    axisLabel: { padding: 30 },
+  }}
+  tickFormat={(tick, index) => xAxisTickValues[index]?.label || ''}
+/>
+
+  <VictoryAxis
+    dependentAxis
+    label="Count of Anganwadi"
+    style={{
+      axisLabel: { padding: 30 },
+    }}
+  />
+  <VictoryBar
+    data={chartData}
+    x="bit_name"
+    y="anganwadi_count"
+    style={{ data: { fill: 'rgba(180, 80, 130, 1)' } }}
+    barWidth={20}
+    alignment="start"
+    labels={({ datum }) => datum.anganwadi_count}
+    labelComponent={<VictoryLabel dx={10} dy={0} />}
+  />
+</VictoryChart>
+
             </ViewShot>
           </View>
         </ScrollView>
         <Text style={styles.summaryTableTitle}>Summary Table</Text>
         <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>Bit Name vs Count of Children</Text>
+          <Text style={styles.tableTitle}>Bit Name vs Count of Anganwadi</Text>
           <FlatList
             data={chartData}
             keyExtractor={(item, index) => index.toString()}
@@ -348,9 +464,7 @@ const CustomMenuButton = ({toggleMenu}) => {
         </TouchableOpacity>
       </ScrollView>
     );
-};
-
-const styles = StyleSheet.create({
+};const styles = StyleSheet.create({
   menuButton: {
     position: 'absolute',
     bottom: -20,
@@ -382,6 +496,75 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
   },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    marginTop: 20,
+    borderRadius: 10,
+    elevation: 4,
+  },
+  dateRangeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  changeDateButton: {
+    backgroundColor: 'teal',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    margin:15,
+  },
+  changeDateButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  tableContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  tableTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+    textAlign: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  bitName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  anganwadi_count: {
+    fontSize: 16,
+    color: '#333',
+  },
+  calendarContainer: {
+    borderRadius: 30,
+    backgroundColor: 'white',
+    padding: 10,
+    marginBottom: 10,
+    margin: 10,
+  },
   summaryTableTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -389,91 +572,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
     textAlign: 'center',
-  },
-  tableContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-    margin: 16,
-  },
-  tableTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    margin: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  bitName: {
-    flex: 1,
-    textAlign: 'left',
-    color: '#333',
-    fontSize: 16,
-  },
-  anganwadi_count: {
-    flex: 1,
-    textAlign: 'right',
-    color: '#333',
-    fontSize: 16,
-  },
-  pdfButton: {
-    marginTop: 20,
-    backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  pdfButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  dropdownContainer: {
-    margin: 16,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-    elevation: 4,
-    width:250,
-  },
-  dropdown: {
-    padding: 10,
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: 'black',
-  },
-  dropdownMenu: {
-    borderRadius: 5,
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-  dropdownMenuItemText: {
-    fontSize: 16,
-    color: 'black',
-    padding: 10,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft:20,
-    color: 'black',
   },
 });
 

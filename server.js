@@ -674,30 +674,7 @@ app.get('/child_distribution/:bit_name/:visitDate(*)', (req, res) => {
     res.json(childDistribution);
   });
 });
-app.get('/anganwadi-count', async (req, res) => {
-  const { year } = req.query;
 
-  try {
-    let query = `
-      SELECT bit_name, COUNT(DISTINCT anganwadi_no) AS anganwadi_count, EXTRACT(YEAR FROM date) as extracted_year
-      FROM child
-    `;
-
-    if (year) {
-      query += ` WHERE EXTRACT(YEAR FROM date) = ${year}`;
-    }
-
-    query += `
-      GROUP BY bit_name, extracted_year
-    `;
-
-    const [rows, fields] = await db.promise().query(query);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error executing MySQL query:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
 
 
@@ -717,10 +694,8 @@ app.get('/childGenderData', (req, res) => {
   });
 });
 
-
-
 app.get('/childData', async (req, res) => {
-  const { year } = req.query;
+  const { fromDate, toDate } = req.query;
 
   try {
     let query = `
@@ -728,12 +703,11 @@ app.get('/childData', async (req, res) => {
              COUNT(*) as total_children_count,
              SUBSTRING(date, 1, 4) as extracted_year
       FROM child
+      WHERE bit_name IS NOT NULL AND bit_name != ''
     `;
 
-    if (year) {
-      query += ` WHERE SUBSTRING(date, 1, 4) = ${year} AND bit_name IS NOT NULL AND bit_name != ''`;
-    } else {
-      query += ` WHERE bit_name IS NOT NULL AND bit_name != ''`;
+    if (fromDate && toDate) {
+      query += ` AND date BETWEEN '${fromDate}' AND '${toDate}'`;
     }
 
     query += `
@@ -747,6 +721,7 @@ app.get('/childData', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 // Define an API route to fetch user data
@@ -831,9 +806,8 @@ app.get('/gender_distribution/:bit_name/:year?', (req, res) => {
   });
 });
 
-
 app.get('/anganwadi-count', async (req, res) => {
-  const { year } = req.query;
+  const { startDate, endDate } = req.query;
 
   try {
     let query = `
@@ -841,8 +815,9 @@ app.get('/anganwadi-count', async (req, res) => {
       FROM child
     `;
 
-    if (year) {
-      query += ` WHERE EXTRACT(YEAR FROM date) = ${year}`;
+    // Add condition to filter data based on selected date range
+    if (startDate && endDate) {
+      query += ` WHERE date BETWEEN '${startDate}' AND '${endDate}'`;
     }
 
     query += `
@@ -973,23 +948,22 @@ app.get('/years', (req, res) => {
     }
   });
 });
-
 app.get('/childList', async (req, res) => {
-  const { year, bitName } = req.query;
+  const { fromDate, toDate, bitName } = req.query;
 
   try {
     let query;
     let queryParams;
 
-    if (year) {
+    if (fromDate && toDate) {
       query = `
         SELECT child_name, anganwadi_no
         FROM child
-        WHERE bit_name = ? AND SUBSTRING(date, 1, 4) = ?
+        WHERE bit_name = ? AND date BETWEEN ? AND ?
       `;
-      queryParams = [bitName, year];
+      queryParams = [bitName, fromDate, toDate];
     } else {
-      // When no year is provided, fetch data for all years
+      // When no date range is provided, fetch data for all dates
       query = `
         SELECT child_name, anganwadi_no
         FROM child
@@ -1008,49 +982,63 @@ app.get('/childList', async (req, res) => {
 
 app.get('/getTransitionCount', async (req, res) => {
   try {
-    // Extract the distinct years from the visits table
-    const distinctYearsQuery = 'SELECT DISTINCT YEAR(visitDate) AS year FROM visits;';
-    const distinctYearsResult = await db.promise().query(distinctYearsQuery);
-    const distinctYears = distinctYearsResult[0].map((row) => row.year);
-
-    // Extract the year parameter from the request query
-    const selectedYear = req.query.year;
-
-    // Use the year parameter in your SQL query
+    // Extract the fromDate and toDate parameters from the request query
+    const { fromDate, toDate } = req.query;
+    const fromDate1 = fromDate || '1900-01-01';
+    const toDate1 = toDate || '9999-12-31';
+    // Construct the SQL query with placeholders for fromDate and toDate
     const query = `
       SELECT
-        c.bit_name,
-        COUNT(DISTINCT CASE WHEN sam_visits.firstVisitDate IS NOT NULL AND normal_visits.visitDate IS NOT NULL THEN v.childName END) AS sam_to_normal_count,
-        COUNT(DISTINCT CASE WHEN mam_visits.firstVisitDate IS NOT NULL AND normal_visits.visitDate IS NOT NULL THEN v.childName END) AS mam_to_normal_count
-      FROM child c
-      JOIN visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
+          c.bit_name,
+          COUNT(DISTINCT CASE WHEN sam_visits.firstVisitDate IS NOT NULL AND normal_visits.visitDate IS NOT NULL THEN v.childName END) AS sam_to_normal_count,
+          COUNT(DISTINCT CASE WHEN mam_visits.firstVisitDate IS NOT NULL AND normal_visits.visitDate IS NOT NULL AND v.childName NOT IN (
+              SELECT DISTINCT v2.childName
+              FROM visits v2
+              WHERE v2.grade = 'SAM' AND v2.visitDate >= ? AND v2.visitDate <= ?
+          ) THEN v.childName END) AS mam_to_normal_count
+      FROM 
+          child c
+      JOIN 
+          visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
       LEFT JOIN (
-        SELECT childName, MIN(visitDate) AS firstVisitDate
-        FROM visits
-        WHERE grade = 'SAM'
-        GROUP BY childName
+          SELECT childName, MIN(visitDate) AS firstVisitDate
+          FROM visits
+          WHERE grade = 'SAM'
+          GROUP BY childName
       ) AS sam_visits ON v.childName = sam_visits.childName
       LEFT JOIN (
-        SELECT childName, MIN(visitDate) AS firstVisitDate
-        FROM visits
-        WHERE grade = 'MAM'
-        GROUP BY childName
+          SELECT childName, MIN(visitDate) AS firstVisitDate
+          FROM visits
+          WHERE grade = 'MAM'
+          GROUP BY childName
       ) AS mam_visits ON v.childName = mam_visits.childName
       LEFT JOIN visits normal_visits ON v.childName = normal_visits.childName AND normal_visits.grade = 'Normal'
-      WHERE (v.grade = 'SAM' OR v.grade = 'MAM')
-      ${selectedYear ? `AND YEAR(v.visitDate) = ${db.escape(selectedYear)}` : ''}
-      GROUP BY c.bit_name;
+      WHERE 
+          (v.grade = 'SAM' OR v.grade = 'MAM')
+          ${fromDate1 ? `AND v.visitDate >= ${db.escape(fromDate1)}` : ''} 
+      ${toDate1 ? `AND v.visitDate <= ${db.escape(toDate1)}` : ''} 
+      GROUP BY 
+          c.bit_name;
     `;
+    // Execute the query with fromDate and toDate values
+    const result = await new Promise((resolve, reject) => {
+      db.query(query, [fromDate1, toDate1, fromDate1, toDate1], (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
 
-    const result = await db.promise().query(query);
-
-    // Return the result along with distinct years for the dropdown
-    res.json({ data: result[0], distinctYears });
+    // Return the result
+    res.json({ data: result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 app.post('/updateVaccinationData', (req, res) => {
   const { anganwadiNo, childsName, BCG, POLIO, IPV, PCV, PENTAVALENT, ROTAVIRUS, MR, VITAMIN_A, DPT, TD } = req.body;
@@ -1111,63 +1099,58 @@ app.get('/getDistinctYears', async (req, res) => {
 
 app.get('/getChildDetails', async (req, res) => {
   try {
-    const { bitName, year } = req.query;
+    const { bitName, selectedFromDate, selectedToDate } = req.query;
 
-  
+    // Check if fromDate and toDate are provided, otherwise set default values
+    const fromDate = selectedFromDate || '1900-01-01';
+    const toDate = selectedToDate || '9999-12-31';
 
     const querySAM = `
-    SELECT DISTINCT
-        c.anganwadi_no,
-        c.child_name
-      FROM child c
-      JOIN visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
-      LEFT JOIN (
-        SELECT childName
-        FROM visits
-        WHERE grade = 'SAM'
-        GROUP BY childName
-      ) AS sam_visits ON v.childName = sam_visits.childName
-      LEFT JOIN visits normal_visits ON v.childName = normal_visits.childName AND normal_visits.grade = 'Normal'
-      WHERE v.grade = 'SAM'
-        AND normal_visits.grade = 'Normal'
-        AND c.bit_name = ${db.escape(bitName)}
-        ${year ? `AND YEAR(v.visitDate) = ${db.escape(year)}` : ''};
+      SELECT DISTINCT
+          c.anganwadi_no,
+          c.child_name
+        FROM child c
+        JOIN visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
+        LEFT JOIN (
+          SELECT DISTINCT childName
+          FROM visits
+          WHERE grade = 'SAM'
+          GROUP BY childName
+        ) AS sam_visits ON v.childName = sam_visits.childName
+        LEFT JOIN visits normal_visits ON v.childName = normal_visits.childName AND normal_visits.grade = 'Normal'
+        WHERE v.grade = 'SAM'
+          AND normal_visits.grade = 'Normal'
+          AND c.bit_name = ${db.escape(bitName)}
+          AND v.visitDate BETWEEN ${db.escape(fromDate)} AND ${db.escape(toDate)};
     `;
-
-  //   const queryMAM = `
-  //   SELECT DISTINCT
-  //   child.child_name,
-  //   child.anganwadi_no,
-  //   visits.grade AS originalGrade,
-  //   normal_visits.grade AS finalGrade
-  // FROM child
-  // JOIN visits ON child.child_name = visits.childName AND child.anganwadi_no = visits.anganwadiNo
-  // LEFT JOIN visits normal_visits ON child.child_name = normal_visits.childName
-  //   AND normal_visits.grade = 'Normal'
-  //   AND normal_visits.visitDate > visits.visitDate
-  // WHERE child.bit_name = ${db.escape(bitName)}
-  //   AND visits.grade = 'MAM'
-  //   ${year ? `AND YEAR(visits.visitDate) = ${db.escape(year)}` : ''}
-  //   AND normal_visits.grade = 'Normal';
-  //   `;
 
     const queryMAM = `
     SELECT DISTINCT
-        c.anganwadi_no,
-        c.child_name
-      FROM child c
-      JOIN visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
-      LEFT JOIN (
-        SELECT childName
+    c.anganwadi_no,
+    c.child_name
+FROM 
+    child c
+JOIN 
+    visits v ON c.child_name = v.childName AND c.anganwadi_no = v.anganwadiNo
+LEFT JOIN (
+    SELECT DISTINCT childName
+    FROM visits
+    WHERE grade = 'MAM'
+    GROUP BY childName
+) AS mam_visits ON v.childName = mam_visits.childName
+LEFT JOIN visits normal_visits ON v.childName = normal_visits.childName AND normal_visits.grade = 'Normal'
+WHERE 
+    v.grade = 'MAM'
+    AND normal_visits.grade = 'Normal'
+    AND c.bit_name = ${db.escape(bitName)}
+    AND v.visitDate BETWEEN ${db.escape(fromDate)} AND ${db.escape(toDate)}
+    AND v.childName NOT IN (
+        SELECT DISTINCT childName
         FROM visits
-        WHERE grade = 'MAM'
-        GROUP BY childName
-      ) AS sam_visits ON v.childName = sam_visits.childName
-      LEFT JOIN visits normal_visits ON v.childName = normal_visits.childName AND normal_visits.grade = 'Normal'
-      WHERE v.grade = 'MAM'
-        AND normal_visits.grade = 'Normal'
-        AND c.bit_name = ${db.escape(bitName)}
-        ${year ? `AND YEAR(v.visitDate) = ${db.escape(year)}` : ''};
+        WHERE grade = 'SAM'
+        AND visitDate BETWEEN ${db.escape(fromDate)} AND ${db.escape(toDate)}
+    );
+
     `;
 
     const resultSAM = await db.promise().query(querySAM);
@@ -1186,6 +1169,69 @@ app.get('/getChildDetails', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
+});
+
+
+app.get('/child_distribution_range/:bit_name/:fromDate/:toDate', (req, res) => {
+  const { bit_name, fromDate, toDate } = req.params;
+  console.log('bit_name:', bit_name);
+  console.log('fromDate:', fromDate);
+  console.log('toDate:', toDate);
+  
+  // Fetch child distribution data for the provided bit_name and date range for all matching anganwadi_no
+  const query = `
+    SELECT grade, COUNT(*) AS count
+    FROM visits v
+    JOIN child c ON v.anganwadiNo = c.anganwadi_no AND v.childName = c.child_name
+    WHERE c.bit_name = ? 
+    AND v.visitDate BETWEEN ? AND ? -- Use BETWEEN to specify the range of dates
+    GROUP BY grade;
+  `;
+
+  db.query(query, [bit_name, fromDate, toDate], (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    const childDistribution = results.map((row) => ({
+      grade: row.grade,
+      count: row.count,
+    }));
+    
+    console.log(childDistribution);
+    console.log("!!!!");
+    res.json(childDistribution);
+  });
+});
+
+app.get('/grade_details_range/:bit_name/:fromDate/:toDate/:grade', (req, res) => {
+  const { bit_name, fromDate, toDate, grade } = req.params;
+
+  // Fetch child details for the provided bit_name, visitDate, and grade
+  const query = `
+    SELECT childName, anganwadiNo
+    FROM visits
+    WHERE anganwadiNo IN (SELECT anganwadi_no FROM child WHERE bit_name = ?)
+    AND visitDate BETWEEN ? AND ?
+    AND grade = ?;
+  `;
+
+  db.query(query, [bit_name, fromDate, toDate, grade], (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    const gradeDetails = results.map((row) => ({
+      childName: row.childName,
+      anganwadiNo: row.anganwadiNo,
+    }));
+
+    res.json(gradeDetails);
+  });
 });
 
 

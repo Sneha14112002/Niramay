@@ -14,53 +14,48 @@ import {
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import { API_URL } from './config';
 import { captureRef } from 'react-native-view-shot';
-import RNFS from 'react-native-fs';
+import RNFS, { completeHandlerIOS } from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
 import Modal from 'react-native-modal';
+import { Calendar, LocaleConfig } from 'react-native-calendars';
 
 const GradeTransition = () => {
   const [data, setData] = useState([]);
-  const [distinctYears, setDistinctYears] = useState([]);
-  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
   const chartContainerRef = useRef();
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState({});
 
-  const [pdfCounter, setPdfCounter] = useState(1); 
+  const [pdfCounter, setPdfCounter] = useState(1);
   useEffect(() => {
     fetchData();
-    fetchDistinctYears();
   }, []);
 
 
   const [pdfCount, setPDFCount] = useState(1);
 
+  useEffect(() => {
+    fetchData();
+  }, [selectedFromDate, selectedToDate]);
+
 
   const fetchData = async () => {
     try {
       const response = await axios.get(`${API_URL}/getTransitionCount`, {
-        params: { year: selectedYear },
+        params: {
+          fromDate: selectedFromDate,
+          toDate: selectedToDate,
+        },
       });
+      console.log(response.data.data);
       setData(response.data.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
 
-  const fetchDistinctYears = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/getDistinctYears`);
-      setDistinctYears(response.data);
-    } catch (error) {
-      console.error('Error fetching distinct years:', error);
-    }
-  };
-
-  const onYearChange = (index, value) => {
-    setSelectedYear(value);
-    // Fetch data again when the year changes
-    fetchData();
-  };
 
   // Log the data to check if it's available
   console.log('Data:', data);
@@ -80,6 +75,16 @@ const GradeTransition = () => {
     sam_to_normal_count: item.sam_to_normal_count,
   }));
 
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
+  };
+
+  const formatDate = (dateString) => {
+    // Add your date formatting logic here
+    return dateString;
+  };
   const captureChart = async () => {
     try {
       if (chartContainerRef.current) {
@@ -101,13 +106,21 @@ const GradeTransition = () => {
 
   const generatePDFHtml = (chartImageUri) => {
     const chartImageHtml = chartImageUri ? `<img src="${chartImageUri}" style="width:100%;height: 300px; object-fit: contain;" />` : '';
-  
-    const selectedYearHtml = selectedYear ? `<p style="font-size: 16px; color: #333; margin-bottom: 10px;">Selected Year: ${selectedYear}</p>` : '';
-  
+
+  const formattedFromDate = formatDate(selectedFromDate);
+  const formattedToDate = formatDate(selectedToDate);
+  const isDatesSelected = selectedFromDate && selectedToDate;
+
+  // Include selected dates HTML only if both dates are selected
+  const selectedDatesHtml = isDatesSelected ? `
+    <div style="margin-top: 20px; text-align: center;">
+      <p style="font-size: 16px; color: #333;">Selected Date Range: ${formattedFromDate} - ${formattedToDate}</p>
+    </div>
+  ` : '';
     const tableHtml = `
       <div>
         <h2 style="text-align: center;">Transition Summary</h2>
-        ${selectedYearHtml}
+        
         <table style="width: 100%; border-collapse: collapse;">
           <tr style="background-color: teal; color: white; text-align: center;">
             <th style="padding: 10px;">Name</th>
@@ -115,16 +128,16 @@ const GradeTransition = () => {
             <th style="padding: 10px;">SAM to Normal</th>
           </tr>
           ${data
-            .map(
-              (item) => `
+        .map(
+          (item) => `
                 <tr style="text-align: center;">
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.mam_to_normal_count}</td>
                   <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.sam_to_normal_count}</td>
                 </tr>
               `
-            )
-            .join('')}
+        )
+        .join('')}
         </table>
       </div>
     `;
@@ -246,53 +259,50 @@ const GradeTransition = () => {
         <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
       </div>
     </div>
-        <div class="container">
-         
-
-          <div class="chart">
-            <div class="chart-title">Grade Transition Chart</div>
-            ${chartImageHtml}
-          </div>
-
-          ${tableHtml}
-
-        </div>
+    <div class="container">
+    ${selectedDatesHtml}
+    <div class="chart">
+      <div class="chart-title">Grade Transition Chart</div>
+      ${chartImageHtml}
+    </div>
+    ${tableHtml}
+  </div>
       </body>
     </html>
   `;
 
     return htmlContent;
 
-  }; 
+  };
   const generatePDF = async () => {
     try {
       const chartImageUri = await captureChart();
-  
+
       if (chartImageUri) {
         const newPdfCounter = pdfCounter + 1;
         setPdfCounter(newPdfCounter);
-  
+
         const options = {
           html: generatePDFHtml(chartImageUri),
           fileName: `GradeTransitionReport_${newPdfCounter}.pdf`,
           directory: 'Documents/ConsolidatedReports',
         };
-  
+
         const pdf = await RNHTMLtoPDF.convert(options);
         const pdfPath = pdf.filePath;
-  
+
         const downloadsPath = RNFS.DownloadDirectoryPath;
         const newPdfPath = `${downloadsPath}/GradeTransitionReport_${newPdfCounter}.pdf`;
-  
+
         await RNFS.moveFile(pdfPath, newPdfPath);
-  
+
         Alert.alert(
           'PDF Generated!',
           `PDF has been generated successfully.\nFile Path: ${newPdfPath}`,
           [
             {
               text: 'OK',
-              onPress: () => {},
+              onPress: () => { },
             },
           ]
         );
@@ -303,29 +313,34 @@ const GradeTransition = () => {
       console.error('Error generating PDF:', error);
     }
   };
-  
+
   const handleTableRowPress = (bitName) => {
-    // Make an API request to fetch child name and anganwadi no based on bit name and selected year
+
     axios
       .get(`${API_URL}/getChildDetails`, {
-        params: { bitName, year: selectedYear },
+        params: { bitName, selectedFromDate, selectedToDate },
+        // Update params to include selectedFromDate and selectedToDate
       })
       .then((response) => {
-        const { MAM, SAM } = response.data;
-        console.log("**************RESPONSE DATA****************", response.data);
-
-        // Check if data exists for both categories
-        if (MAM.length > 0 || SAM.length > 0) {
-          // Update modal data with the fetched details
-          setModalData({
-            MAM,
-            SAM,
-          });
-          // Show the modal
-          setModalVisible(true);
+        if (response.data && response.data.error) {
+          // Handle error response from the server
+          console.log('Error:', response.data.error);
         } else {
-          // Handle case where no data is found
-          console.log('No data found for the given parameters');
+          const { MAM, SAM } = response.data;
+
+          // Check if data exists for both categories
+          if ((MAM && MAM.length > 0) || (SAM && SAM.length > 0)) {
+            // Update modal data with the fetched details
+            setModalData({
+              MAM: MAM || [], // Handle case where MAM is undefined
+              SAM: SAM || [], // Handle case where SAM is undefined
+            });
+            // Show the modal
+            setModalVisible(true);
+          } else {
+            // Handle case where no data is found
+            console.log('No data found for the given parameters');
+          }
         }
       })
       .catch((error) => {
@@ -358,17 +373,34 @@ const GradeTransition = () => {
       <View style={styles.container}>
         <Text style={styles.heading}>Grade Transitions</Text>
         <Text style={styles.label}>Select Year:</Text>
-
-        {/* Dropdown for selecting year */}
-        <ModalSelector
-          data={['All Years', ...distinctYears.map((year) => ({ key: year.toString(), label: year.toString() }))]}
-          initValue={selectedYear || 'All Years'}
-          onChange={(option) => onYearChange(option.key, option.label)}
-          style={styles.yearDropdown} // Apply styles for ModalSelector container
-          selectTextStyle={styles.dropdownText} // Apply styles for selected text
-          optionContainerStyle={styles.optionContainer} // Apply styles for option container
-          optionTextStyle={styles.optionText} // Apply styles for option text
-        />
+        {showCalendar ? (
+          <Calendar
+            onDayPress={(day) => {
+              if (!selectedFromDate) {
+                setSelectedFromDate(day.dateString);
+              } else if (!selectedToDate) {
+                setSelectedToDate(day.dateString);
+                setShowCalendar(false);
+              } else {
+                resetDateSelection();
+              }
+            }}
+            markedDates={{
+              [selectedFromDate]: { selected: true, marked: true, selectedColor: 'blue' },
+              [selectedToDate]: { selected: true, marked: true, selectedColor: 'blue' },
+            }}
+            style={{ borderRadius: 50, width: 350, marginLeft: 5, marginTop: 20 }}
+          />
+        ) : (
+          <View style={styles.dateSelectionContainer}>
+            <Text style={styles.dateSelectionText}>
+              {`Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}`}
+            </Text>
+            <TouchableOpacity onPress={resetDateSelection}>
+              <Text style={styles.resetDateSelectionText}>Change Dates</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Container for the Bar Chart */}
         <ScrollView horizontal={true}>
@@ -736,6 +768,46 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     paddingVertical: 8,
     paddingHorizontal: 0,
+  },
+  selectedDatesContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  selectedDatesText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  resetDateSelectionText: {
+    fontSize: 16,
+    color: 'blue',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  dateSelectionContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  dateSelectionText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
 });
 

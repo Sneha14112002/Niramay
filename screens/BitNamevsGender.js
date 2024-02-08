@@ -15,7 +15,7 @@ import { FlatList } from 'react-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import ViewShot from 'react-native-view-shot';
 import { useNavigation } from '@react-navigation/native';
-import ModalSelector from 'react-native-modal-selector'; // Import the ModalSelector
+import { Calendar, LocaleConfig } from 'react-native-calendars'; // Import Calendar
 import { API_URL } from './config';
 import RNFS from 'react-native-fs';
 
@@ -31,185 +31,182 @@ const CustomMenuButton = ({ toggleMenu }) => {
   );
 };
 
-const YearDropdown = ({ selectedYear, onYearChange, uniqueYears }) => {
-  const filteredYears = uniqueYears.filter((year) => year !== null && year !== undefined);
-  const dropdownData = filteredYears.map((year) => ({ key: year.toString(), label: year.toString() }));
-
-  const renderDropdown = () => {
-    if (dropdownData.length === 0) {
-      return <Text>No years available</Text>;
-    }
-
-    return (
-      <View style={styles.dropdownContainer}>
-        <ModalSelector
-          data={dropdownData}
-          initValue={selectedYear ? selectedYear.toString() : "Select Year"} // Show selected year if exists, otherwise show "Select Year"
-          onChange={(option) => onYearChange(option.label)}
-        />
-      </View>
-    );
-  };
-
-  return renderDropdown();
-};
-
-
-
 const BitNamevsGender = ({ toggleMenu }) => {
   const [data, setData] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(null);
-  const [uniqueYears, setUniqueYears] = useState([]);
-  const [selectedBitName, setSelectedBitName] = useState(null);
+  const [selectedFromDate, setSelectedFromDate] = useState(null);
+  const [selectedToDate, setSelectedToDate] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(true);
   const [childListModalVisible, setChildListModalVisible] = useState(false);
   const [childList, setChildList] = useState([]);
+  const [selectedBitName, setSelectedBitName] = useState(null);
+  const [pdfCounter, setPdfCounter] = useState(null);
   const navigation = useNavigation();
   const chartRef = useRef();
-  const [pdfCounter, setPdfCounter] = useState(1); 
-
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />,
     });
   }, [navigation]);
-  useEffect(() => {
-    const fetchUniqueYears = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/availableYears`);
-        setUniqueYears(response.data);
-        console.log('hello', response.data)
-      } catch (error) {
-        console.error('Error fetching unique years:', error);
-      }
-    };
-
-    fetchUniqueYears();
-  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/childData`, {
-          params: { year: selectedYear },
-        });
-
-        setData(response.data);
-        console.log(response.data);
-        // Extract unique years from the dataset
-        const years = [...new Set(response.data.map((item) => item.extracted_year))];
-        //setUniqueYears(years);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
     fetchData();
-  }, [selectedYear]);
+  }, [selectedFromDate, selectedToDate]);
 
-  const chartData = selectedYear
-    ? data.map((item) => ({
-      bit_name: item.bit_name,
-      total_children_count: parseInt(item.total_children_count),
-    }))
-    : data.reduce((result, item) => {
-      const existingItem = result.find((x) => x.bit_name === item.bit_name);
-      if (existingItem) {
-        existingItem.total_children_count += parseInt(item.total_children_count);
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/childData`, {
+        params: { fromDate: selectedFromDate, toDate: selectedToDate },
+      });
+
+      if (response.data && response.data.length > 0) {
+        // Aggregate data by bit name
+        const aggregatedData = response.data.reduce((acc, curr) => {
+          const { bit_name, total_children_count } = curr;
+          if (!acc[bit_name]) {
+            acc[bit_name] = parseInt(total_children_count);
+          } else {
+            acc[bit_name] += parseInt(total_children_count);
+          }
+          return acc;
+        }, {});
+
+        // Convert aggregated data into array format for rendering
+        const aggregatedArray = Object.keys(aggregatedData).map((bit_name) => ({
+          bit_name,
+          total_children_count: aggregatedData[bit_name],
+        }));
+
+        setData(aggregatedArray);
       } else {
-        result.push({
-          bit_name: item.bit_name,
-          total_children_count: parseInt(item.total_children_count),
-        });
+        setData([]);
+        Alert.alert('No Data', 'No data available for the selected date range.');
       }
-      return result;
-    }, []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setData([]);
+    }
+  };
 
-  const xAxisTickValues = selectedYear
-    ? data.map((item, index) => ({ x: index + 1, label: item.bit_name }))
-    : chartData.map((item, index) => ({ x: index + 1, label: item.bit_name }));
 
-    const generateHTML = (chartImageUri, allYearsChartData) => {
-      const selectedYearText = selectedYear ? `Year: ${selectedYear}` : '';
-    
-      const chartHtml = `
-        <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
-          <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
-        </div>
-      `;
-    
-      const tableHtml = `
-        <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
-          <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Bit Name vs Count of Children</Text>
-          <table style="width: 100%; border-collapse: collapse;">
+
+  const chartData = data.map((item) => ({
+    bit_name: item.bit_name,
+    total_children_count: parseInt(item.total_children_count),
+  }));
+
+  const xAxisTickValues = data.map((item, index) => ({
+    x: index + 1,
+    label: item.bit_name,
+  }));
+
+  const resetDateSelection = () => {
+    setSelectedFromDate(null);
+    setSelectedToDate(null);
+    setShowCalendar(true);
+  };
+
+  const formatDate = (dateString) => {
+    // Add your date formatting logic here
+    return dateString;
+  };
+
+  const generateHTML = (chartImageUri, allYearsChartData) => {
+    // Format the selected dates
+    const formattedFromDate = formatDate(selectedFromDate);
+    const formattedToDate = formatDate(selectedToDate);
+    const isDatesSelected = selectedFromDate && selectedToDate;
+
+    // Include selected dates HTML only if both dates are selected
+    const selectedDatesHtml = isDatesSelected ? `
+      <div style="margin-top: 20px; text-align: center;">
+        <p style="font-size: 16px; color: #333;">Selected Date Range: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}</p>
+      </div>
+    ` : '';
+
+    const chartHtml = `
+      <div style="margin: 16px; background-color: white; border-radius: 10px; elevation: 4; padding: 16px;">
+        <img src="${chartImageUri}" alt="Chart" style="width: 100%; height: 400px; object-fit: contain;"/>
+      </div>
+    `;
+
+    const tableHtml = `
+      <div style="background-color: #fff; border-radius: 15px; box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3); elevation: 8; margin: 16px;">
+        <Text style="font-size: 20px; font-weight: bold; margin: 16px; color: #333; text-align: center;">Bit Name vs Count of Children</Text>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Bit Name</th>
+            <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Count</th>
+          </tr>
+          ${allYearsChartData.map(item => `
             <tr>
-              <th style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Bit Name</th>
-              <th style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold;">Count</th>
+              <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
+              <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.total_children_count}</td>
             </tr>
-            ${allYearsChartData.map(item => `
-              <tr>
-                <td style="text-align: left; padding: 8px; border-bottom: 1px solid #ccc;">${item.bit_name}</td>
-                <td style="text-align: right; padding: 8px; border-bottom: 1px solid #ccc;">${item.total_children_count}</td>
-              </tr>
-            `).join('')}
-          </table>
-        </div>
-      `;
-    
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                background-color: #f0f0f0;
-              }
-              .headerContainer {
-                display: flex;
-                align-items: left;
-                border-bottom: 1px solid orange;
-                padding-bottom: 15px;
-              }
-              img {
-                width:100px;
-                height:100px;
-              }
-              .headingLine {
-                font-size:30;
-                color:orange;
-                margin-left:20px;
-                margin-top:20px;
-                padding-bottom:25px;
-              }
-              .subheading {
-                font-size: 18px;
-                color: orange;
-                margin-left:20px;
-              }
-              .textContainer {
-                margin-left: 10px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="headerContainer">
-              <img src="file:///android_asset/images/logo2.jpg" />
-              <div class="textContainer">
-                <div class="headingLine">Niramay Bharat</div>
-                <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
-              </div>
+          `).join('')}
+        </table>
+      </div>
+    `;
+
+
+
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #f0f0f0;
+            }
+            .headerContainer {
+              display: flex;
+              align-items: left;
+              border-bottom: 1px solid orange;
+              padding-bottom: 15px;
+            }
+            img {
+              width:100px;
+              height:100px;
+            }
+            .headingLine {
+              font-size:30;
+              color:orange;
+              margin-left:20px;
+              margin-top:20px;
+              padding-bottom:25px;
+            }
+            .subheading {
+              font-size: 18px;
+              color: orange;
+              margin-left:20px;
+            }
+            .textContainer {
+              margin-left: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="headerContainer">
+            <img src="file:///android_asset/images/logo2.jpg" />
+            <div class="textContainer">
+              <div class="headingLine">Niramay Bharat</div>
+              <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
             </div>
-            <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px;margin-top:20px; color: #333; text-align: center;">Total Children by Bit Name ${selectedYearText}</Text>
-            ${chartHtml}
-            <Text style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</Text>
-            ${tableHtml}
-          </body>
-        </html>
-      `;
-    
-      return htmlContent;
-    };
-    
+          </div>
+          ${selectedDatesHtml}
+          <Text style="font-size: 20px; font-weight: bold; margin-bottom: 10px;margin-top:20px; color: #333; text-align: center;">Total Children by Bit Name</Text>
+          ${chartHtml}
+          <Text style="font-size: 20px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333; text-align: center;">Summary Table</Text>
+          ${tableHtml}
+
+        </body>
+      </html>
+    `;
+
+    return htmlContent;
+  };
+
+
   const captureChart = async () => {
     try {
       // Capture the chart as an image
@@ -264,7 +261,7 @@ const BitNamevsGender = ({ toggleMenu }) => {
           [
             {
               text: 'OK',
-              onPress: () => {},
+              onPress: () => { },
             },
           ]
         );
@@ -280,7 +277,7 @@ const BitNamevsGender = ({ toggleMenu }) => {
     try {
       setSelectedBitName(bitName);
       const response = await axios.get(`${API_URL}/childList`, {
-        params: { year: selectedYear, bitName: bitName },
+        params: { bitName: bitName, fromDate: selectedFromDate, toDate: selectedToDate },
       });
       console.log('Child List:', response.data);
       setChildList(response.data);
@@ -290,15 +287,24 @@ const BitNamevsGender = ({ toggleMenu }) => {
     }
   };
 
+
   const renderChildList = () => {
     if (!childList.length) {
       return <Text style={styles.noChildListText}>No children in this Bit Name</Text>;
     }
 
+    const resetDateSelection = () => {
+      setSelectedFromDate(null);
+      setSelectedToDate(null);
+      // Show the calendar again after resetting the selection
+      setShowCalendar(true);
+    };
+
+
     return (
       <FlatList
         data={childList}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => `${item.bit_name}_${item.id}`}
         renderItem={({ item }) => (
           <View style={styles.modalItem}>
             <Text style={styles.modalItemText}>{item.child_name}</Text>
@@ -314,69 +320,105 @@ const BitNamevsGender = ({ toggleMenu }) => {
       <Text style={styles.chartTitle}>Total Children by Bit Name</Text>
 
       <Text style={styles.label}>Select Year:</Text>
-      <YearDropdown
-        selectedYear={selectedYear}
-        onYearChange={(year) => setSelectedYear(year)}
-        uniqueYears={uniqueYears}
-      />
-      <ScrollView horizontal={true}>
-        <View style={styles.chartContainer} collapsable={false}>
-          <ViewShot
-            ref={chartRef}
-            options={{ format: 'png', quality: 0.8 }}
-          >
-            <VictoryChart
-              domainPadding={{ x: 5 }}
-              padding={{ left: 50, right: 50, top: 20, bottom: 50 }}
-              height={450}
-              width={data.length * 100}
-            >
-              <VictoryAxis
-                label="Bit Name"
-                tickValues={xAxisTickValues.map((tick) => tick.x)}
-                tickLabelComponent={<VictoryLabel angle={0} />}
-                style={{
-                  axisLabel: { padding: 30 },
-                }}
-                tickFormat={(tick, index) => xAxisTickValues[index]?.label || ''}
-              />
-              <VictoryAxis
-                dependentAxis
-                label="Count of Children"
-                style={{
-                  axisLabel: { padding: 30 },
-                }}
-              />
-              <VictoryBar
-                data={chartData}
-                x="bit_name"
-                y="total_children_count"
-                style={{ data: { fill: 'rgba(180, 80, 130, 1)' } }}
-                barWidth={20}
-                alignment="start"
-                labels={({ datum }) => datum.total_children_count}
-                labelComponent={<VictoryLabel dx={10} dy={0} />}
-              />
-            </VictoryChart>
-          </ViewShot>
-        </View>
-      </ScrollView>
-      <Text style={styles.summaryTableTitle}>Summary Table</Text>
-      <View style={styles.tableContainer}>
-        <Text style={styles.tableTitle}>Bit Name vs Count of Children</Text>
-        <FlatList
-          data={chartData}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => openChildListModal(item.bit_name)}>
-              <View style={styles.tableRow}>
-                <Text style={styles.bitName}>{item.bit_name}</Text>
-                <Text style={styles.childCount}>{item.total_children_count}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+      {showCalendar ? (
+        <Calendar
+          onDayPress={(day) => {
+            if (!selectedFromDate) {
+              setSelectedFromDate(day.dateString);
+            } else if (!selectedToDate) {
+              setSelectedToDate(day.dateString);
+              setShowCalendar(false);
+            } else {
+              resetDateSelection();
+            }
+          }}
+          markedDates={{
+            [selectedFromDate]: { selected: true, marked: true, selectedColor: 'blue' },
+            [selectedToDate]: { selected: true, marked: true, selectedColor: 'blue' },
+          }}
+          style={{ borderRadius: 50, width: 350, marginLeft: 5, marginTop: 20 }}
         />
-      </View>
+      ) : (
+        <View style={styles.dateSelectionContainer}>
+          <Text style={styles.dateSelectionText}>
+            {`Selected Dates: ${formatDate(selectedFromDate)} - ${formatDate(selectedToDate)}`}
+          </Text>
+          <TouchableOpacity onPress={resetDateSelection}>
+            <Text style={styles.resetDateSelectionText}>Change Dates</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {data.length > 0 ? (
+        <ScrollView horizontal={true}>
+          <View style={styles.chartContainer} collapsable={false}>
+            <ViewShot ref={chartRef} options={{ format: 'png', quality: 0.8 }}>
+              <VictoryChart
+                domainPadding={{ x: 5 }}
+                padding={{ left: 50, right: 50, top: 20, bottom: 50 }}
+                height={450}
+                width={data.length > 1 ? data.length * 100 : 300} // Adjust the width for single data entry
+              >
+                <VictoryAxis
+                  label="Bit Name"
+                  tickValues={xAxisTickValues.map((tick) => tick.x)}
+                  tickLabelComponent={<VictoryLabel angle={0} />}
+                  style={{
+                    axisLabel: { padding: 30 },
+                  }}
+                  tickFormat={(tick, index) => xAxisTickValues[index]?.label || ''}
+                />
+                <VictoryAxis
+                  dependentAxis
+                  label="Count of Children"
+                  style={{
+                    axisLabel: { padding: 30 },
+                  }}
+                />
+                <VictoryBar
+                  data={chartData}
+                  x="bit_name"
+                  y="total_children_count"
+                  style={{ data: { fill: 'rgba(180, 80, 130, 1)' } }}
+                  barWidth={20}
+                  alignment="start"
+                  labels={({ datum }) => datum.total_children_count}
+                  labelComponent={<VictoryLabel dx={10} dy={0} />}
+                />
+              </VictoryChart>
+            </ViewShot>
+          </View>
+        </ScrollView>
+      ) : (
+        <View style={styles.chartContainer}>
+          <Text>No data available</Text>
+        </View>
+      )}
+      {console.log(data)}
+      <Text style={styles.summaryTableTitle}>Summary Table</Text>
+
+      {data.length > 0 ? (
+        <View style={styles.tableContainer}>
+          <Text style={styles.tableTitle}>Bit Name vs Count of Children</Text>
+          <FlatList
+            data={data}
+            keyExtractor={(item, index) => `${item.bit_name}_${index}`} // Use index as a fallback key
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => openChildListModal(item.bit_name)}>
+                <View style={styles.tableRow}>
+                  <Text style={styles.bitName}>{item.bit_name}</Text>
+                  <Text style={styles.childCount}>{item.total_children_count}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      ) : (
+        <View style={styles.tableContainer}>
+          <Text>No data available</Text>
+        </View>
+      )}
+
 
 
       {/* Child List Modal */}
@@ -628,6 +670,46 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     paddingVertical: 8,
     paddingHorizontal: 0,
+  },
+  selectedDatesContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  selectedDatesText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  resetDateSelectionText: {
+    fontSize: 16,
+    color: 'blue',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  dateSelectionContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    elevation: 4,
+    margin: 16,
+    padding: 16,
+  },
+  dateSelectionText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  calendarContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  calendarScrollView: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  calendar: {
+    borderRadius: 50,
+    width: 350,
   },
 });
 

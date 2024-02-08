@@ -18,7 +18,7 @@ import { captureRef } from 'react-native-view-shot';
 import RNFS from 'react-native-fs';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import { Modal, TouchableHighlight } from 'react-native';
-
+import { Calendar } from 'react-native-calendars'; // Import Calendar component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    color: 'black'
+    color: 'black',
   },
   dropdownContainer: {
     width: 300,
@@ -40,11 +40,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CCCCCC',
     marginBottom: 20,
-    color: 'black'
   },
   dropdownText: {
     fontSize: 16,
-    color: 'black'
+    color: 'black',
   },
   dropdownOptions: {
     borderWidth: 1,
@@ -53,11 +52,10 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     width: 300,
-    color: 'black'
   },
   dropdownOptionText: {
     fontSize: 16,
-    color: 'black'
+    color: 'black',
   },
   chartSection: {
     alignItems: 'center',
@@ -77,26 +75,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: 'black'
-  },
-  legendContainer: {
-    position: 'absolute',
-    top: 80,
-    right: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  legendColor: {
-    width: 20,
-    height: 20,
-    borderRadius: 12,
-    marginRight: 5,
-  },
-  legendText: {
-    fontSize: 14,
+    color: 'black',
   },
   tableContainer: {
     borderRadius: 8,
@@ -113,7 +92,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 8,
   },
-
   tableHeader: {
     backgroundColor: 'teal',
     paddingVertical: 8,
@@ -123,7 +101,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
-
   },
   tableRow: {
     flexDirection: 'row',
@@ -136,7 +113,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
     textAlign: 'center',
-    color: 'black'
+    color: 'black',
   },
   printButton: {
     position: 'absolute',
@@ -148,45 +125,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1, // Ensure the button is above other components
+    zIndex: 1,
   },
   printButtonText: {
     color: 'black',
     fontSize: 16,
   },
-  gradeDetailsContainer: {
-    marginVertical: 20,
-  },
-  gradeDetailsHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 10,
-    color: '#333',
-    textAlign: 'center',
-  },
-  gradeDetailsList: {
-    marginTop: 10,
-  },
-  gradeDetailsItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  gradeDetailsText: {
-    flex: 1,
-    color: '#333',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  noChildListText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -242,19 +186,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  tableHeaderText: {
+  noChildListText: {
     fontSize: 16,
-    color: 'black',
-    fontWeight: 'bold',
+    color: '#666',
     textAlign: 'center',
+    marginTop: 20,
   },
-  tableHeader: {
+  calendarContainer: {
+    marginBottom: 20,
+  },
+  selectedDateContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    paddingVertical: 8,
-    paddingHorizontal: 0,
+    justifyContent: 'space-between',
+    // marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    // Add new style properties for the rectangular shape
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
+  selectedDateText: {
+    fontSize: 16,
+    color: '#333',
+    // fontWeight: 'bold',
+  },
+
 });
+
+
+
 const colors = {
   NORMAL: '#33FF57',
   MAM: '#FFC300',
@@ -266,6 +228,8 @@ const GradeDistribution = () => {
   const [selectedBitName, setSelectedBitName] = useState('');
   const [visitDate, setVisitDate] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedFromDate, setSelectedFromDate] = useState('');
+  const [selectedToDate, setSelectedToDate] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [gradeDetails, setGradeDetails] = useState([]);
   const [data, setData] = useState([]);
@@ -273,6 +237,7 @@ const GradeDistribution = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedModalGrade, setSelectedModalGrade] = useState(null);
   const [modalGradeDetails, setModalGradeDetails] = useState([]);
+  const [noDataAlert, setNoDataAlert] = useState(false); // State for no data alert
 
   const resetVisitDate = () => {
     setVisitDate([]);
@@ -315,6 +280,7 @@ const GradeDistribution = () => {
     }
   }, [selectedBitName]);
 
+
   useEffect(() => {
     if (selectedDate) {
       axios
@@ -332,8 +298,18 @@ const GradeDistribution = () => {
     }
   }, [selectedDate, selectedBitName]);
 
+
   useEffect(() => {
-    if (selectedModalGrade && selectedBitName && selectedDate) {
+    if (selectedFromDate && selectedToDate && selectedModalGrade && selectedBitName) {
+      axios
+        .get(`${API_URL}/grade_details_range/${selectedBitName}/${selectedFromDate}/${selectedToDate}/${selectedModalGrade}`)
+        .then((response) => {
+          setModalGradeDetails(response.data);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    } else if (selectedModalGrade && selectedBitName && selectedDate) {
       axios
         .get(`${API_URL}/grade_details/${selectedBitName}/${selectedDate}/${selectedModalGrade}`)
         .then((response) => {
@@ -343,7 +319,8 @@ const GradeDistribution = () => {
           console.error(error);
         });
     }
-  }, [selectedModalGrade, selectedBitName, selectedDate]);
+  }, [selectedFromDate, selectedToDate, selectedBitName, selectedModalGrade, selectedDate]);
+
 
 
   const pieChartData = data.map((item, index) => ({
@@ -351,6 +328,7 @@ const GradeDistribution = () => {
     count: item.count,
     color: colors[item.grade],
   }));
+
 
   const captureChartImage = async () => {
     try {
@@ -362,15 +340,16 @@ const GradeDistribution = () => {
     }
   };
 
+
   const generatePDF = async () => {
     try {
-      if (!selectedBitName || !selectedDate) {
-        Alert.alert(
-          'Error',
-          'Please select an Anganwadi Name and Visit Date before generating PDF.'
-        );
-        return;
-      }
+      // if (!selectedBitName || !selectedDate) {
+      //   Alert.alert(
+      //     'Error',
+      //     'Please select an Anganwadi Name and Visit Date before generating PDF.'
+      //   );
+      //   return;
+      // }
 
       const chartImage = await captureChartImage();
 
@@ -393,6 +372,54 @@ const GradeDistribution = () => {
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
+  };
+
+  const handleDayPress = async (day) => {
+    try {
+      if (!selectedFromDate) {
+        setSelectedFromDate(day.dateString);
+      } else if (!selectedToDate) {
+        if (day.dateString < selectedFromDate) {
+          Alert.alert('Invalid Date', 'End date must be after the start date');
+          return;
+        }
+        setSelectedToDate(day.dateString);
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/child_distribution_range/${selectedBitName}/${selectedFromDate}/${day.dateString}`);
+        const formattedData1 = response.data.map((item) => ({
+          grade: item.grade,
+          count: item.count,
+        }));
+        setData(formattedData1);
+        setLoading(false);
+        // Check if data is empty
+        if (formattedData1.length === 0) {
+          Alert.alert('No Data', 'No data available for the selected date range');
+          clearDateSelection(); // Clear selected dates
+        }
+      } else {
+        setSelectedFromDate(day.dateString);
+        setSelectedToDate('');
+        setData([]);
+      }
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+    setSelectedBitName(selectedBitName);
+  };
+
+
+  const changeDateSelection = () => {
+    setSelectedFromDate('');
+    setSelectedToDate('');
+    setData([]);
+  };
+
+  const clearDateSelection = () => {
+    setSelectedFromDate('');
+    setSelectedToDate('');
+    setData([]);
   };
 
 
@@ -507,6 +534,21 @@ const GradeDistribution = () => {
       </div>
       <h1>Grade Distribution</h1>
       <p>Anganwadi Name: ${selectedBitName}</p>
+      <body>
+    <!-- header and other content omitted for brevity -->
+    ${
+    // Conditionally render selected date or date range
+    selectedDate
+      ? `<p>Visit Date: ${selectedDate}</p>`
+      : selectedFromDate && selectedToDate
+        ? `<div class="dateRange">
+             <p>Selected Date Range:</p>
+             <p>From: ${selectedFromDate}</p>
+             <p>To: ${selectedToDate}</p>
+           </div>`
+        : ''
+    }
+  </body>
       ${chartImage ? `<div class="chart-section"><img class="chart-image" src="${chartImage}" alt="Grade Distribution Chart" /></div>` : ''}
       <div class="table-container">
         <table class="table">
@@ -606,6 +648,38 @@ const GradeDistribution = () => {
             </View>
           </View>
         )}
+
+        <View style={styles.calendarContainer}>
+          <Calendar
+            markingType={'period'}
+            markedDates={{
+              [selectedFromDate]: { startingDay: true, color: '#00B0FF' },
+              [selectedToDate]: { endingDay: true, color: '#00B0FF' },
+            }}
+            onDayPress={handleDayPress}
+            style={styles.calendarContainer} // Apply the styles here
+          />
+        </View>
+
+
+        <View style={styles.selectedDateContainer}>
+          {(selectedFromDate || selectedToDate) && (
+            <>
+              {selectedFromDate && (
+                <View>
+                  <Text style={styles.selectedDateText}>From:</Text>
+                  <Text style={styles.selectedDateText}>{selectedFromDate}</Text>
+                </View>
+              )}
+              {selectedToDate && (
+                <View>
+                  <Text style={styles.selectedDateText}>To:</Text>
+                  <Text style={styles.selectedDateText}>{selectedToDate}</Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
 
 
 
