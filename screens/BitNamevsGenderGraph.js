@@ -11,6 +11,7 @@ import logo2 from '../assets/logo2.jpg';
 import RNFS from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
 import Modal from 'react-native-modal';
+import { Calendar } from 'react-native-calendars';
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
   },
   dropdownOptionText: {
     fontSize: 16,
-    color:'black',
+    color: 'black',
   },
   genderChartSection: {
     alignItems: 'center',
@@ -225,6 +226,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  calendarContainer: {
+    borderRadius: 30,
+    backgroundColor: 'white',
+    padding: 10,
+    marginBottom: 10,
+    margin: 10,
+  },
+  changeDateButton: {
+    backgroundColor: 'teal',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    margin: 15,
+  },
+  changeDateButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    marginTop: 20,
+    borderRadius: 10,
+    elevation: 4,
+  },
+  dateRangeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
 });
 const colors = ['#3498db', '#ff69b4']; // Blue for male, Pink for female
 
@@ -254,6 +294,8 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   const [chartImage, setChartImage] = useState(null);
   const [prevSelectedBitName, setPrevSelectedBitName] = useState('');
   const [chartImageURI, setChartImageURI] = useState(null);
+  const [selectedStartDate, setSelectedStartDate] = useState('');
+  const [selectedEndDate, setSelectedEndDate] = useState('');
 
 
   React.useLayoutEffect(() => {
@@ -306,17 +348,41 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   };
 
   useEffect(() => {
-    if (selectedBitName && (selectedYear || selectedYear === '')) {
+    // Fetch data regardless of whether start and end dates are selected
+    if (selectedBitName) {
+      setLoading(true);
+      let url = `${API_URL}/gender_distribution/${selectedBitName}`;
+
+      // Append selected start and end dates to the URL if they exist
+      if (selectedStartDate && selectedEndDate) {
+        url += `/${selectedStartDate}/${selectedEndDate}`;
+      }
+
       axios
-        .get(`${API_URL}/gender_distribution/${selectedBitName}/${selectedYear || ''}`)
+        .get(url)
         .then((response) => {
+          if (response.data.length === 0) {
+            // Show an alert if no data is available
+            Alert.alert(
+              'No Data',
+              'No data available for the selected date range.',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => { },
+                },
+              ]
+            );
+          }
           setData(response.data);
+          setLoading(false);
         })
         .catch((error) => {
           console.error(error);
+          setLoading(false);
         });
     }
-  }, [selectedBitName, selectedYear]);
+  }, [selectedBitName, selectedStartDate, selectedEndDate]);
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [childData, setChildData] = useState([]);
@@ -326,10 +392,14 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
   };
 
   const fetchChildData = (gender) => {
-    const yearParam = selectedYear ? `/${selectedYear}` : ''; // Add the year parameter if selected
-  
+    let dateParams = '';
+
+    if (selectedStartDate && selectedEndDate) {
+      dateParams = `/${selectedStartDate}/${selectedEndDate}`;
+    }
+
     axios
-      .get(`${API_URL}/children/${selectedBitName}/${gender}${yearParam}`)
+      .get(`${API_URL}/children/${selectedBitName}/${gender}${dateParams}`)
       .then((response) => {
         setChildData(response.data);
         toggleModal(); // Show the modal
@@ -338,7 +408,6 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
         console.error(error);
       });
   };
-  
 
 
   const pieChartData = data.map((item, index) => ({
@@ -356,14 +425,6 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
 
   }, [bitName, selectedBitName, data, pieChartData]);
 
-  // const captureChartImage = async () => {
-  //   try {
-  //     const image = await captureRef(chartRef, { format: 'png', quality: 1 });
-  //     setChartImage(image);
-  //   } catch (error) {
-  //     console.error('Error capturing chart image:', error);
-  //   }
-  // };
   useEffect(() => {
     if (chartImageURI) {
       generatePDF();
@@ -383,6 +444,13 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
 
 
   const generateHTMLContent = () => {
+
+    let dateRangeText = ''; // Initialize date range text
+
+    // Check if both start and end dates are selected
+    if (selectedStartDate && selectedEndDate) {
+      dateRangeText = `Date Range: ${selectedStartDate} to ${selectedEndDate}`;
+    }
 
     return `
       <html>
@@ -504,6 +572,7 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
         </div>
           <h1>Gender Distribution</h1>
           <p>Anganwadi Name: ${selectedBitName}</p>
+          <p>${dateRangeText}</p>
           <div class="gender-chart-section">
           ${chartImageURI ? `<img class="chart-image" src="${chartImageURI}" alt="Gender Distribution Chart" />` : ''}
         </div>
@@ -530,6 +599,8 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
       </html>
     `;
   };
+
+ 
   const generatePDF = async () => {
     try {
       if (!selectedBitName) {
@@ -537,10 +608,23 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
         return;
       }
 
-      // Remove the captureChartImage call here
+      let url = `${API_URL}/gender_distribution/${selectedBitName}`;
+
+      // Append selected start and end dates to the URL if they exist
+      if (selectedStartDate && selectedEndDate) {
+        url += `/${selectedStartDate}/${selectedEndDate}`;
+      }
+
+      const response = await axios.get(url);
+
+      if (response.data.length === 0) {
+        // Show an alert if no data is available
+        Alert.alert('No Data', 'No data available for the selected date range.');
+        return;
+      }
 
       const options = {
-        html: generateHTMLContent(),
+        html: generateHTMLContent(response.data),
         fileName: `${selectedBitName}.pdf`,
         directory: RNFS.DownloadDirectoryPath,
       };
@@ -592,6 +676,24 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
     );
   };
 
+  const handleDateSelect = (date) => {
+    if (!selectedStartDate) {
+      setSelectedStartDate(date.dateString);
+    } else {
+      setSelectedEndDate(date.dateString);
+    }
+  };
+
+  console.log("Selected Bit Name", selectedBitName);
+  console.log("Selected Start Date", selectedStartDate);
+  console.log("Selected End Date", selectedEndDate);
+
+  const clearDateRange = () => {
+    setSelectedStartDate('');
+    setSelectedEndDate('');
+    setData([]);
+  };
+
   return (
     <ScrollView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -612,19 +714,41 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
               />
             </View>
           )}
-            
-          <Text style={styles.label}>Select Year:</Text>
-          {<ModalSelector
-            data={(years || []).map((year) => ({ key: year ? year.toString() : '', label: year ? year.toString() : '' }))}
-            initValue={selectedYear ? selectedYear : 'Select a Year'}
-            onChange={(option) => setSelectedYear(option.label)}
-            style={styles.modalSelectorContainer}
-            selectTextStyle={styles.modalSelectorText}
-            optionTextStyle={styles.modalSelectorText}
-          />}
 
-
-
+          <View style={{ marginBottom: 20 }}>
+            <Text style={styles.label}>Select Date Range:</Text>
+            <View style={styles.dateRangeContainer}>
+              <Text style={styles.dateRangeText}>
+                {selectedStartDate ? `From: ${selectedStartDate}` : 'Select start date'}
+              </Text>
+              <Text style={styles.dateRangeText}>
+                {selectedEndDate ? `To: ${selectedEndDate}` : 'Select end date'}
+              </Text>
+            </View>
+            <Calendar
+              style={styles.calendarContainer}
+              onDayPress={handleDateSelect}
+              markedDates={{
+                [selectedStartDate || '']: {
+                  selected: true,
+                  startingDay: true,
+                  color: '#007BFF',
+                  textColor: 'white',
+                },
+                [selectedEndDate || '']: {
+                  selected: true,
+                  endingDay: true,
+                  color: '#007BFF',
+                  textColor: 'white',
+                },
+              }}
+            />
+            {(selectedStartDate || selectedEndDate) && (
+              <TouchableOpacity style={styles.changeDateButton} onPress={clearDateRange}>
+                <Text style={styles.changeDateButtonText}>Change Date</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {selectedBitName && (selectedYear || selectedYear === '') && data.length > 0 && (
@@ -654,17 +778,6 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Gender Summary</Text>
             </View>
-            {/* <FlatList
-              initialScrollIndex={0}
-              data={data}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item }) => (
-                <View style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{item.gender}</Text>
-                  <Text style={styles.tableCell}>{item.count}</Text>
-                </View>
-              )}
-            /> */}
             <FlatList
               initialScrollIndex={0}
               data={data}

@@ -773,22 +773,59 @@ app.get('/childDataGender', (req, res) => {
 });
 
 
-app.get('/gender_distribution/:bit_name/:year?', (req, res) => {
-  const { bit_name, year } = req.params;
+// app.get('/gender_distribution/:bit_name/:year?', (req, res) => {
+//   const { bit_name, year } = req.params;
 
-  // Fetch child distribution data for the provided bit_name and year
-  const query = `
+//   // Fetch child distribution data for the provided bit_name and year
+//   const query = `
+//     SELECT child_gender AS gender, COUNT(*) AS count
+//     FROM child
+//     WHERE bit_name = ? ${year ? 'AND YEAR(date) = ?' : ''}
+//     GROUP BY child_gender;
+//   `;
+
+//   const params = [bit_name];
+//   if (year) {
+//     params.push(year);
+//   }
+
+//   db.query(query, params, (err, results) => {
+//     if (err) {
+//       console.error('Error executing MySQL query: ' + err);
+//       res.status(500).json({ error: 'Internal Server Error' });
+//       return;
+//     }
+
+//     const childDistribution = results.map((row) => ({
+//       gender: row.gender,
+//       count: row.count,
+//     }));
+
+//     console.log(childDistribution);
+//     res.json(childDistribution);
+//   });
+// });
+
+app.get('/gender_distribution/:bit_name/:start_date?/:end_date?', (req, res) => {
+  const { bit_name, start_date, end_date } = req.params;
+
+  // Construct the SQL query
+  let query = `
     SELECT child_gender AS gender, COUNT(*) AS count
     FROM child
-    WHERE bit_name = ? ${year ? 'AND YEAR(date) = ?' : ''}
-    GROUP BY child_gender;
-  `;
+    WHERE bit_name = ?`;
 
   const params = [bit_name];
-  if (year) {
-    params.push(year);
+
+  // Add conditions for start and end dates if provided
+  if (start_date && end_date) {
+    query += ' AND date >= ? AND date <= ?';
+    params.push(start_date, end_date);
   }
 
+  query += ' GROUP BY child_gender;';
+
+  // Execute the query
   db.query(query, params, (err, results) => {
     if (err) {
       console.error('Error executing MySQL query: ' + err);
@@ -805,6 +842,8 @@ app.get('/gender_distribution/:bit_name/:year?', (req, res) => {
     res.json(childDistribution);
   });
 });
+
+
 
 app.get('/anganwadi-count', async (req, res) => {
   const { startDate, endDate } = req.query;
@@ -833,19 +872,45 @@ app.get('/anganwadi-count', async (req, res) => {
 });
 
 
-app.get('/children/:anganwadiName/:gender/:year?', (req, res) => {
-  const { anganwadiName, gender, year } = req.params;
-  
-  // Modify the SQL query to include the year filter if it is provided
-  const query = `
+// app.get('/children/:anganwadiName/:gender/:year?', (req, res) => {
+//   const { anganwadiName, gender, year } = req.params;
+
+//   // Modify the SQL query to include the year filter if it is provided
+//   const query = `
+//     SELECT child_name, anganwadi_no
+//     FROM child
+//     WHERE bit_name = ? AND child_gender = ? ${year ? 'AND YEAR(date) = ?' : ''}
+//   `;
+
+//   const params = [anganwadiName, gender];
+//   if (year) {
+//     params.push(year);
+//   }
+
+//   db.query(query, params, (error, results) => {
+//     if (error) {
+//       console.error(error);
+//       res.status(500).json({ error: 'Internal Server Error' });
+//     } else {
+//       res.json(results);
+//     }
+//   });
+// });
+
+app.get('/children/:anganwadiName/:gender/:startDate?/:endDate?', (req, res) => {
+  const { anganwadiName, gender, startDate, endDate } = req.params;
+
+  // Modify the SQL query to include the date range filter if provided
+  let query = `
     SELECT child_name, anganwadi_no
     FROM child
-    WHERE bit_name = ? AND child_gender = ? ${year ? 'AND YEAR(date) = ?' : ''}
+    WHERE bit_name = ? AND child_gender = ?
   `;
-  
   const params = [anganwadiName, gender];
-  if (year) {
-    params.push(year);
+
+  if (startDate && endDate) {
+    query += ' AND date BETWEEN ? AND ?';
+    params.push(startDate, endDate);
   }
 
   db.query(query, params, (error, results) => {
@@ -857,9 +922,6 @@ app.get('/children/:anganwadiName/:gender/:year?', (req, res) => {
     }
   });
 });
-
-
-
 
 
 app.get('/child_distribution/:bit_name/:visitDate(*)', (req, res) => {
@@ -1177,7 +1239,7 @@ app.get('/child_distribution_range/:bit_name/:fromDate/:toDate', (req, res) => {
   console.log('bit_name:', bit_name);
   console.log('fromDate:', fromDate);
   console.log('toDate:', toDate);
-  
+
   // Fetch child distribution data for the provided bit_name and date range for all matching anganwadi_no
   const query = `
     SELECT grade, COUNT(*) AS count
@@ -1199,7 +1261,7 @@ app.get('/child_distribution_range/:bit_name/:fromDate/:toDate', (req, res) => {
       grade: row.grade,
       count: row.count,
     }));
-    
+
     console.log(childDistribution);
     console.log("!!!!");
     res.json(childDistribution);
