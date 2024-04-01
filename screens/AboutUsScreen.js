@@ -6,7 +6,7 @@ const images = [
   require('../assets/ngo_image3.jpeg'),
   require('../assets/ngo_image1.jpeg'), // Replace with your image paths
   require('../assets/ngo_image2.jpeg'),
-  
+
   // Add more images as needed
 ];
 const AboutUsScreen = ({ navigation }) => {
@@ -22,7 +22,7 @@ const AboutUsScreen = ({ navigation }) => {
   );
   return (
     <ScrollView contentContainerStyle={styles.container}>
-  
+
       <View style={styles.logoContainer}>
         <Image
           source={require('../assets/logo2.jpg')} // Replace with the actual path to your NGO's logo
@@ -87,36 +87,36 @@ const AboutUsScreen = ({ navigation }) => {
       <View style={styles.textContainer}>
         <Text style={styles.subHeading}>Developed By:</Text>
         <Text style={styles.aimText}>
-         Sneha Marcus Shinde</Text>
-         <Text style={styles.aimText}>
-         Piyusha Sandip shinde</Text>
-         <Text style={styles.aimText}>
-         Silvi Parlani</Text>
-         <Text style={styles.aimText}>
-         Simran Suresh Modi</Text>
-      
-            <Text style={styles.subHeading}>Mentors:</Text>
-            <Text style={styles.aimText}>
-            Vaishali Salgar</Text>
-            <Text style={styles.aimText}>
-            Shilpa Deshpande</Text>
-    
-            <View style={styles.mentor}>
-            <Text style={styles.subHeading}>contact us on:</Text>
-            <Text style={styles.aimText}>Email: administrator@cumminscollege.in
-Tel: 020- 25311000, 25477211      
-            </Text>
-          
-            </View>
+          Sneha Marcus Shinde</Text>
+        <Text style={styles.aimText}>
+          Piyusha Sandip shinde</Text>
+        <Text style={styles.aimText}>
+          Silvi Parlani</Text>
+        <Text style={styles.aimText}>
+          Simran Suresh Modi</Text>
+
+        <Text style={styles.subHeading}>Mentors:</Text>
+        <Text style={styles.aimText}>
+          Vaishali Salgar</Text>
+        <Text style={styles.aimText}>
+          Shilpa Deshpande</Text>
+
+        <View style={styles.mentor}>
+          <Text style={styles.subHeading}>contact us on:</Text>
+          <Text style={styles.aimText}>Email: administrator@cumminscollege.in
+            Tel: 020- 25311000, 25477211
+          </Text>
+
+        </View>
       </View>
-      
+
     </ScrollView>
-    
+
   );
 };
 
 const styles = StyleSheet.create({
-  
+
   container: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop:20,
+    marginTop: 20,
   },
   logo: {
     width: 100,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   activeDot: {
     backgroundColor: COLORS.theme, // Change to your active dot color
   },
-  mentor:{}
+  mentor: {}
   // Other styles as needed
 });
 

@@ -276,7 +276,6 @@ const CustomerForm = ({route}) => {
     assistantPhone: '',
     registrationDate: '',
     childName: '',
-    childDob: '',
     childGender: '',
     motherEducation: '',
     motherOccupation: '',
@@ -299,7 +298,6 @@ const CustomerForm = ({route}) => {
       !assistantName ||
       !assistantPhone ||
       !childName ||
-      !selectedDate ||
       !childGender ||
       !childPhone ||
       !motherName ||
@@ -430,6 +428,11 @@ const CustomerForm = ({route}) => {
       });
   };
 
+
+  const sanitizePhoneNumber = (phoneNumber) => {
+    return phoneNumber.replace(/\D/g, '');
+  };
+
   const handleSubmit = async () => {
     handleForSubmit();
     console.log(anganwadiNo_name);
@@ -437,6 +440,9 @@ const CustomerForm = ({route}) => {
     const newErrors = {};
     let hasErrors = false;
     
+
+    const sanitizedAssistantPhone = sanitizePhoneNumber(assistantPhone);
+  const sanitizedChildPhone = sanitizePhoneNumber(childPhone);
 
     if (bitName === '') {
       newErrors.bitName = 'Please enter Bit Name';
@@ -458,7 +464,7 @@ const CustomerForm = ({route}) => {
     if (assistantPhone === '') {
       newErrors.assistantPhone = 'Please enter Phone Number';
       hasErrors = true;
-    } else if (!/^\d{10}$/.test(assistantPhone)) {
+    } else if (!/^\d{10}$/.test(sanitizedAssistantPhone)) {
       newErrors.assistantPhone = 'Please enter a valid 10-digit phone number';
       hasErrors = true;
     }
@@ -470,10 +476,6 @@ const CustomerForm = ({route}) => {
       newErrors.registrationDate = 'Please select Date of Registration';
       hasErrors = true;
     }
-    if (childDob === '') {
-      newErrors.childDob = 'Please select Date of Birth';
-      hasErrors = true;
-    }
     if (childGender === '') {
       newErrors.childGender = 'Please enter Gender';
       hasErrors = true;
@@ -481,7 +483,7 @@ const CustomerForm = ({route}) => {
     if (childPhone === '') {
       newErrors.childPhone = 'Please enter Phone Number';
       hasErrors = true;
-    } else if (!/^\d{10}$/.test(childPhone)) {
+    } else if (!/^\d{10}$/.test(sanitizedChildPhone)) {
       newErrors.childPhone = 'Please enter a valid 10-digit phone number';
       hasErrors = true;
     }
@@ -686,7 +688,7 @@ const CustomerForm = ({route}) => {
                     <TextInput
                       style={[styles.input, {height: 45, color: 'black'}]}
                       value={assistantPhone}
-                      onChangeText={setAssistantPhone}
+                      onChangeText={(text) => setAssistantPhone(sanitizePhoneNumber(text))}
                       placeholder="Enter assistant's phone number"
                       placeholderTextColor="grey"
                       keyboardType="phone-pad"
@@ -753,7 +755,7 @@ const CustomerForm = ({route}) => {
 
                   <Text style={styles.label}>
                     Date of Birth / जन्मतारीख :{' '}
-                    <Text style={{color: 'red', fontSize: 16}}>*</Text>
+                    {/* <Text style={{color: 'red', fontSize: 16}}>*</Text> */}
                   </Text>
                   <TouchableOpacity onPress={() => setShowCalendar(true)}>
                     <Text
@@ -776,7 +778,7 @@ const CustomerForm = ({route}) => {
                     />
                   )}
 
-                  <Text style={styles.errorText}>{errors.childDob}</Text>
+                  
                   <Text style={styles.label}>
                     Gender / लिंग :{' '}
                     <Text style={{color: 'red', fontSize: 16}}>*</Text>
@@ -821,7 +823,7 @@ const CustomerForm = ({route}) => {
                   <TextInput
                     style={[styles.input, {height: 45, color: 'black'}]}
                     value={childPhone}
-                    onChangeText={setChildPhone}
+                    onChangeText={(text) => setChildPhone(sanitizePhoneNumber(text))}
                     placeholder="Enter phone number (parent's)"
                     placeholderTextColor="grey"
                     keyboardType="phone-pad"
