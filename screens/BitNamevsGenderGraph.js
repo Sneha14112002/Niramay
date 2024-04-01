@@ -283,8 +283,9 @@ const CustomMenuButton = ({ toggleMenu, handlePDFGeneration }) => {
 
   );
 };
-const BitNamevsGenderGraph = ({ toggleMenu }) => {
+const BitNamevsGenderGraph = ({ toggleMenu,route }) => {
   const navigation = useNavigation();
+  
   const [bitName, setBitName] = useState([]);
   const [years, setYears] = useState([]);
   const [selectedBitName, setSelectedBitName] = useState('');
@@ -300,7 +301,7 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu} />, // Place the menu button in the header
+      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu}  />, // Place the menu button in the header
       // You can add other header configurations here as needed
     });
   }, [navigation]);
@@ -566,7 +567,7 @@ const BitNamevsGenderGraph = ({ toggleMenu }) => {
         <img src="file:///android_asset/images/logo2.jpg" />
 
         <div class="textContainer">
-        <div class="headingLine">Niramay Bharat</div>
+        <div class="headingLine">Niramay</div>
         <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
         </div>
         </div>

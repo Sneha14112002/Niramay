@@ -139,7 +139,7 @@ const VisitRow = ({visit, index, handleVisitFieldChange}) => {
       <TextInput
         value={visit.haemoglobin}
         onChangeText={text => {
-          const cleanedText = text.replace(/[^0-9]/g, '');
+          const cleanedText = text.replace(/[^0-9.]/g, '');
           const truncatedText = cleanedText.slice(0, 5);
           const numericValue = parseFloat(truncatedText);
 
@@ -308,7 +308,7 @@ const VisitRow = ({visit, index, handleVisitFieldChange}) => {
         value={visit.height}
         onChangeText={text => {
           // Remove non-digit characters from the input
-          const cleanedText = text.replace(/[^0-9]/g, '');
+          const cleanedText = text.replace(/[^0-9.]/g, '');
 
           // Limit the input to a reasonable length
           const truncatedText = cleanedText.slice(0, 5); // For example, limit to 5 digits

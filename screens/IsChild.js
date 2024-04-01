@@ -3,8 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ImageB
 import { useNavigation } from '@react-navigation/native';
 import COLORS from '../constants/colors';
 import { API_URL } from './config';
-const IsChild = () => {
+const IsChild = ({route}) => {
   const navigation = useNavigation();
+  //const { role, name } = route.params;
   const [isChildPresent, setIsChildPresent] = useState(false); 
   const [anganwadiNo, setAnganwadiNo] = useState('');
   const [childsName, setChildsName] = useState('');
@@ -29,7 +30,7 @@ const IsChild = () => {
         // Data exists in the database, you can navigate to the next screen or perform other actions
         console.log('Data exists in the database');
         console.log(childsName,anganwadiNo);
-        navigation.navigate('Reports',{ anganwadiNo, childsName });
+        navigation.navigate('Reports',{ anganwadiNo, childsName});
       } else {
         setIsChildPresent(true);
         ToastAndroid.showWithGravityAndOffset(

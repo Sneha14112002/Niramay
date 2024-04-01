@@ -207,6 +207,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
+  },
   selectedDateText: {
     fontSize: 16,
     color: '#333',
@@ -222,8 +234,19 @@ const colors = {
   MAM: '#FFC300',
   SAM: '#FF5733',
 };
+const CustomMenuButton = ({ toggleMenu }) => {
+  const handleMenuToggle = () => {
+    toggleMenu(); // Call the toggleMenu function received as a prop
+  };
 
-const GradeDistribution = () => {
+  return (
+    <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
+      <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
+    </TouchableOpacity>
+
+  );
+};
+const GradeDistribution = ({route,toggleMenu,navigation}) => {
   const [bitName, setBitName] = useState([]);
   const [selectedBitName, setSelectedBitName] = useState('');
   const [visitDate, setVisitDate] = useState([]);
@@ -238,7 +261,12 @@ const GradeDistribution = () => {
   const [selectedModalGrade, setSelectedModalGrade] = useState(null);
   const [modalGradeDetails, setModalGradeDetails] = useState([]);
   const [noDataAlert, setNoDataAlert] = useState(false); // State for no data alert
-
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu}/>, // Place the menu button in the header
+      // You can add other header configurations here as needed
+    });
+  }, [navigation]);
   const resetVisitDate = () => {
     setVisitDate([]);
   };
@@ -528,7 +556,7 @@ const GradeDistribution = () => {
       <div class="headerContainer">
         <img src="file:///android_asset/images/logo2.jpg" />
         <div class="textContainer">
-          <div class="headingLine">Niramay Bharat</div>
+          <div class="headingLine">Niramay</div>
           <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
         </div>
       </div>

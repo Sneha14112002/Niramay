@@ -206,7 +206,7 @@ const HeightPerChild = ({route, toggleMenu}) => {
           <div class="headerContainer">
             <img src="file:///android_asset/images/logo2.jpg" />
             <div class="textContainer">
-              <div class="headingLine">Niramay Bharat</div>
+              <div class="headingLine">Niramay</div>
               <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
             </div>
           </div>

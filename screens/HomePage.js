@@ -5,21 +5,6 @@ import user from '../assets/user.png';
 import heartbeat from '../assets/heartbeat.png';
 import file from '../assets/file.png';
 import clipboard from '../assets/clipboard.png';
-// const CustomMenuButton = ({ toggleMenu }) => {
-//   const handleMenuToggle = () => {
-//     if (toggleMenu) {
-//       toggleMenu(); // Call the toggleMenu function received as a prop
-//     }
-//   };
-
-//   return (
-//     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
-//       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
-//     </TouchableOpacity>
-//   );
-// };
-
-
 
 
 const HomePage = ({ route,toggleMenu}) => {
@@ -53,7 +38,7 @@ const HomePage = ({ route,toggleMenu}) => {
   };
 
   const goToReports = () => {
-    navigation.navigate('IsChild');
+    navigation.navigate('IsChild',{role,name});
   };
 
   return (

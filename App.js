@@ -247,7 +247,7 @@ export default function App() {
 </Stack.Screen>
           <Stack.Screen
             name="GradeDistribution"
-            component={GradeDistribution}
+            
             options={{
               // headerShown: false,
               headerStyle: {
@@ -257,7 +257,11 @@ export default function App() {
               headerTintColor: COLORS.white,
               title: "Report",
             }}
-          />
+            >
+            {(props) => (
+              <GradeDistribution {...props} toggleMenu={toggleMenu} />
+            )}
+          </Stack.Screen>
           <Stack.Screen
             name="AnganwadiCountvsBit_name"
             component={AnganwadiCountvsBit_name}
@@ -442,7 +446,7 @@ export default function App() {
 
 <Stack.Screen
               name="GradeTransition"
-              component={GradeTransition}
+        
               options={{
                 // headerShown: false,
                 headerStyle: {
@@ -452,7 +456,11 @@ export default function App() {
                 headerTintColor: COLORS.white,
                 title: "Consolidated Report",
               }}
-            />
+              >
+              {(props) => (
+                <GradeTransition {...props} toggleMenu={toggleMenu} />
+              )}
+            </Stack.Screen>
              <Stack.Screen
               name="AboutUsScreen"
               component={AboutUsScreen}

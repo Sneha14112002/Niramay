@@ -18,8 +18,19 @@ import RNFS, { completeHandlerIOS } from 'react-native-fs';
 import ModalSelector from 'react-native-modal-selector';
 import Modal from 'react-native-modal';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+const CustomMenuButton = ({ toggleMenu }) => {
+  const handleMenuToggle = () => {
+    toggleMenu(); // Call the toggleMenu function received as a prop
+  };
 
-const GradeTransition = () => {
+  return (
+    <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
+      <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
+    </TouchableOpacity>
+
+  );
+};
+const GradeTransition = ({navigation,toggleMenu}) => {
   const [data, setData] = useState([]);
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
@@ -27,7 +38,12 @@ const GradeTransition = () => {
   const chartContainerRef = useRef();
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState({});
-
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <CustomMenuButton toggleMenu={toggleMenu}/>, // Place the menu button in the header
+      // You can add other header configurations here as needed
+    });
+  }, [navigation]);
   const [pdfCounter, setPdfCounter] = useState(1);
   useEffect(() => {
     fetchData();
@@ -255,7 +271,7 @@ const GradeTransition = () => {
       <div class="headerContainer">
       <img src="file:///android_asset/images/logo2.jpg" />
       <div class="textContainer">
-        <div class="headingLine">Niramay Bharat</div>
+        <div class="headingLine">Niramay</div>
         <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
       </div>
     </div>
@@ -751,6 +767,18 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
+  },
+  menuButton: {
+    position: 'absolute',
+    bottom: -20,
+    right: 1,
+    zIndex: 1,
+    // Add any additional styles you need for positioning and appearance
+  },
+  menuIcon: {
+    width: 28,
+    height: 30,
+    // Add styles for your icon if needed
   },
   closeModalButtonText: {
     color: '#fff',

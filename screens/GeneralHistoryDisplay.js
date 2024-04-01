@@ -596,7 +596,7 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <TextInput
                                 value={newVisit.haemoglobin}
                                 onChangeText={(text) => {
-                                    const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+                                    const cleanedText = text.replace(/[^0-9.]/g, ''); // Remove non-numeric characters
                                     const truncatedText = cleanedText.slice(0, 5); // Limit the length to 5 characters
                                     const numericValue = parseFloat(truncatedText);
 
@@ -647,8 +647,8 @@ const GeneralHistoryDisplay = ({ route }) => {
                             <TextInput
                                 value={newVisit.height}
                                 onChangeText={(text) => {
-                                    const cleanedText = text.replace(/[^0-9]/g, ''); // Remove non-numeric characters
-                                    const truncatedText = cleanedText.slice(0, 3); // Limit the length to 3 digits
+                                    const cleanedText = text.replace(/[^0-9.]/g, ''); // Remove non-numeric characters
+                                    const truncatedText = cleanedText.slice(0, 5); // Limit the length to 3 digits
                                     const numericValue = parseInt(truncatedText, 10); // Convert to an integer
 
                                     if (!isNaN(numericValue) && numericValue >= 0) {

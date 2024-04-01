@@ -31,7 +31,8 @@ const CustomMenuButton = ({ toggleMenu }) => {
   );
 };
 
-const BitNamevsGender = ({ toggleMenu }) => {
+const BitNamevsGender = ({ toggleMenu,route }) => {
+  //const {role,name}=route.params;
   const [data, setData] = useState([]);
   const [selectedFromDate, setSelectedFromDate] = useState(null);
   const [selectedToDate, setSelectedToDate] = useState(null);
@@ -189,7 +190,7 @@ const BitNamevsGender = ({ toggleMenu }) => {
           <div class="headerContainer">
             <img src="file:///android_asset/images/logo2.jpg" />
             <div class="textContainer">
-              <div class="headingLine">Niramay Bharat</div>
+              <div class="headingLine">Niramay</div>
               <div class="subheading">सर्वे पि सुखिनः सन्तु | सर्वे सन्तु निरामय: ||</div>
             </div>
           </div>

@@ -1,10 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
-const Menu = ({ toggleMenu }) => {
+import {role,name} from "./HomePage";
+const Menu = ({toggleMenu }) => {
   const navigation = useNavigation();
+  console.log(role, name,"####");
+  // const roleIcons = {
+  //   Doctor: require('../assets/doctor.png'),
+  //   Supervisor: require('../assets/supervisor.png'),
+  //   Assistant: require('../assets/assistant.png'),
+  // };
 
+  //const selectedIcon = roleIcons[role];
   const handleMenuItemClick = (menuItem) => {
     switch (menuItem) {
       case 'Child Personal Information':
@@ -37,6 +44,7 @@ const Menu = ({ toggleMenu }) => {
       source={require('../assets/bg9.jpg')} // Replace with your image path
       style={styles.backgroundImage}
     >
+
       <View style={styles.container}>
         <View style={styles.menuItemsContainer}>
           {menuItems.map((menuItem, index) => (
@@ -52,6 +60,13 @@ const Menu = ({ toggleMenu }) => {
           <TouchableOpacity style={styles.closeButton} onPress={toggleMenu}>
             <Text style={styles.closeButtonText}>Close Menu</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.closeButton} onPress={() => {
+             toggleMenu(); // Close the menu
+            navigation.navigate('Welcome'); // Navigate to the Welcome page
+          }}>
+            <Text style={styles.closeButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+
         </View>
       </View>
     </ImageBackground>

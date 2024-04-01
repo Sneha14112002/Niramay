@@ -21,7 +21,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'root@123',
-  database: 'ngo',
+  database: 'ngo1',
 });
 
 db.connect((err) => {

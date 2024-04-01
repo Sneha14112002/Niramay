@@ -12,18 +12,19 @@ const options = [
 
 
 ];
-const CustomMenuButton = ({toggleMenu}) => {
+const CustomMenuButton = ({ toggleMenu}) => {
   const handleMenuToggle = () => {
-    toggleMenu(); // Call the toggleMenu function received as a prop
+   
+    toggleMenu(); // Call the toggleMenu function with role and name
   };
 
   return (
     <TouchableOpacity style={styles.menuButton} onPress={handleMenuToggle}>
       <Image source={require('../assets/menu.png')} style={styles.menuIcon} />
     </TouchableOpacity>
-    
   );
 };
+
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   const day = date.getDate().toString().padStart(2, '0');
@@ -32,7 +33,7 @@ const formatDate = (dateString) => {
   return `${day}/${month}/${year}`;
 };
 const Reports = ({ navigation, route,toggleMenu}) => {
-  const { anganwadiNo, childsName } = route.params;
+  const { anganwadiNo, childsName} = route.params;
   const [formData, setFormData] = useState(null);
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -48,6 +49,7 @@ const Reports = ({ navigation, route,toggleMenu}) => {
           childsName,
         };
         // fetchDeviceIpAddress();
+        
         const response = await fetch(`${API_URL}/getFormData`, {
           method: 'POST',
           headers: {
